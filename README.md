@@ -14,7 +14,7 @@ The scripts for running the profile inference tool require the following depende
 
 ## Usage
 The script `profile_inferrer.py` infers one or more JASPAR TF binding profiles recognized by a sequence of interest. It requires the following inputs:
-* The path to the BLAST+ bin directory where `blastp` is located (option `-b`)
+* The path to the `BLAST+` bin directory where `blastp` is located (option `-b`)
 * The path to the `files` folder (option `-f`)
 * A file containing one or more sequences in FASTA format (option `-i`)
 
@@ -31,7 +31,7 @@ Inference modes (for a more restricted profile inference):
 As a usage example, the inferred JASPAR profiles for the `MAX` TF can be obtained as follows: `./profile_inferrer.py -b $BLAST_PATH -f ./files/ -i ./examples/MAX.fa`.
 
 The script returns all inferred JASPAR TF binding profiles along with details regarding  the inference details,including:
-* The BLAST alignment between the query and the JASPAR TF, including the aligned sequences, the start and end amino acid positions, and the Expect value (E); and
+* The `BLAST` alignment between the query and the JASPAR TF, including the aligned sequences, the start and end amino acid positions, and the Expect value (E); and
 * The % of identical residues between the query and the JASPAR TF DBD
 
 Note that for the `profile_inferrer.py` script to work with future versions of JASPAR other than 2018, first users would have to create a new `files` folder with the script `make_files.py`.
