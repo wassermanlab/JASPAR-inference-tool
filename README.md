@@ -4,11 +4,11 @@ For the [2016 release](https://doi.org/10.1093/nar/gkv1176) of [JASPAR](http://j
 ## Content
 The repository is organized as follows:
 * The `examples` folder contains a positive (*i.e.* `MAX.fa`) and a negative example (*i.e.* `MTOR.fa`) for testing
-* The `files` folder contains the output from `make_files.py` (*i.e.* prerequisites):
+* The `files` folder contains the output from `make_files.py`:
   - `domains.json` contains UniProt Accessions, their associated DBD sequences and thresholds on the % of DBD sequence identity for profile inference
   - `jaspar.json` contains UniProt Accessions, their associated JASPAR matrix IDs and TF Names
-  - `fungi.fa`, `insects.fa`, `nematodes.fa`, `plants.fa` and `vertebrates.fa` are taxon databases formatted with `makeblastdb` for `blastp` searches (the `sequence.fa` is a general database grouping all taxons) 
-* The scripts `functions.py` (global functions), `make_files.py` (creates prerequisites) and `profile_inferrer.py` (*i.e.* the profile inference tool)
+  - `fungi.fa`, `insects.fa`, `nematodes.fa`, `plants.fa` and `vertebrates.fa` are taxon-specific TF databases formatted with `makeblastdb` for `blastp` searches (the `sequence.fa` is a general database that groups TFs from all taxons) 
+* The scripts `functions.py`, `make_files.py` and `profile_inferrer.py` (*i.e.* the profile inference tool)
 
 ## Dependencies
 The scripts for running the profile inference tool require the following dependencies:
@@ -16,7 +16,7 @@ The scripts for running the profile inference tool require the following depende
 * [`Python 2.7`](https://www.python.org/download/releases/2.7/) with the [`Biopython`](http://biopython.org), [`CoreAPI`](http://www.coreapi.org) and [`UniProt`](https://github.com/boscoh/uniprot) libraries
 
 ## Usage
-The inference tool requires the following prerequisites:
+The inference tool requires the output from `make_files.py` as prerequisites:
 * 
 
 ## Configuration
