@@ -106,7 +106,6 @@ if __name__ == "__main__":
     options = parse_options()
 
     # Initialize #
-    inferences = {}
     domains_json = os.path.join(os.path.abspath(options.files_dir), "domains.json")
     domains = json.loads("\n".join([line for line in functions.parse_file(domains_json)]))
     jaspar_json = os.path.join(os.path.abspath(options.files_dir), "jaspar.json")
@@ -115,13 +114,16 @@ if __name__ == "__main__":
     if options.taxon is not None:
         database_file = os.path.join(os.path.abspath(options.files_dir), "%s.fa" % taxon)
 
+    # Write output #
+    functions.write(options.output_file, "#Query,TF Name,TF Matrix,E-value,Query Alignment,Query Start-End,TF Alignment,TF Start-End,DBD %ID")
     # For each header, sequence... #
     for header, sequence in functions.parse_fasta_file(options.input_file):
         # Initialize #
         homologs = []
+        inferences = []
+        inferred_profiles = set()
         fasta_file = os.path.join(os.path.abspath(options.dummy_dir), "query.%s.fa" % str(os.getpid()))
         blast_file = os.path.join(os.path.abspath(options.dummy_dir), "blast.%s.xml" % str(os.getpid()))
-        inferences.setdefault(header, [])
         # Create FASTA file #
         if os.path.exists(fasta_file): os.remove(fasta_file)
         functions.write(fasta_file, ">%s\n%s" % (header, sequence))
@@ -158,19 +160,15 @@ if __name__ == "__main__":
                 # For each uniacc JASPAR matrix... #
                 for matrix, genename in jaspar[uniacc]:
                     # Infer matrix #
-                    inferences[header].append([genename, matrix, evalue, query_alignment, query_from_to, hit_alignment, hit_from_to, max(identities)])
-
-    # Write output #
-    functions.write(options.output_file, "#Query,TF Name,TF Matrix,E-value,Query Alignment,Query Start-End,TF Alignment,TF Start-End,DBD %ID")
-    for header in sorted(inferences):
-        # Initialize #
-        matrices = set()
-        for inference in sorted(inferences[header], key=lambda x: (x[-1], x[1]), reverse=True):
+                    inferences.append([genename, matrix, evalue, query_alignment, query_from_to, hit_alignment, hit_from_to, max(identities)])
+        # For each inferred profile... #
+        for inference in sorted(inferences, key=lambda x: (x[-1], x[1]), reverse=True):
             # If latest mode... #
             if options.latest:
-                if inference[1][:6] in matrices: continue
+                if inference[1][:6] in inferred_profiles: continue
             # If single mode... #
             if options.single:
                 if "::" in inference[0]: continue
+            # Write output #
             functions.write(options.output_file, "%s,%s" % (header, ",".join(map(str, inference))))
-            matrices.add(inference[1][:6])
+            inferred_profiles.add(inference[1][:6])
