@@ -22,7 +22,7 @@ python motif_inferrer.py -i examples/MAX.fa
 
 If we don't want to infer JASPAR profiles representing different TFs (e.g. hetetodimers):
 ```
-python motif_inferrer.py -f $FILES_DIR -i examples/MAX.fa -s
+python motif_inferrer.py -b $BLAST_PATH -f $FILES_DIR -i examples/MAX.fa -s
 ```
 
 
