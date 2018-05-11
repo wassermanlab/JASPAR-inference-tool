@@ -24,7 +24,7 @@ def parse_options():
     parser = optparse.OptionParser("./%prog -b <blast_dir> -f <files_dir> -i <input_file> [--dummy=<dummy_dir> -n <n_parameter> -o <output_file> -s -t <taxon>]")
 
     parser.add_option("-b", action="store", type="string", dest="blast_dir", help="Full path to BLAST+ bin directory (i.e. where \"blastp\" is located; e.g. $BLAST_PATH/bin)", metavar="<blast_dir>")
-    parser.add_option("--dummy", default="/tmp/", action="store", type="string", dest="Dummy_dir", help="dummy directory (default = /tmp/)", metavar="<dummy_dir>")
+    parser.add_option("--dummy", default="/tmp/", action="store", type="string", dest="dummy_dir", help="Dummy directory (default = /tmp/)", metavar="<dummy_dir>")
     parser.add_option("-f", action="store", type="string", dest="files_dir", help="Files directory (output directory from make_files.py)", metavar="<files_dir>")
     parser.add_option("-i", action="store", type="string", dest="input_file", help="Input file (i.e. one or more sequences in FASTA format)", metavar="<input_file>")
     parser.add_option("-n", default=0, action="store", type="int", dest="n_parameter", help="N parameter for the Rost's curve (e.g. n=5 ensures 99% of correctly assigned homologs; default = 0)", metavar="<n_parameter>")
@@ -110,7 +110,6 @@ if __name__ == "__main__":
 
     # For each header, sequence... #
     for header, sequence in functions.parse_fasta_file(options.input_file):
-        print(header, sequence)
         # Initialize #
         homologs = []
         fasta_file = os.path.join(os.path.abspath(options.dummy_dir), "query.%s.fa" % str(os.getpid()))
