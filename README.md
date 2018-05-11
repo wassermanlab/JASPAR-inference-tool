@@ -30,7 +30,7 @@ Inference modes (for a more restricted profile inference):
 
 As a usage example, the inferred JASPAR profiles for the `MAX` TF can be obtained as follows: `./profile_inferrer.py -b $BLAST_PATH -f ./files/ -i ./examples/MAX.fa`.
 
-The script returns all inferred JASPAR TF binding profiles along with details regarding  the inference details,including:
+The script returns all inferred JASPAR TF binding profiles along with details regarding  the inference details, including:
 * The `BLAST` alignment between the query and the JASPAR TF, including the aligned sequences, the start and end amino acid positions, and the Expect value (E); and
 * The % of identical residues between the query and the JASPAR TF DBD
 
