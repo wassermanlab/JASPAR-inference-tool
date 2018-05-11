@@ -21,11 +21,15 @@ def parse_options():
 
     """
 
-    parser = optparse.OptionParser("./%prog [-o <output_dir>]")
+    parser = optparse.OptionParser("./%prog -b <blast_dir> [-o <output_dir>]")
 
+    parser.add_option("-b", action="store", type="string", dest="blast_dir", help="Full path to BLAST+ bin directory (i.e. where \"makeblastdb\" is located; e.g. $BLAST_PATH/bin)", metavar="<blast_dir>")
     parser.add_option("-o", default="./", action="store", type="string", dest="output_dir", help="Output directory (default = ./)", metavar="<output_dir>")
 
     (options, args) = parser.parse_args()
+
+    if options.blast_dir is None:
+        parser.error("missing arguments: type option \"-h\" for help")
 
     return options
 
@@ -114,7 +118,7 @@ if __name__ == "__main__":
                     functions.write(fasta_file, ">%s\n%s" % (uniacc, uniaccs[uniacc][1]))
             # Format db #
             try:
-                process = subprocess.check_output([os.path.join(os.path.abspath(os.path.dirname(__file__)), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+                process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
             except:
                 raise ValueError("Could not format BLAST database: %s" % fasta_file)
 
@@ -138,7 +142,7 @@ if __name__ == "__main__":
             functions.write(fasta_file, ">%s\n%s" % (header, uniq_seqs[header]))
         # Format db #
         try:
-            process = subprocess.check_output([os.path.join(os.path.abspath(os.path.dirname(__file__)), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
         except:
             raise ValueError("Could not format BLAST database: %s" % fasta_file)
 

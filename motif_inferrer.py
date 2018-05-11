@@ -21,8 +21,9 @@ def parse_options():
 
     """
 
-    parser = optparse.OptionParser("./%prog -f <files_dir> -i <input_file> [--dummy=<dummy_dir> -n <n_parameter> -o <output_file> -s -t <taxon>]")
+    parser = optparse.OptionParser("./%prog -b <blast_dir> -f <files_dir> -i <input_file> [--dummy=<dummy_dir> -n <n_parameter> -o <output_file> -s -t <taxon>]")
 
+    parser.add_option("-b", action="store", type="string", dest="blast_dir", help="Full path to BLAST+ bin directory (i.e. where \"blastp\" is located; e.g. $BLAST_PATH/bin)", metavar="<blast_dir>")
     parser.add_option("--dummy", default="/tmp/", action="store", type="string", dest="Dummy_dir", help="dummy directory (default = /tmp/)", metavar="<dummy_dir>")
     parser.add_option("-f", action="store", type="string", dest="files_dir", help="Files directory (output directory from make_files.py)", metavar="<files_dir>")
     parser.add_option("-i", action="store", type="string", dest="input_file", help="Input file (i.e. one or more sequences in FASTA format)", metavar="<input_file>")
@@ -32,6 +33,13 @@ def parse_options():
     parser.add_option("-t", action="store", dest="taxon", help="Taxonomic group (i.e. \"fungi\", \"insects\", \"nematodes\", \"plants\", or \"vertebrates\"; default = None)", metavar="<taxon>")
 
     (options, args) = parser.parse_args()
+
+    if options.blast_dir is None or options.files_dir is None or options.input_file is None:
+        parser.error("missing arguments: type option \"-h\" for help")
+
+    if options.taxon is not None:
+        if options.taxon not in ["fungi", "insects", "nematodes", "plants", "vertebrates"]:
+            parser.error("invalid taxon: %s\n\tvalid taxons include \"fungi\", \"insects\", \"nematodes\", \"plants\", and \"vertebrates\"" % options.taxon)
 
     return options
 
@@ -113,7 +121,7 @@ if __name__ == "__main__":
         functions.write(fasta_file, ">%s\n%s" % (header, sequence))
         # Exec blastp #
         try:
-            process = subprocess.check_output([os.path.join(os.path.abspath(os.path.dirname(__file__)), "blastp"), "-query", fasta_file, "-db", database_file, "-out", blast_file, "-outfmt", "5"], stderr=subprocess.STDOUT)
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-query", fasta_file, "-db", database_file, "-out", blast_file, "-outfmt", "5"], stderr=subprocess.STDOUT)
         except:
             raise ValueError("Could not exec blastp for %s" % fasta_file)
         # Parse BLAST results #
