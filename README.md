@@ -3,12 +3,9 @@ For the [2016 release](https://doi.org/10.1093/nar/gkv1176) of [JASPAR](http://j
 
 ## Content
 The repository is organized as follows:
-* The `examples` folder contains a positive (*i.e.* `MAX.fa`) and a negative example (*i.e.* `MTOR.fa`) for testing
-* The `files` folder contains the output from `make_files.py`:
-  - `domains.json` contains UniProt Accessions, their associated DBD sequences and thresholds on the % of DBD sequence identity for profile inference
-  - `jaspar.json` contains UniProt Accessions, their associated JASPAR matrix IDs and TF Names
-  - `fungi.fa`, `insects.fa`, `nematodes.fa`, `plants.fa` and `vertebrates.fa` are taxon-specific TF databases formatted with `makeblastdb` for `blastp` searches (the `sequence.fa` is a general database that groups TFs from all taxons) 
-* The scripts `functions.py`, `make_files.py` and `profile_inferrer.py` (*i.e.* the profile inference tool)
+* The `examples` folder contains a TF (*i.e.* `MAX.fa`) and a non-TF proteic sequence (*i.e.* `MTOR.fa`) in FASTA format
+* The `files` folder contains the output from `make_files.py`: *i.e.* `domains.json`, `jaspar.json` and several BLAST formatted databases
+* The scripts `functions.py`, `make_files.py` and `profile_inferrer.py`
 
 ## Dependencies
 The scripts for running the profile inference tool require the following dependencies:
@@ -16,27 +13,25 @@ The scripts for running the profile inference tool require the following depende
 * [`Python 2.7`](https://www.python.org/download/releases/2.7/) with the [`Biopython`](http://biopython.org), [`CoreAPI`](http://www.coreapi.org) and [`UniProt`](https://github.com/boscoh/uniprot) libraries
 
 ## Usage
-The inference tool requires the output from `make_files.py` as prerequisites:
-* 
+The script `profile_inferrer.py` infers one or more JASPAR TF binding profiles recognized by a sequence of interest. It requires the following inputs:
+* The path to the BLAST+ bin directory where `blastp` is located (option `-b`)
+* The path to the `files` folder (option `-f`)
+* A file containing one or more sequences in FASTA format (option `-i`)
 
-## Configuration
-```
-explain that users must exec make_files.py and create symbolic links to both blastp and makeblastdb
-```
+Non-mandatory options include:
+* The path to a "dummy" directory where to create temporary files (option `--dummy`, by default is set to the global temporary directory `/tmp`)
+* The N parameter for the [Rost's sequence identity curve](https://doi.org/10.1093/protein/12.2.85) (option `-n`; by default is set to `0`)
+* The name of a file to output the results (option `-o`; by default is set to the standard output stream)
+* A taxonomic group (*i.e.* `fungi`, `insects`, `nematodes`, `plants`, or `vertebrates`) to which to restrict the profile inference (option `-t`; by default is set to ignore taxon restrictions)
 
-## Usage
-```
-some cool description with two examples:
+Inference modes (for a more restricted profile inference):
+* The option `-l` limits the inference of profiles to the latest JASPAR version
+* The option `-s` ignores inferred profiles representing different TFs (*e.g.* hetetodimers)
 
-python motif_inferrer.py -i examples/MAX.fa
-```
+As a usage example, the inferred JASPAR profiles for the `MAX` TF can be obtained as follows: `./profile_inferrer.py -b $BLAST_PATH -f ./files/ -i ./examples/MAX.fa`.
 
-If we don't want to infer JASPAR profiles representing different TFs (e.g. hetetodimers):
-```
-python motif_inferrer.py -b $BLAST_PATH -f $FILES_DIR -i examples/MAX.fa -s
-```
+The script returns all inferred JASPAR TF binding profiles along with details regarding  the inference details,including:
+* The BLAST alignment between the query and the JASPAR TF, including the aligned sequences, the start and end amino acid positions, and the Expect value (E); and
+* The % of identical residues between the query and the JASPAR TF DBD
 
-
-
-
-
+Note that for the `profile_inferrer.py` script to work with future versions of JASPAR other than 2018, first users would have to create a new `files` folder with the script `make_files.py`.
