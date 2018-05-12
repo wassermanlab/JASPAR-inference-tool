@@ -112,7 +112,7 @@ if __name__ == "__main__":
     jaspar = json.loads("\n".join([line for line in functions.parse_file(jaspar_json)]))
     database_file = os.path.join(os.path.abspath(options.files_dir), "sequences.fa")
     if options.taxon is not None:
-        database_file = os.path.join(os.path.abspath(options.files_dir), "%s.fa" % taxon)
+        database_file = os.path.join(os.path.abspath(options.files_dir), "%s.fa" % options.taxon)
 
     # Write output #
     functions.write(options.output_file, "#Query,TF Name,TF Matrix,E-value,Query Alignment,Query Start-End,TF Alignment,TF Start-End,DBD %ID")
