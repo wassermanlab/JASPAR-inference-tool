@@ -10,7 +10,7 @@ The repository is organized as follows:
 ## Dependencies
 The scripts for running the profile inference tool require the following dependencies:
 * [`BLAST+`](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
-* [`Python 2.7`](https://www.python.org/download/releases/2.7/) with the [`Biopython`](http://biopython.org), [`CoreAPI`](http://www.coreapi.org) and [`UniProt`](https://github.com/boscoh/uniprot) libraries
+* [`Python 2.7`](https://www.python.org/download/releases/2.7/) with the [`Biopython`](http://biopython.org), [`CoreAPI`](http://www.coreapi.org), [tqdm](`https://pypi.org/project/tqdm/`) and [`UniProt`](https://github.com/boscoh/uniprot) libraries
 
 ## Usage
 The script `profile_inferrer.py` infers one or more JASPAR TF binding profiles recognized by a sequence of interest. It requires the following inputs:

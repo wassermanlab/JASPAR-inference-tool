@@ -5,7 +5,9 @@ from Bio.Blast import NCBIXML
 from Bio.SubsMat.MatrixInfo import blosum62
 import json
 import optparse
+import shutil
 import subprocess
+from tqdm import tqdm
 
 # Import my functions #
 import functions
@@ -106,6 +108,10 @@ if __name__ == "__main__":
     options = parse_options()
 
     # Initialize #
+    sequences = []
+    csv_file = os.path.join(os.path.abspath(options.dummy_dir), "%s.%s.csv" % (os.path.basename(__file__), os.getpid()))
+    fasta_file = os.path.join(os.path.abspath(options.dummy_dir), "%s.%s.fa" % (os.path.basename(__file__), str(os.getpid())))
+    blast_file = os.path.join(os.path.abspath(options.dummy_dir), "%s.%s.xml" % (os.path.basename(__file__), str(os.getpid())))
     domains_json = os.path.join(os.path.abspath(options.files_dir), "domains.json")
     domains = json.loads("\n".join([line for line in functions.parse_file(domains_json)]))
     jaspar_json = os.path.join(os.path.abspath(options.files_dir), "jaspar.json")
@@ -115,17 +121,21 @@ if __name__ == "__main__":
         database_file = os.path.join(os.path.abspath(options.files_dir), "%s.fa" % options.taxon)
 
     # Write output #
-    functions.write(options.output_file, "#Query,TF Name,TF Matrix,E-value,Query Alignment,Query Start-End,TF Alignment,TF Start-End,DBD %ID")
+    functions.write(csv_file, "#Query,TF Name,TF Matrix,E-value,Query Alignment,Query Start-End,TF Alignment,TF Start-End,DBD %ID")
     # For each header, sequence... #
     for header, sequence in functions.parse_fasta_file(options.input_file):
+        # Append to sequences #
+        sequences.append((header, sequence))
+    # For each header, sequence... #
+    for header, sequence in tqdm(sequences, desc='TF inference'):
         # Initialize #
         homologs = []
         inferences = []
         inferred_profiles = set()
-        fasta_file = os.path.join(os.path.abspath(options.dummy_dir), "query.%s.fa" % str(os.getpid()))
-        blast_file = os.path.join(os.path.abspath(options.dummy_dir), "blast.%s.xml" % str(os.getpid()))
-        # Create FASTA file #
+        # Remove files #
+        if os.path.exists(blast_file): os.remove(blast_file)
         if os.path.exists(fasta_file): os.remove(fasta_file)
+        # Create FASTA file #
         functions.write(fasta_file, ">%s\n%s" % (header, sequence))
         # Exec blastp #
         try:
@@ -143,8 +153,8 @@ if __name__ == "__main__":
                         homologs.append((str(alignment.hit_def), float(hsp.expect), hsp.query, "%s-%s" % (hsp.query_start, hsp.query_end),  hsp.sbjct, "%s-%s" % (hsp.sbjct_start, hsp.sbjct_end)))
                         break
         # Remove files #
-        os.remove(blast_file)
-        os.remove(fasta_file)
+        if os.path.exists(blast_file): os.remove(blast_file)
+        if os.path.exists(fasta_file): os.remove(fasta_file)
         # For each uniacc... #
         for uniacc, evalue, query_alignment, query_from_to, hit_alignment, hit_from_to in homologs:
             # Skip if uniacc does not have assigned domains... #
@@ -174,5 +184,18 @@ if __name__ == "__main__":
             if options.single:
                 if "::" in inference[0]: continue
             # Write output #
-            functions.write(options.output_file, "%s,%s" % (header, ",".join(map(str, inference))))
+            functions.write(csv_file, "%s,%s" % (header, ",".join(map(str, inference))))
             inferred_profiles.add(inference[1][:6])
+
+    # Output #
+    if options.output_file is not None:
+        # Write output #
+        shutil.copy(dummy_file, os.path.abspath(options.output_file))
+        os.remove(dummy_file)
+    else:
+        # For each line... #
+        for line in functions.parse_file(dummy_file):
+            # Write output #
+            functions.write(None, line)
+    # Remove files #
+    if os.path.exists(csv_file): os.remove(csv_file)
