@@ -29,7 +29,7 @@ def parse_file(file_name, gz=False):
     else:
         raise ValueError("File %s does not exist!" % file_name)
 
-def parse_fasta_file(file_name, gz=False, clean=True):
+def parse_fasta_file(file_name, gz=False, clean=True, proteinogenize=True):
     """
     This function parses any FASTA file and yields sequences one by one
     in the form header, sequence.
@@ -59,7 +59,11 @@ def parse_fasta_file(file_name, gz=False, clean=True):
         else:
             sequence += line.upper()
     if clean:
-        sequence = re.sub("\W|\d", "X", sequence)
+        # Convert non-amino acids to Xs #
+        sequence = re.sub("[^ACDEFGHIKLMNPQRSTUVWY]", "X", sequence)
+    if proteinogenize:
+        # Convert selenocysteines to Cs #
+        sequence = re.sub("U", "C", sequence)
 
     yield header, sequence
 
