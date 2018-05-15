@@ -127,7 +127,7 @@ if __name__ == "__main__":
         # Append to sequences #
         sequences.append((header, sequence))
     # For each header, sequence... #
-    for header, sequence in tqdm(sequences, desc='TF inference'):
+    for header, sequence in tqdm(sequences, desc="TF inference"):
         # Initialize #
         homologs = []
         inferences = []
@@ -163,6 +163,7 @@ if __name__ == "__main__":
             identities = [0]
             # For each domain... #
             for domain in domains[uniacc][0]:
+                # Pairwise alignment #
                 try:
                     alignments = pairwise2.align.globalds(sequence, domain, blosum62, -11.0, -1)
                 except:
