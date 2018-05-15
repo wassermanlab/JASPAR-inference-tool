@@ -150,11 +150,15 @@ if __name__ == "__main__":
             # Skip if uniacc does not have assigned domains... #
             if uniacc not in domains: continue
             # Initialize #
-            identities = []
+            identities = [0]
             # For each domain... #
             for domain in domains[uniacc][0]:
-                for alignment in pairwise2.align.globalds(sequence, domain, blosum62, -11.0, -1):
-                    identities.append(get_alignment_identities(alignment[0], alignment[1])/float(len(domain)))
+                try:
+                    alignments = pairwise2.align.globalds(sequence, domain, blosum62, -11.0, -1)
+                except:
+                    raise ValueError("Pairwise alignment failes:\n\tA: %s\n\tB: %s" % (sequence, domain))
+                for alignment in alignments:
+                        identities.append(get_alignment_identities(alignment[0], alignment[1])/float(len(domain)))
             # If domain alignment passes threshold... #
             if max(identities) >= float(domains[uniacc][1]):
                 # For each uniacc JASPAR matrix... #
