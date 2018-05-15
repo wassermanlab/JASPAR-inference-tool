@@ -166,7 +166,7 @@ if __name__ == "__main__":
                 try:
                     alignments = pairwise2.align.globalds(sequence, domain, blosum62, -11.0, -1)
                 except:
-                    raise ValueError("Pairwise alignment failes:\n\tA: %s\n\tB: %s" % (sequence, domain))
+                    raise ValueError("Pairwise alignment failed:\n\tA: %s\n\tB: %s" % (sequence, domain))
                 for alignment in alignments:
                         identities.append(get_alignment_identities(alignment[0], alignment[1])/float(len(domain)))
             # If domain alignment passes threshold... #
