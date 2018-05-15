@@ -190,8 +190,7 @@ if __name__ == "__main__":
     # Output #
     if options.output_file is not None:
         # Write output #
-        shutil.copy(dummy_file, os.path.abspath(options.output_file))
-        os.remove(dummy_file)
+        shutil.copy(csv_file, os.path.abspath(options.output_file))
     else:
         # For each line... #
         for line in functions.parse_file(dummy_file):
