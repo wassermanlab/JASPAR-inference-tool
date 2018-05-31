@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-import os, sys, re
+import os, re
 import coreapi
 import hashlib
 import json
@@ -21,14 +21,15 @@ def parse_options():
 
     """
 
-    parser = optparse.OptionParser("./%prog -b <blast_dir> [-o <output_dir>]")
+    parser = optparse.OptionParser("./%prog -b <blast_dir> -m <mmseqs_dir> [-o <output_dir>]")
 
     parser.add_option("-b", action="store", type="string", dest="blast_dir", help="Full path to BLAST+ bin directory (i.e. where \"makeblastdb\" is located; e.g. $BLAST_PATH/bin)", metavar="<blast_dir>")
+    parser.add_option("-m", action="store", type="string", dest="mmseqs_dir", help="Full path to MMseqs2 bin directory (i.e. where \"mmseqs\" is located; e.g. $MMSEQS_PATH/bin)", metavar="<mmseqs_dir>")
     parser.add_option("-o", default="./", action="store", type="string", dest="output_dir", help="Output directory (default = ./)", metavar="<output_dir>")
 
     (options, args) = parser.parse_args()
 
-    if options.blast_dir is None:
+    if options.blast_dir is None or options.mmseqs_dir is None:
         parser.error("missing arguments: type option \"-h\" for help")
 
     return options
@@ -116,11 +117,13 @@ if __name__ == "__main__":
                 if uniaccs[uniacc][1] is not None:
                     # Write #
                     functions.write(fasta_file, ">%s\n%s" % (uniacc, uniaccs[uniacc][1]))
-            # Format db #
+            # Create db #
             try:
-                process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+#                process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+                process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createdb", fasta_file, "%s.db" % fasta_file], stderr=subprocess.STDOUT)
             except:
-                raise ValueError("Could not format BLAST database: %s" % fasta_file)
+#                raise ValueError("Could not format BLAST database: %s" % fasta_file)
+                raise ValueError("Could not create MMseqs2 db: %s" % fasta_file)
 
     # Skip if FASTA file already exists #
     fasta_file = os.path.join(os.path.abspath(options.output_dir), "sequences.fa")
@@ -140,11 +143,13 @@ if __name__ == "__main__":
         for header in sorted(uniq_seqs):
             # Write #
             functions.write(fasta_file, ">%s\n%s" % (header, uniq_seqs[header]))
-        # Format db #
+        # Create db #
         try:
-            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+#            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createdb", fasta_file, "%s.db" % fasta_file], stderr=subprocess.STDOUT)
         except:
-            raise ValueError("Could not format BLAST database: %s" % fasta_file)
+#            raise ValueError("Could not format BLAST database: %s" % fasta_file)
+            raise ValueError("Could not create MMseqs2 db: %s" % fasta_file)
 
     # Skip if Cis-BP JSON file already exists #
     cisbp_json_file = os.path.join(os.path.abspath(options.output_dir), ".cisbp.json")
