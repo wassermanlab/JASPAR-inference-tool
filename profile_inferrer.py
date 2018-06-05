@@ -9,7 +9,6 @@ from multiprocessing import Pool
 import optparse
 import shutil
 import subprocess
-from tqdm import tqdm
 
 # Import my functions #
 import functions
@@ -45,8 +44,7 @@ def parse_options():
     
     group = optparse.OptionGroup(parser, "Inference modes")
     group.add_option("-l", "--latest", default=False, action="store_true", dest="latest", help="Latest mode (return the latest version of a profile; default = False)")
-    group.add_option("-s", "--sensitive", default=False, action="store_true", dest="sensitive", help="Sensitive mode (align DBDs w/ the Needleman-Wunsch algorithm as implemented in BioPython; default = False)")
-#    group.add_option("-s", "--single", default=False, action="store_true", dest="single", help="Singleton mode (return profiles from a single TF; default = False)")
+    group.add_option("-s", "--single", default=False, action="store_true", dest="single", help="Singleton mode (return profiles from a single TF; default = False)")
 
     parser.add_option_group(group)
 
@@ -216,31 +214,31 @@ if __name__ == "__main__":
 
     # If MMseqs2... #
     if options.mmseqs_dir is not None:
-#        # Create db #
-#        try:
-#            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createdb", os.path.abspath(options.input_file), query_mmseqs_db], stderr=subprocess.STDOUT)
-#        except:
-#            raise ValueError("Could not create MMseqs2 db: %s" % query_mmseqs_db)
-#        # Index db #
-#        try:
-#            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createindex", query_mmseqs_db, os.path.abspath(options.dummy_dir), "--threads", str(options.threads)], stderr=subprocess.STDOUT)
-#        except:
-#            raise ValueError("Could not index MMseqs2 db: %s" % query_db)
-#        # Search JASPAR db #
-#        try:
-#            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "search", jaspar_mmseqs_db, query_mmseqs_db, query_mmseqs_ali, dummy_dir, "-s", "7.5", "--threads", str(options.threads)], stderr=subprocess.STDOUT)
-#        except:
-#            raise ValueError("Could not search JASPAR db!")
-#        # Reformat alignments #
-#        try:
-#            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "convertalis", jaspar_mmseqs_db, query_mmseqs_db, query_mmseqs_ali, alignments_tsv, "--threads", str(options.threads)], stderr=subprocess.STDOUT)
-#        except:
-#            raise ValueError("Could not reformat alignments!")
-#        # Generate MSAs #
-#        try:
-#            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "result2msa", jaspar_mmseqs_db, query_mmseqs_db, query_mmseqs_ali, alignments_msa, "--summarize", "--threads", str(options.threads)], stderr=subprocess.STDOUT)
-#        except:
-#            raise ValueError("Could not reformat alignments!")
+        # Create db #
+        try:
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createdb", os.path.abspath(options.input_file), query_mmseqs_db], stderr=subprocess.STDOUT)
+        except:
+            raise ValueError("Could not create MMseqs2 db: %s" % query_mmseqs_db)
+        # Index db #
+        try:
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createindex", query_mmseqs_db, os.path.abspath(options.dummy_dir), "--threads", str(options.threads)], stderr=subprocess.STDOUT)
+        except:
+            raise ValueError("Could not index MMseqs2 db: %s" % query_db)
+        # Search JASPAR db #
+        try:
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "search", jaspar_mmseqs_db, query_mmseqs_db, query_mmseqs_ali, dummy_dir, "-s", "7.5", "--threads", str(options.threads)], stderr=subprocess.STDOUT)
+        except:
+            raise ValueError("Could not search JASPAR db!")
+        # Reformat alignments #
+        try:
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "convertalis", jaspar_mmseqs_db, query_mmseqs_db, query_mmseqs_ali, alignments_tsv, "--threads", str(options.threads)], stderr=subprocess.STDOUT)
+        except:
+            raise ValueError("Could not reformat alignments!")
+        # Generate MSAs #
+        try:
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "result2msa", jaspar_mmseqs_db, query_mmseqs_db, query_mmseqs_ali, alignments_msa, "--summarize", "--threads", str(options.threads)], stderr=subprocess.STDOUT)
+        except:
+            raise ValueError("Could not reformat alignments!")
         # For each line... #
         for line in functions.parse_file(alignments_msa):
             # Skip empty lines #
@@ -273,72 +271,54 @@ if __name__ == "__main__":
                 homologs.append((query, target, query_start, query_end, target_start, target_end, float(e_value)))
             else :
                 alignments.pop(len(homologs))
-#    # ... Else, use BLAST+... #
-#    else:
-#        # Exec blastp #
-#        try:
-#            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-query", os.path.abspath(options.input_file), "-db", jaspar_blast_db, "-out", alignments_xml, "-outfmt", "5"], stderr=subprocess.STDOUT)
-#        except:
-#            raise ValueError("Could not search JASPAR db!")
-#        # Parse BLAST results #
-#        blast_records = NCBIXML.parse(open(alignments_xml))
-#        # For each BLAST record... #
-#        for blast_record in blast_records:
-#            for alignment in blast_record.alignments:
-#                # Skip if target does not have assigned domains #
-#                if alignment.hit_def not in domains: continue
-#                for hsp in alignment.hsps:
-#                    # If structural homologs... #
-#                    print(hsp.query, hsp.sbjct)
-#                    exit(0)
-#                    if is_alignment_over_Rost_sequence_identity_curve(get_alignment_identities(hsp.query, hsp.sbjct), len(hsp.query), parameter=int(options.n_parameter)):
-#                        homologs.append((blast_record.query, alignment.hit_def, hsp.query_start, hsp.query_end, hsp.sbjct_start, hsp.sbjct_end, float(hsp.expect)))
-#                        alignments.append((blast_record.query, hsp.query, alignment.hit_def, hsp.sbjct))
-#                        break
-
-#    # For each homolog... #
-#    for i in range(len(homologs)):
-#        # For each domain... #
-#        for domain in domains[homologs[i][1]][0]:
-#            # For each pairwise alignment... #
-#            for alignment in pairwise_alignment(sequences[alignments[i][0].strip()], domain, options.sensitive):
-#                # If domain alignment passes threshold... #
-#                identities = get_alignment_identities(alignment[0], alignment[1])/float(len(domain))
-#                if identities >= float(domains[homologs[i][1]][1]):
-#                    # For each JASPAR matrix... #
-#                    for matrix, genename in jaspar[homologs[i][1]]:
-#                        # Infer matrix #
-#                        inferences.append([alignments[i][0], genename, matrix, homologs[i][6], "%s-%s" % (homologs[i][2], homologs[i][3]), "%s-%s" % (homologs[i][4], homologs[i][5]), identities])
-#                        break
+    # ... Else, use BLAST+... #
+    else:
+        # Exec blastp #
+        try:
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-query", os.path.abspath(options.input_file), "-db", jaspar_blast_db, "-out", alignments_xml, "-outfmt", "5"], stderr=subprocess.STDOUT)
+        except:
+            raise ValueError("Could not search JASPAR db!")
+        # Parse BLAST results #
+        blast_records = NCBIXML.parse(open(alignments_xml))
+        # For each BLAST record... #
+        for blast_record in blast_records:
+            for alignment in blast_record.alignments:
+                # Skip if target does not have assigned domains #
+                if alignment.hit_def not in domains: continue
+                for hsp in alignment.hsps:
+                    # If structural homologs... #
+                    if is_alignment_over_Rost_sequence_identity_curve(get_alignment_identities(hsp.query, hsp.sbjct), len(hsp.query), parameter=int(options.n_parameter)):
+                        homologs.append((blast_record.query, alignment.hit_def, hsp.query_start, hsp.query_end, hsp.sbjct_start, hsp.sbjct_end, float(hsp.expect)))
+                        alignments.append((blast_record.query, hsp.query, alignment.hit_def, hsp.sbjct))
+                        break
 
     # Initialize #
     inferred_profiles = set()
     pool = Pool(options.threads)
-    print(pool.map(parallelize_inference, [i for i in range(len(homologs))]))
-    # Get inferred profiles #
-    exit(0)
-#    # Write output #
-#    functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
-#    # For each inferred profile... #
-#    for inference in sorted(inferences, key=lambda x: (x[0], x[3], -int(x[2][-1]))):
-#        # If latest mode... #
-#        if options.latest:
-#            if (inference[0], inference[2][:6]) in inferred_profiles: continue
-##        # If single mode... #
-##        if options.single:
-##            if "::" in inference[0]: continue
-#        # Write output #
-#        functions.write(results_file, "%s" % "\t".join(map(str, inference)))
-#        inferred_profiles.add((inference[0], inference[2][:6]))
-#
-#    # Output #
-#    if options.output_file is not None:
-#        # Write output #
-#        shutil.copy(results_file, os.path.abspath(options.output_file))
-#    else:
-#        # For each line... #
-#        for line in functions.parse_file(results_file):
-#            # Write output #
-#            functions.write(None, line)
+    # Write output #
+    functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
+    # For each homolog... #
+    for homolog in pool:
+        # For each inference... #
+        for inference in sorted(homolog, key=lambda x: (x[3], -int(x[2][-1]))):
+            # If latest mode... #
+            if options.latest:
+                if (inference[0], inference[2][:6]) in inferred_profiles: continue
+            # If single mode... #
+            if options.single:
+                if "::" in inference[0]: continue
+            # Write output #
+            functions.write(results_file, "%s" % "\t".join(map(str, inference)))
+            inferred_profiles.add((inference[0], inference[2][:6]))
+
+    # Output #
+    if options.output_file is not None:
+        # Write output #
+        shutil.copy(results_file, os.path.abspath(options.output_file))
+    else:
+        # For each line... #
+        for line in functions.parse_file(results_file):
+            # Write output #
+            functions.write(None, line)
     # Remove files #
-#    shutil.rmtree(dummy_dir)
+    shutil.rmtree(dummy_dir)
