@@ -119,7 +119,7 @@ if __name__ == "__main__":
                     functions.write(fasta_file, ">%s\n%s" % (uniacc, uniaccs[uniacc][1]))
             # Create db #
             try:
-#                process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+                process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
                 process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createdb", fasta_file, "%s.db" % fasta_file], stderr=subprocess.STDOUT)
             except:
 #                raise ValueError("Could not format BLAST database: %s" % fasta_file)
@@ -145,7 +145,7 @@ if __name__ == "__main__":
             functions.write(fasta_file, ">%s\n%s" % (header, uniq_seqs[header]))
         # Create db #
         try:
-#            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "makeblastdb"), "-in", fasta_file, "-dbtype", "prot"], stderr=subprocess.STDOUT)
             process = subprocess.check_output([os.path.join(os.path.abspath(options.mmseqs_dir), "mmseqs"), "createdb", fasta_file, "%s.db" % fasta_file], stderr=subprocess.STDOUT)
         except:
 #            raise ValueError("Could not format BLAST database: %s" % fasta_file)
