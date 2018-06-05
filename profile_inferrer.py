@@ -276,7 +276,7 @@ if __name__ == "__main__":
     else:
         # Exec blastp #
         try:
-            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-query", os.path.abspath(options.input_file), "-db", jaspar_blast_db, "-out", alignments_xml, "-outfmt", "5"], stderr=subprocess.STDOUT)
+            process = subprocess.check_output([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-query", os.path.abspath(options.input_file), "-db", jaspar_blast_db, "-out", alignments_xml, "-outfmt", "5", "-num_threads", str(options.threads)], stderr=subprocess.STDOUT)
         except:
             raise ValueError("Could not search JASPAR db!")
         # Parse BLAST results #
