@@ -128,6 +128,8 @@ def parallelize_inference(i):
                     # Infer matrix #
                     inferences.append([alignments[i][0], genename, matrix, homologs[i][6], "%s-%s" % (homologs[i][2], homologs[i][3]), "%s-%s" % (homologs[i][4], homologs[i][5]), identities])
 
+                return inferences
+    
     return inferences
 
 def pairwise_alignment(A, B):
@@ -187,10 +189,9 @@ if __name__ == "__main__":
     # Initialize #
     alignments = []
     homologs = []
-    inferences = []
+    inferred_profiles = set()
     sequences = {}
     dummy_dir = os.path.join(os.path.abspath(options.dummy_dir), "%s.%s" % (os.path.basename(__file__), os.getpid()))
-    dummy_dir = "/tmp/profile_inferrer.py.78758/"
     if not os.path.exists(dummy_dir): os.makedirs(dummy_dir)
     alignments_tsv = os.path.join(dummy_dir, "alignments.tsv")
     alignments_msa = os.path.join(dummy_dir, "alignments.msa")
@@ -292,13 +293,14 @@ if __name__ == "__main__":
                         alignments.append((blast_record.query, hsp.query, alignment.hit_def, hsp.sbjct))
                         break
 
-    # Initialize #
-    inferred_profiles = set()
+    # Parallelize inference #
     pool = Pool(options.threads)
+    inferences = pool.map(parallelize_inference, [i for i in range(len(homologs))])
+
     # Write output #
     functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
     # For each homolog... #
-    for homolog in pool:
+    for homolog in inferences:
         # For each inference... #
         for inference in sorted(homolog, key=lambda x: (x[3], -int(x[2][-1]))):
             # If latest mode... #
@@ -306,7 +308,7 @@ if __name__ == "__main__":
                 if (inference[0], inference[2][:6]) in inferred_profiles: continue
             # If single mode... #
             if options.single:
-                if "::" in inference[0]: continue
+                if "::" in inference[1]: continue
             # Write output #
             functions.write(results_file, "%s" % "\t".join(map(str, inference)))
             inferred_profiles.add((inference[0], inference[2][:6]))
