@@ -293,7 +293,7 @@ if __name__ == "__main__":
     pool.join()
 
     # Parallelize DBD inference #
-    pool = Pool(options.threads)
+    pool = Pool(optiontqs.threads)
     inferences = list(chain.from_iterable(tqdm(pool.imap(parallelize_profile_inference, range(len(homologs))), desc="DBD inference")))
     pool.close()
     pool.join()
