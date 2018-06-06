@@ -289,14 +289,10 @@ if __name__ == "__main__":
     # Parallelize homology search #
     pool = Pool(options.threads)
     homologs = list(chain.from_iterable(tqdm(pool.imap(parallelize_homology_search, range(len(sequences))), desc="BLAST+ search", total=len(sequences))))
-    pool.close()
-    pool.join()
 
     # Parallelize DBD inference #
-    pool = Pool(optiontqs.threads)
+    pool = Pool(options.threads)
     inferences = list(chain.from_iterable(tqdm(pool.imap(parallelize_profile_inference, range(len(homologs))), desc="DBD inference", total=len(sequences))))
-    pool.close()
-    pool.join()
 
     # Write output #
     functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
