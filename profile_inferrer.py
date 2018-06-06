@@ -81,7 +81,7 @@ def parallelize_homology_search(i):
 
     # Exec blastp #
     try:
-        process = subprocess.Popen([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-db", jaspar_db, "-outfmt", "6", "-num_threads", str(options.threads)], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        process = subprocess.Popen([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-db", jaspar_db, "-outfmt", "6"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         process.stdin.write(">%s\n%s" % (header, sequence))
         (blast_records, blast_errors) = process.communicate()
         # For each BLAST+ record... #
