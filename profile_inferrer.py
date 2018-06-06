@@ -10,6 +10,7 @@ from multiprocessing import Pool
 import optparse
 import shutil
 import subprocess
+from tqdm import tqdm
 
 # Import my functions #
 import functions
@@ -69,10 +70,11 @@ def parse_options():
 
     return options
 
-def parallelize_homology_search(header):
+def parallelize_homology_search(i):
     
     # Initialize #
     homology_search = []
+    (header, sequence) = sequences[i]
     jaspar_db = os.path.join(os.path.abspath(options.files_dir), "sequences.fa")
     if options.taxon is not None:
         jaspar_db = os.path.join(os.path.abspath(options.files_dir), "%s.fa" % options.taxon)
@@ -80,7 +82,7 @@ def parallelize_homology_search(header):
     # Exec blastp #
     try:
         process = subprocess.Popen([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-db", jaspar_db, "-outfmt", "6", "-num_threads", str(options.threads)], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        process.stdin.write(">%s\n%s" % (header, sequences[header]))
+        process.stdin.write(">%s\n%s" % (header, sequence))
         (blast_records, blast_errors) = process.communicate()
         # For each BLAST+ record... #
         for blast_record in blast_records.split("\n"):
@@ -130,20 +132,21 @@ def parallelize_profile_inference(i):
     
     # Initialize #
     profile_inference = []
+    (header, sequence) = sequences[homologs[i][0]]
 
     # If domains... #
     if homologs[i][1] in domains:
         # For each domain... #
         for domain in domains[homologs[i][1]][0]:
             # For each pairwise alignment... #
-            for alignment in pairwise_alignment(sequences[homologs[i][0]], domain):
+            for alignment in pairwise_alignment(sequence, domain):
                 # If at least one DBD alignment passes threshold... #
                 identities = get_alignment_identities(alignment[0], alignment[1])/float(len(domain))
                 if identities >= float(domains[homologs[i][1]][1]):
                     # For each JASPAR matrix... #
                     for matrix, genename in jaspar[homologs[i][1]]:
                         # Infer matrix #
-                        profile_inference.append([homologs[i][0], genename, matrix, homologs[i][4], homologs[i][2], homologs[i][3], identities])
+                        profile_inference.append([header, genename, matrix, homologs[i][4], homologs[i][2], homologs[i][3], identities])
 
     return profile_inference
 
@@ -198,7 +201,7 @@ if __name__ == "__main__":
 
     # Initialize #
     inferred_profiles = set()
-    sequences = {}
+    sequences = []
     dummy_dir = os.path.join(os.path.abspath(options.dummy_dir), "%s.%s" % (os.path.basename(__file__), os.getpid()))
     if not os.path.exists(dummy_dir): os.makedirs(dummy_dir)
 #    alignments_tsv = os.path.join(dummy_dir, "alignments.tsv")
@@ -221,7 +224,7 @@ if __name__ == "__main__":
 
     # For each header, sequence... #
     for header, sequence in functions.parse_fasta_file(os.path.abspath(options.input_file)):
-        sequences.setdefault(header, sequence)
+        sequences.append((header, sequence))
 
 #    # If MMseqs2... #
 #    if options.mmseqs_dir is not None:
@@ -285,11 +288,15 @@ if __name__ == "__main__":
 
     # Parallelize homology search #
     pool = Pool(options.threads)
-    homologs = list(chain.from_iterable(pool.map(parallelize_homology_search, sequences.keys())))
+    homologs = list(chain.from_iterable(tqdm(pool.imap(parallelize_homology_search, range(len(sequences))), desc="BLAST+ search", total=len(sequences))))
+    pool.close()
+    pool.join()
 
     # Parallelize DBD inference #
     pool = Pool(options.threads)
-    inferences = list(chain.from_iterable(pool.map(parallelize_profile_inference, range(len(homologs)))))
+    inferences = list(chain.from_iterable(tqdm(pool.imap(parallelize_profile_inference, range(len(homologs))), desc="DBD inference", total=len(homologs))))
+    pool.close()
+    pool.join()
 
     # Write output #
     functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
