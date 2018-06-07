@@ -70,10 +70,10 @@ def parse_options():
 
     return options
 
-def parallelize_homology_search(i):
+def parallelize_profile_inferences(i):
     
     # Initialize #
-    homology_search = []
+    profile_inference = []
     (header, sequence) = sequences[i]
     jaspar_db = os.path.join(os.path.abspath(options.files_dir), "sequences.fa")
     if options.taxon is not None:
@@ -84,20 +84,32 @@ def parallelize_homology_search(i):
         process = subprocess.Popen([os.path.join(os.path.abspath(options.blast_dir), "blastp"), "-db", jaspar_db, "-outfmt", "6"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         process.stdin.write(">%s\n%s" % (header, sequence))
         (blast_records, blast_errors) = process.communicate()
-        # For each BLAST+ record... #
-        for blast_record in blast_records.split("\n"):
-            # Skip if not a BLAST+ record #
-            blast_record = blast_record.split("\t")
-            if len(blast_record) != 12: continue
-            # Each BLAST+ record is formatted as a tab-separated list with 12 columns: (1,2) identifiers for query and target sequences, (3) percentage sequence identity, (4) alignment length, (5) number of mismatches, (6) number of gap openings, (7-8, 9-10) start and end-position in query and in target, (11) E-value, and (12) bit score.
-            (query, target, perc_identity, alignment_length, mismatches, gaps, query_start, query_end, target_start, target_end, e_value, score) = blast_record
-            # If structural homologs... #
-            if is_alignment_over_Rost_sequence_identity_curve(round(int(alignment_length) * float(perc_identity)/100), int(alignment_length), options.n_parameter):
-                homology_search.append([query, target, "%s-%s" % (query_start, query_end), "%s-%s" % (target_start, target_end), float(e_value)])
     except:
         raise ValueError("Could not search JASPAR db!")
-    
-    return homology_search
+    # For each BLAST+ record... #
+    for blast_record in blast_records.split("\n"):
+        # Skip if not a BLAST+ record #
+        blast_record = blast_record.split("\t")
+        if len(blast_record) != 12: continue
+        # Each BLAST+ record is formatted as a tab-separated list with 12 columns: (1,2) identifiers for query and target sequences, (3) percentage sequence identity, (4) alignment length, (5) number of mismatches, (6) number of gap openings, (7-8, 9-10) start and end-position in query and in target, (11) E-value, and (12) bit score.
+        (query, target, perc_identity, alignment_length, mismatches, gaps, query_start, query_end, target_start, target_end, e_value, score) = blast_record
+        # Skip if target has no domains #
+        if target not in domains: continue
+        # If structural homologs... #
+        if is_alignment_over_Rost_sequence_identity_curve(round(int(alignment_length) * float(perc_identity)/100), int(alignment_length), options.n_parameter):
+            # For each domain... #
+            for domain in domains[target][0]:
+                # For each pairwise alignment... #
+                for alignment in pairwise_alignment(sequence, domain):
+                    # If at least one DBD alignment passes threshold... #
+                    identities = get_alignment_identities(alignment[0], alignment[1])/float(len(domain))
+                    if identities >= float(domains[target][1]):
+                        # For each JASPAR matrix... #
+                        for matrix, genename in jaspar[target]:
+                            # Infer matrix #
+                            profile_inference.append([header, genename, matrix, "%s-%s" % (query_start, query_end), "%s-%s" % (target_start, target_end), float(e_value), identities])
+
+    return profile_inference
 
 def is_alignment_over_Rost_sequence_identity_curve(identities, align_length, n_parameter=0):
     """
@@ -127,28 +139,6 @@ def get_Rost_ID_threshold(L, n=0):
     
 
     return n + (480*pow(L,float('-0.32')*(1+pow(float(repr(math.e)),float(repr(float(-L)/1000))))))
-
-def parallelize_profile_inference(i):
-    
-    # Initialize #
-    profile_inference = []
-    (header, sequence) = sequences[homologs[i][0]]
-
-    # If domains... #
-    if homologs[i][1] in domains:
-        # For each domain... #
-        for domain in domains[homologs[i][1]][0]:
-            # For each pairwise alignment... #
-            for alignment in pairwise_alignment(sequence, domain):
-                # If at least one DBD alignment passes threshold... #
-                identities = get_alignment_identities(alignment[0], alignment[1])/float(len(domain))
-                if identities >= float(domains[homologs[i][1]][1]):
-                    # For each JASPAR matrix... #
-                    for matrix, genename in jaspar[homologs[i][1]]:
-                        # Infer matrix #
-                        profile_inference.append([header, genename, matrix, homologs[i][4], homologs[i][2], homologs[i][3], identities])
-
-    return profile_inference
 
 def pairwise_alignment(A, B):
     """
@@ -194,7 +184,7 @@ def get_alignment_identities(A, B):
 if __name__ == "__main__":
 
     # Globals #
-    global domains, homologs, options, sequences
+    global domains, homologs, jaspar, options, sequences
 
     # Arguments & Options #
     options = parse_options()
@@ -286,13 +276,11 @@ if __name__ == "__main__":
 #            else :
 #                alignments.pop(len(homologs))
 
-    # Parallelize homology search #
+    # Parallelize profile inference #
     pool = Pool(options.threads)
-    homologs = list(chain.from_iterable(tqdm(pool.imap(parallelize_homology_search, range(len(sequences))), desc="BLAST+ search", total=len(sequences))))
-
-    # Parallelize DBD inference #
-    pool = Pool(options.threads)
-    inferences = list(chain.from_iterable(tqdm(pool.imap(parallelize_profile_inference, range(len(homologs))), desc="DBD inference", total=len(sequences))))
+    inferences = list(chain.from_iterable(tqdm(pool.imap(parallelize_profile_inferences, range(len(sequences))), desc="Profile inference", total=len(sequences))))
+    pool.close()
+    pool.join()
 
     # Write output #
     functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
