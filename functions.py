@@ -29,6 +29,8 @@ def parse_fasta_file(file_name, clean=True, proteinogenize=True):
 
     @input:
     file_name {string}
+    clean {boolean} if true, converts non-amino acid residues to X
+    proteinogenize {boolean} if true, converts seleno-cysteines (U) to cysteines (C)
     @return:
     line {list} header, sequence
 
@@ -42,23 +44,19 @@ def parse_fasta_file(file_name, clean=True, proteinogenize=True):
         if len(line) == 0: continue
         if line.startswith("#"): continue
         if line.startswith(">"):
-            if sequence != "":
-                if clean:
-                    sequence = re.sub("\W|\d", "X", sequence)
+            if header != "" and sequence != "":
                 yield header, sequence
-            m = re.search("^>(.+)", line)
-            header = m.group(1)
+            header = ""
             sequence = ""
-        else:
-            sequence += line.upper()
-    if clean:
-        # Convert non-amino acids to Xs #
-        sequence = re.sub("[^ACDEFGHIKLMNPQRSTUVWY]", "X", sequence)
-    if proteinogenize:
-        # Convert selenocysteines to Cs #
-        sequence = re.sub("U", "C", sequence)
-
-    yield header, sequence
+            m = re.search("^>(.+)", line)
+            if m: header = m.group(1)
+        elif header != "":
+            sub_sequence = line.upper()
+            if clean: sub_sequence = re.sub("[^ACDEFGHIKLMNPQRSTUVWY]", "X", sub_sequence)
+            if proteinogenize: sub_sequence = re.sub("U", "C", sub_sequence)
+            sequence += sub_sequence
+    if header != "" and sequence != "":
+        yield header, sequence
 
 def write(file_name=None, line=None):
     """

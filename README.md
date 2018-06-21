@@ -1,6 +1,12 @@
 # JASPAR profile inference tool
 For the [2016 release](https://doi.org/10.1093/nar/gkv1176) of [JASPAR](http://jaspar.genereg.net/), we have incorporated the capacity of inferring a JASPAR TF binding profile recognized by a DNA binding domain. Following a similar approach than the [Cis-BP database](http://cisbp.ccbr.utoronto.ca) (please refer to the original [Cell paper](https://doi.org/10.1016/j.cell.2014.08.009) for more details), for a given TF, the profile inference tool compares the DBD sequence of that TF to those of homologous TFs stored in JASPAR and, wherever possible, infers the binding profile(s) of that TF from the best compared JASPAR homologous TFs. Please refer to the JASPAR 2016 manuscript for more details.
 
+## News
+The repository is organized as follows:
+* The `examples` folder contains a TF (*i.e.* `MAX.fa`) and a non-TF proteic sequence (*i.e.* `MTOR.fa`) in FASTA format
+* The `files` folder contains the output from `make_files.py`: *i.e.* `domains.json`, `jaspar.json` and several BLAST formatted databases
+* The scripts `functions.py`, `make_files.py` and `profile_inferrer.py`
+
 ## Content
 The repository is organized as follows:
 * The `examples` folder contains a TF (*i.e.* `MAX.fa`) and a non-TF proteic sequence (*i.e.* `MTOR.fa`) in FASTA format
