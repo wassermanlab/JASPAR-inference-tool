@@ -225,6 +225,7 @@ if __name__ == "__main__":
     pool.join()
 
     # For each inference... #
+    functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
     for inference in sorted(inferences, key=lambda x: (x[0], x[3], x[1], -float(x[2][2:]))):
         # If latest mode... #
         if options.latest:
@@ -237,7 +238,6 @@ if __name__ == "__main__":
         inferred_profiles.add((inference[0], inference[2][:6]))
 
     # Write output #
-    functions.write(results_file, "Query\tTF Name\tTF Matrix\tE-value\tQuery Start-End\tTF Start-End\tDBD %ID")
     if options.output_file is not None:
         shutil.copy(results_file, os.path.abspath(options.output_file))
     else:
