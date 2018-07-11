@@ -44,7 +44,7 @@ def parse_options():
     group.add_option("-l", "--latest", default=False, action="store_true", dest="latest", help="Latest mode (return the latest version of a profile; default = False)")
     # Need to need of a mode to filter "::" heterodimers
 #    group.add_option("-m", "--sensitive", default=False, action="store_true", dest="sensitive", help="Sensitive mode (infer a profile only if the query satisfies the sequence identity requirement with ALL DBDs of the JASPAR TF; default = False)")
-    group.add_option("-s", "--sensitive", default=False, action="store_true", dest="sensitive", help="Sensitive mode (infer a profile only if the query satisfies the sequence identity requirement with ALL DBDs of the JASPAR TF; default = False)")
+#    group.add_option("-s", "--sensitive", default=False, action="store_true", dest="sensitive", help="Sensitive mode (infer a profile only if the query satisfies the sequence identity requirement with ALL DBDs of the JASPAR TF; default = False)")
 
     parser.add_option_group(group)
 
@@ -138,9 +138,10 @@ def parallelize_profile_inference(i):
                 # If DBD alignment does not satisfy the threshold... #
                 identities = get_alignment_identities(alignment[0], alignment[1])/float(len(domain))
                 if identities < float(domains[homologs[i][1]][1]):
-                    # If sensitive mode... #
-                    if options.sensitive:
-                        return []
+                    pass
+#                    # If sensitive mode... #
+#                    if options.sensitive:
+#                        return []
                 else:
                     # For each JASPAR matrix... #
                     for matrix, genename in jaspar[homologs[i][1]]:
