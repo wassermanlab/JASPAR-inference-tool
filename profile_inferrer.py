@@ -117,6 +117,7 @@ def is_alignment_over_Rost_sequence_identity_curve(identities, align_length, n_p
     @return: {boolean}
     
     """
+
     return identities >= get_Rost_ID_threshold(align_length, n=n_parameter)
 
 def get_Rost_ID_threshold(L, n=0):
@@ -129,8 +130,7 @@ def get_Rost_ID_threshold(L, n=0):
     parameter {int} N parameter in the curve (if > 0 more strict)
     @return: {Decimal}
         
-    """
-    
+    """    
 
     return n + (480*pow(L,float('-0.32')*(1+pow(float(repr(math.e)),float(repr(float(-L)/1000))))))
 
