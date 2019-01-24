@@ -7,7 +7,7 @@ For the [2016 release](https://doi.org/10.1093/nar/gkv1176) of [JASPAR](http://j
 ## Content
 The repository is organized as follows:
 * The `examples` folder contains a TF (*i.e.* `MAX.fa`) and a non-TF proteic sequence (*i.e.* `MTOR.fa`) in FASTA format
-* The `files` folder contains the output from `make_files.py`: *i.e.* `domains.json`, `jaspar.json` and several BLAST formatted databases
+* The `files` folder contains the output from `make_files.py`: *i.e.* `domains.json`, `jaspar.json` and several BLAST-formatted databases and JSONs
 * The scripts `functions.py`, `make_files.py` and `profile_inferrer.py`
 
 ## Dependencies
@@ -33,5 +33,5 @@ JASPAR database options (for a customized profile inference):
 As a usage example, the inferred JASPAR profiles for the `MAX` TF can be obtained as follows: `./profile_inferrer.py ./examples/MAX.fa ./files/`.
 
 The script returns (if any) the inferred JASPAR profiles for the specified TF(s) along with the details regarding the inference, including:
-* The `blastp` alignment between the query and JASPAR TF, including the the start and end amino acid positions, and the Expect value (E); and
+* The BLAST alignment between the query and JASPAR TF, including the the start and end amino acid positions, and the Expect value (E); and
 * The % of identical residues between the query and the JASPAR TF DBDs
