@@ -13,28 +13,25 @@ The repository is organized as follows:
 ## Dependencies
 The scripts for running the profile inference tool require the following dependencies:
 * [`BLAST+`](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
-* [`Python 2.7`](https://www.python.org/download/releases/2.7/) with the [`Biopython`](http://biopython.org), [`CoreAPI`](http://www.coreapi.org), [`tqdm`](https://pypi.org/project/tqdm/) and [`UniProt`](https://github.com/boscoh/uniprot) libraries
+* [`Python 2.7 or 3.x`](https://www.python.org) with the [`Biopython`](http://biopython.org), [`bioservices`](https://bioservices.readthedocs.io), [`CoreAPI`](http://www.coreapi.org) and [`tqdm`](https://pypi.org/project/tqdm/) libraries
 
 ## Usage
 The script `profile_inferrer.py` infers one or more JASPAR TF binding profiles recognized by a sequence of interest. It requires the following inputs:
-* The path to the `BLAST+` bin directory where `blastp` is located (option `-b`)
-* The path to the `files` folder (option `-f`)
-* A file containing one or more sequences in FASTA format (option `-i`)
+* A file containing one or more sequences in FASTA format
+* The path to the `files` folder
 
 Non-mandatory options include:
 * The path to a "dummy" directory where to create temporary files (option `--dummy`, by default is set to the global temporary directory `/tmp`)
-* The N parameter for the [Rost's sequence identity curve](https://doi.org/10.1093/protein/12.2.85) (option `-n`; by default is set to `0`)
+* The N parameter for the [Rost's sequence identity curve](https://doi.org/10.1093/protein/12.2.85) (option `-n`; by default is set to `5` to ensure ~99% of correctly assigned homologs)
 * The name of a file to output the results (option `-o`; by default is set to the standard output stream)
-* A taxonomic group (*i.e.* `fungi`, `insects`, `nematodes`, `plants`, or `vertebrates`) to which to restrict the profile inference (option `-t`; by default is set to ignore taxon restrictions)
+* The number of threads to use (*i.e.* to speed-up the inference; option `--threads`)
 
-Inference modes (for a more restricted profile inference):
+JASPAR database options (for a customized profile inference):
+* Options `--fungi`, `--insects`, `--nematodes`, `--plants` and `--vertebrates` restrict the inference of profiles to the specified taxons (by default, the inference tool uses profiles regardless of taxon)
 * The option `-l` limits the inference of profiles to the latest JASPAR version
-* The option `-s` ignores inferred profiles representing different TFs (*e.g.* hetetodimers)
 
-As a usage example, the inferred JASPAR profiles for the `MAX` TF can be obtained as follows: `./profile_inferrer.py -b $BLAST_PATH -f ./files/ -i ./examples/MAX.fa`.
+As a usage example, the inferred JASPAR profiles for the `MAX` TF can be obtained as follows: `./profile_inferrer.py ./examples/MAX.fa ./files/`.
 
-The script returns all inferred JASPAR TF binding profiles along with details regarding  the inference details, including:
-* The `BLAST` alignment between the query and the JASPAR TF, including the aligned sequences, the start and end amino acid positions, and the Expect value (E); and
-* The % of identical residues between the query and the JASPAR TF DBD
-
-Note that for the `profile_inferrer.py` script to work with future versions of JASPAR other than 2018, first users would have to create a new `files` folder with the script `make_files.py`.
+The script returns (if any) the inferred JASPAR profiles for the specified TF(s) along with the details regarding the inference, including:
+* The `blastp` alignment between the query and JASPAR TF, including the the start and end amino acid positions, and the Expect value (E); and
+* The % of identical residues between the query and the JASPAR TF DBDs
