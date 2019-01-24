@@ -71,7 +71,7 @@ def parse_args(extra=""):
     jaspar_group.add_argument("--vertebrates", action="store_true",
         help="use profiles from the JASPAR CORE vertebrates collection")
     jaspar_group.add_argument("-l", "--latest", default=False, action="store_true",
-        help="use profiles from the lastest JASPAR relsease")
+        help="use profiles from the lastest JASPAR release")
 
     return parser.parse_args()
 
