@@ -9,7 +9,8 @@ import coreapi
 import gzip
 import json
 import os
-from pathlib import Path
+import pickle
+
 # Download of Pfam/UniProt via RESTFUL API
 from prody.database import pfam, uniprot
 import re
@@ -290,15 +291,15 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
         ]
     }
 
-    # Skip if taxon uniprot JSON file already exists
-    uniprot_json_file = os.path.join(out_dir, taxon + uniprot_file_ext)
-    if not os.path.exists(uniprot_json_file):
+    # Change dir
+    os.chdir(out_dir)
+
+    # Skip if pickle file already exists
+    pickle_file = ".%s.uniaccs.pickle" % taxon
+    if not os.path.exists(pickle_file):
 
         # Initialize
         uniaccs = {}
-
-        # Change dir
-        os.chdir(out_dir)
 
         # Load JSON file
         profiles_json_file = taxon + profiles_file_ext
@@ -328,6 +329,18 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
                 if profile not in uniaccs[uniacc][0]:
                     uniaccs[uniacc][0].append(profile)
 
+        # Write pickle file
+        with open(pickle_file, "wb") as f:
+            pickle.dump(uniaccs, f)
+
+    # Skip if taxon uniprot JSON file already exists
+    uniprot_json_file = taxon + uniprot_file_ext
+    if not os.path.exists(uniprot_json_file):
+
+        # Load pickle file
+        with open(pickle_file, "rb") as f:
+            uniaccs = pickle.load(f)
+
         # For each UniProt Accession...
         for uniacc in uniaccs:
 
@@ -348,8 +361,8 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
             json.dumps(uniaccs, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
-        # Change dir
-        os.chdir(cwd)
+    # Change dir
+    os.chdir(cwd)
 
 def _get_Pfam_alignments(taxon, out_dir=out_dir):
 
