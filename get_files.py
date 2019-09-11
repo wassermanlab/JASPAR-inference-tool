@@ -199,8 +199,8 @@ def _download_Pfam_DBDs(out_dir=out_dir):
             json.dumps(pfam_DBDs, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
-        # Remove Cis-BP file
-        os.remove(cisbp_file)
+        # # Remove Cis-BP file
+        # os.remove(cisbp_file)
 
     # Change dir
     os.chdir(cwd)
