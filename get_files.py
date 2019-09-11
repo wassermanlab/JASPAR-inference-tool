@@ -263,7 +263,9 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
         "MA0098.1": ["P14921"],
         "MA0110.1": ["P46667"],
         "MA0138.1": ["Q13127"],
-        "MA0328.1": ["P0CY08"]
+        "MA0328.1": ["P0CY08"],
+        "MA0529.1": ["Q94513"],
+        "MA0529.2": ["Q94513"]
     }
     faulty_sequences = {
         "B9GPL8": [
@@ -288,8 +290,8 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
         ]
     }
 
-    # Initialize
-    profiles_json_file = os.path.join(out_dir, taxon + profiles_file_ext)
+gcontext = ssl.SSLContext()
+    url = "https://www.uniprot.org/uploadlists/"
 
     # Skip if taxon uniprot JSON file already exists
     uniprot_json_file = os.path.join(out_dir, taxon + uniprot_file_ext)
@@ -299,6 +301,7 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
         uniaccs = {}
 
         # Load JSON file
+        profiles_json_file = taxon + profiles_file_ext
         with open(profiles_json_file) as f:
             profiles = json.load(f)
 
@@ -342,6 +345,9 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
             uniprot_json_file,
             json.dumps(uniaccs, sort_keys=True, indent=4, separators=(",", ": "))
         )
+
+        # Change dir
+        os.chdir(cwd)
 
 def _get_Pfam_alignments(taxon, out_dir=out_dir):
 
