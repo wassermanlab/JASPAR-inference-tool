@@ -99,6 +99,10 @@ def _download_Pfam_DBDs(out_dir=out_dir):
     pfam_ids = set()
     url = "http://cisbp.ccbr.utoronto.ca/data/2.00/DataFiles/Bulk_downloads/EntireDataset/"
     cisbp_file = "TF_Information_all_motifs.txt.zip"
+    faulty_pfam_ids = {
+        "DUF260": "LOB",
+        "FLO_LFY": "SAM_LFY",
+    }
 
     # Create Pfam dir
     pfam_dir = os.path.join(out_dir, "pfam-DBDs")
@@ -125,11 +129,19 @@ def _download_Pfam_DBDs(out_dir=out_dir):
         # For each output line...
         for line in process.stdout.decode("utf-8").split("\n"):
 
-            # Add Pfam IDs
+            # For each Pfam ID...
             for pfam_id in line.split(","):
+
+                    # Skip if not Pfam ID
+                    if len(pfam_id) == 0 or pfam_id == "UNKNOWN":
+                        continue
+
+                    # Fix faulty Pfam IDs
+                    if pfam_id in faulty_pfam_ids:
+                        pfam_id = faulty_pfam_ids[pfam_id]
+
+                    # Add Pfam ID
                     pfam_ids.add(pfam_id)
-        print(pfam_ids)
-        exit(0)
 
         # Change dir
         os.chdir(pfam_dir)
