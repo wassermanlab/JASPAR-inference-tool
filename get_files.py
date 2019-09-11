@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import os, re
 import argparse
 from Bio import SearchIO, SeqIO
 from Bio.Seq import Seq
@@ -13,6 +12,7 @@ import os
 from pathlib import Path
 # Download of Pfam/UniProt via RESTFUL API
 from prody.database import pfam, uniprot
+import re
 import subprocess
 import shutil
 import stat
@@ -55,14 +55,12 @@ def get_files(devel=False, out_dir=out_dir):
     global client
     global codec
     global cwd
-    global pfam_DBD_file
     global pfam_file_ext
     global profiles_file_ext
     global uniprot_file_ext
     client = coreapi.Client()
     codec = coreapi.codecs.CoreJSONCodec()
     cwd = os.getcwd()
-    pfam_DBD_file = "pfam-DBDs.json"
     pfam_file_ext = ".pfam.json"
     profiles_file_ext = ".profiles.json"
     uniprot_file_ext = ".uniprot.json"
@@ -79,7 +77,6 @@ def get_files(devel=False, out_dir=out_dir):
 
     # Download Pfam DBDs
     _download_Pfam_DBDs(out_dir)
-    exit(0)
 
     # For each taxon...
     for taxon in Jglobals.taxons:
@@ -105,11 +102,6 @@ def _download_Pfam_DBDs(out_dir=out_dir):
         "DUF260": "LOB",
         "FLO_LFY": "SAM_LFY",
     }
-
-    # Create Pfam dir
-    pfam_dir = os.path.join(out_dir, "pfam-DBDs")
-    if not os.path.exists(pfam_dir):
-        os.makedirs(pfam_dir)
 
     # Skip if Pfam DBD file already exists
     pfam_DBD_file = os.path.join(out_dir, "pfam-DBDs.json")
@@ -145,13 +137,16 @@ def _download_Pfam_DBDs(out_dir=out_dir):
                     # Add Pfam ID
                     pfam_ids.add(pfam_id)
 
+        # Create Pfam dir
+        pfam_dir = "pfam-DBDs"
+        if not os.path.exists(pfam_dir):
+            os.makedirs(pfam_dir)
+
         # Change dir
         os.chdir(pfam_dir)
 
         # For each Pfam ID...
         for pfam_id in sorted(pfam_ids):
-
-            # try:
 
             # Fetch MSA from Pfam
             msa_file = pfam.fetchPfamMSA(pfam_id, alignment="seed")
@@ -183,11 +178,23 @@ def _download_Pfam_DBDs(out_dir=out_dir):
             # Remove MSA file
             os.remove(msa_file)
 
-            # except:
-            #     print("\nCould not fetch MSA for id: %s\n" % pfam_id)
+        # Skip if HMM database of all DBDs already exists
+        hmm_db = "all_DBDs.hmm"
+        if not os.path.exists(hmm_db):
 
-        # Change dir
-        os.chdir(out_dir)
+            # For each HMM file...
+            for hmm_file in os.listdir(pfam_dir):
+
+                # Skip if not HMM file
+                if not hmm_file.endswith(".hmm"): continue
+
+                # Add HMM to database
+                for line in Jglobals.parse_file(hmm_file):
+                    Jglobals.write(hmm_db, line)
+
+            # HMM press
+            cmd = "hmmpress -f %s" % hmm_db
+            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         # Write
         Jglobals.write(
@@ -195,8 +202,12 @@ def _download_Pfam_DBDs(out_dir=out_dir):
             json.dumps(pfam_DBDs, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
-        # # Remove Cis-BP file
-        # os.remove(cisbp_file)
+        # Change dir
+        os.chdir(out_dir)
+
+        # Remove Cis-BP file
+        if os.path.exists(cisbp_file):
+            os.remove(cisbp_file)
 
     # Change dir
     os.chdir(cwd)
@@ -335,57 +346,187 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
 
 def _get_Pfam_alignments(taxon, out_dir=out_dir):
 
-    # Initialize
-    global pfam_DBDs
-    seq_file = ".seq.fasta"
-    hmm_db = os.path.join(out_dir, "pfam-DBDs", "all_DBDs.hmm")
-    pfam_DBD_file = os.path.join(out_dir, "pfam-DBDs.json")
+    # Skip if Pfam JSON file already exists
+    pfam_json_file = os.path.join(out_dir, taxon + pfam_file_ext)
+    if not os.path.exists(pfam_json_file):
 
-    # Change dir
-    os.chdir(out_dir)
+        # Change dir
+        os.chdir(out_dir)
 
-    # Load JSON file
-    with open(pfam_DBD_file) as f:
-        pfam_DBDs = json.load(f)
-
-    # For each taxon...
-    for taxon in JTglobals.taxons:
         # Initialize
-        uniprot_json_file = os.path.join(out_dir, taxon+uniprot_file_tail)
-        # Skip if Pfam JSON file already exists
-        pfam_json_file = os.path.join(out_dir, taxon+pfam_file_tail)
-        if not os.path.exists(pfam_json_file):
-            # Initialize
-            pfams = {}
-            # Load JSON file
-            with open(uniprot_json_file) as f:
-                uniaccs = json.load(f)
-            # For each uniacc...
-            for uniacc in uniaccs:
-                # Initialize
-                alignments = []
-                pfams.setdefault(uniacc, [])
-                # Make seq file
-                seq = Seq(uniaccs[uniacc][1], IUPAC.protein)
-                seq_record = SeqRecord(seq, id=uniacc, name=uniacc, description=uniacc)
-                makeSeqFile(seq_record, seq_file)
-                # For each DBD...
-                for pfam_ac, start, end, evalue in hmmScan(seq_file, hmm_db, non_overlapping_domains=True):
-                    # Initialize
-                    hmm_file = os.path.join(out_dir, "pfam-DBDs", "%s.hmm" % pfam_ac)
-                    # Make seq file
-                    sub_seq = seq[start:end]
-                    seq_record = SeqRecord(sub_seq, id=uniacc, name=uniacc, description=uniacc)
-                    makeSeqFile(seq_record, seq_file)
-                    # Add DBDs
-                    alignment = hmmAlign(seq_file, hmm_file)
-                    pfams[uniacc].append((pfam_ac, alignment, start+1, end, evalue))
-            # Write
-            JTglobals.write(pfam_json_file, json.dumps(
-                pfams, sort_keys=True, indent=4, separators=(",", ": ")))
+        pfams = {}
+        seq_file = ".seq.fasta"
+        hmm_db = os.path.join("pfam-DBDs", "all_DBDs.hmm")
+        uniprot_json_file = taxon + uniprot_file_ext
 
-    # Change dir
-    os.chdir(cwd)
+        # Load JSON file
+        with open(uniprot_json_file) as f:
+            uniaccs = json.load(f)
+
+        # For each uniacc...
+        for uniacc in uniaccs:
+
+            # Initialize
+            pfams.setdefault(uniacc, [])
+
+            # Make seq file
+            seq = Seq(uniaccs[uniacc][1], IUPAC.protein)
+            seq_record = SeqRecord(seq, id=uniacc, name=uniacc, description=uniacc)
+            _makeSeqFile(seq_record, seq_file)
+
+            # For each DBD...
+            for pfam_ac, start, end, evalue in hmmScan(seq_file, hmm_db, non_overlapping_domains=True):
+
+                # Initialize
+                hmm_file = os.path.join("pfam-DBDs", "%s.hmm" % pfam_ac)
+
+                # Make seq file
+                sub_seq = seq[start:end]
+                seq_record = SeqRecord(sub_seq, id=uniacc, name=uniacc, description=uniacc)
+                _makeSeqFile(seq_record, seq_file)
+
+                # Add DBDs
+                alignment = hmmAlign(seq_file, hmm_file)
+                pfams[uniacc].append((pfam_ac, alignment, start+1, end, evalue))
+
+        # Write
+        Jglobals.write(
+            pfam_json_file,
+            json.dumps(pfams, sort_keys=True, indent=4, separators=(",", ": "))
+        )
+
+        # Remove seq file
+        if os.path.exists(seq_file):
+            os.remove(seq_file)
+
+        # Change dir
+        os.chdir(cwd)
+
+def _makeSeqFile(seq_record, file_name=".seq.fa"):
+
+    # Remove seq file if exists...
+    if os.path.exists(file_name):
+        os.remove(file_name)
+
+    # Write
+    Jglobals.write(file_name, seq_record.format("fasta"))
+
+def hmmScan(seq_file, hmm_file, non_overlapping_domains=False):
+
+    # Initialize
+    out_file = ".out.txt"
+
+    # Scan
+    cmd = "hmmscan --domtblout %s %s %s" % (out_file, hmm_file, seq_file)
+    process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Read domains
+    domains = _readDomainsTab(out_file)
+
+    # Remove output file
+    if os.path.exists(out_file):
+        os.remove(out_file)
+
+    # Filter overlapping domains
+    if non_overlapping_domains:
+        domains = _getNonOverlappingDomains(domains)
+
+    # Yield domains one by one
+    for pfam_ac, start, end, evalue in sorted(domains, key=lambda x: x[1]):
+
+        yield(pfam_ac, start, end, evalue)
+
+def _readDomainsTab(file_name):
+
+    # Initialize
+    domains = []
+    # From PMID:22942020;
+    # A hit has equal probability of being in the same clan as a different clan when the
+    # E-value is 0.01 (log10 = −2). When the E-value is 10−5, the probability that a sequence
+    # belongs to the same clan is >95%.
+    cutoff_mod = 1e-5
+    # From CIS-BP paper;
+    # We scanned all protein sequences for putative DNA-binding domains (DBDs) using the 81
+    # Pfam (Finn et al., 2010) models listed in (Weirauch and Hughes, 2011) and the HMMER tool
+    # (Eddy, 2009), with the recommended detection thresholds of Per-sequence Eval < 0.01 and
+    # Per-domain conditional Eval < 0.01.
+    cutoff_dom = 0.01
+
+    # For each result...
+    for res in SearchIO.parse(file_name, "hmmscan3-domtab"):
+
+        # For each model...
+        for mod in res.iterhits():
+
+            # Skip poor models
+            if mod.evalue > cutoff_mod:
+                continue
+
+            # For each domain...
+            for dom in mod.hsps:
+
+                # Skip poor domains
+                if dom.evalue_cond > cutoff_dom:
+                    continue
+
+                # Append domain
+                domains.append((mod.id, dom.query_start, dom.query_end, dom.evalue_cond))
+
+    return(domains)
+
+def _getNonOverlappingDomains(domains):
+
+    # Initialize
+    nov_domains = []
+
+    # Sort domains by e-value
+    for domain in sorted(domains, key=lambda x: x[-1]):
+
+        # Initialize
+        domains_overlap = False
+
+        # For each non-overlapping domain...
+        for nov_domain in nov_domains:
+
+            # domains 1 & 2 overlap?
+            # ---------1111111---------
+            # -------22222-------------  True
+            # ----------22222----------  True
+            # -------------22222-------  True
+            # -----22222---------------  False
+            # ---------------22222-----  False
+            if domain[1] < nov_domain[2] and domain[2] > nov_domain[1]:
+                domains_overlap = True
+                break
+
+        # Add non-overlapping domain
+        if not domains_overlap:
+            nov_domains.append(domain)
+
+    return(nov_domains)
+
+def hmmAlign(seq_file, hmm_file):
+
+    # Align
+    cmd = "hmmalign --outformat PSIBLAST %s %s" % (hmm_file, seq_file)
+    process = subprocess.check_output([cmd], shell=True, universal_newlines=True)
+
+    return(_readPSIBLASToutformat(process))
+
+def _readPSIBLASToutformat(psiblast_alignment):
+
+    # Initialize
+    alignment = ""
+
+    # For each chunk...
+    for chunk in psiblast_alignment.split("\n"):
+
+        # If alignment substring...
+        m = re.search("\s+(\S+)$", chunk)
+        if m:
+            alignment += m.group(1)
+
+    return(alignment)
 
 #-------------#
 # Main        #
