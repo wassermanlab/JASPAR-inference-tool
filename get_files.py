@@ -290,15 +290,15 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
         ]
     }
 
-gcontext = ssl.SSLContext()
-    url = "https://www.uniprot.org/uploadlists/"
-
     # Skip if taxon uniprot JSON file already exists
     uniprot_json_file = os.path.join(out_dir, taxon + uniprot_file_ext)
     if not os.path.exists(uniprot_json_file):
 
         # Initialize
         uniaccs = {}
+
+        # Change dir
+        os.chdir(out_dir)
 
         # Load JSON file
         profiles_json_file = taxon + profiles_file_ext
