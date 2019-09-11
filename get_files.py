@@ -9,11 +9,13 @@ from Bio.Alphabet import IUPAC
 import coreapi
 import gzip
 import json
+import os
 from pathlib import Path
 # Download of Pfam/UniProt via RESTFUL API
 from prody.database import pfam, uniprot
 import subprocess
 import shutil
+import stat
 import wget
 import zipfile # for unzip 
 
@@ -170,6 +172,10 @@ def _download_Pfam_DBDs(out_dir=out_dir):
                 hmm_file = "%s.hmm" % pfam_id_std
                 cmd = "hmmbuild %s %s &> /dev/null" % (hmm_file, msa_file)
                 process = subprocess.run([cmd], shell=True)
+
+                # Change file permissions
+                st = os.stat(hmm_file)
+                os.chmod(hmm_file, st.st_mode | stat.S_IEXEC)
 
                 # HMM press
                 cmd = "hmmpress -f %s &> /dev/null" % hmm_file
