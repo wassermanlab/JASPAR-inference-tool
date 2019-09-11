@@ -127,7 +127,7 @@ def _download_Pfam_DBDs(out_dir=out_dir):
 
             # Add Pfam IDs
             for pfam_id in line.split(","):
-                    pfam_ids.add(line)
+                    pfam_ids.add(pfam_id)
         print(pfam_ids)
         exit(0)
 
