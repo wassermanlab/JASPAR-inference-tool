@@ -182,7 +182,7 @@ def _download_Pfam_DBDs(out_dir=out_dir):
         if not os.path.exists(hmm_db):
 
             # For each HMM file...
-            for hmm_file in os.listdir(pfam_dir):
+            for hmm_file in os.listdir("."):
 
                 # Skip if not HMM file
                 if not hmm_file.endswith(".hmm"): continue
