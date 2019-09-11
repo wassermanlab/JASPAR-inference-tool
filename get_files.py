@@ -170,16 +170,12 @@ def _download_Pfam_DBDs(out_dir=out_dir):
 
             # HMM build
             hmm_file = "%s.hmm" % pfam_id_std
-            cmd = "hmmbuild %s %s &> /dev/null" % (hmm_file, msa_file)
-            process = subprocess.run([cmd], shell=True)
-
-            # Change file permissions
-            st = os.stat(hmm_file)
-            os.chmod(hmm_file, st.st_mode | stat.S_IEXEC)
+            cmd = "hmmbuild %s %s" % (hmm_file, msa_file)
+            process = subprocess.run([cmd],shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
             # HMM press
-            cmd = "hmmpress -f %s &> /dev/null" % hmm_file
-            process = subprocess.run([cmd], shell=True)
+            cmd = "hmmpress -f %s" % hmm_file
+            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
             # Add Pfam
             pfam_DBDs.setdefault(pfam_ac, pfam_id_std)
