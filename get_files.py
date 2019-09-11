@@ -331,6 +331,8 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
         # For each UniProt Accession...
         for uniacc in uniaccs:
 
+            print(uniacc)
+
             # Fix faulty sequences
             if uniacc in faulty_sequences:
                 uniaccs[uniacc][1] = "".join(faulty_sequences[uniacc]) 
