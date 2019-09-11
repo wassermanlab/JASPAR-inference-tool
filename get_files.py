@@ -118,9 +118,18 @@ def _download_Pfam_DBDs(out_dir=out_dir):
             # Download TF info
             os.system("curl --silent -O %s%s" % (url, cisbp_file))
 
-        # For each line...
-        for line in Jglobals.parse_tsv_file(cisbp_file):
-            pfam_ids.add(line[10])
+        # Get DBDs
+        cmd = "unzip -p %s | cut -f 11 | sort | uniq | grep -v DBDs" % cisbp_file
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # For each output line...
+        for line in process.stdout.decode("utf-8").split("\n"):
+
+            # Add Pfam IDs
+            for pfam_id in line.split(","):
+                    pfam_ids.add(line)
+        print(pfam_ids)
+        exit(0)
 
         # Change dir
         os.chdir(pfam_dir)
