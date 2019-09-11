@@ -1,0 +1,3 @@
+[submodule "SimilarityRegression"]
+	path = SimilarityRegression
+	url = https://github.com/wassermanlab/SimilarityRegression.git
