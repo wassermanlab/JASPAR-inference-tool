@@ -89,7 +89,6 @@ def get_files(devel=False, out_dir=out_dir):
 
         # Get Pfam alignments
         _get_Pfam_alignments(taxon, out_dir)
-        exit(0)
 
 def _download_Pfam_DBDs(out_dir=out_dir):
 
