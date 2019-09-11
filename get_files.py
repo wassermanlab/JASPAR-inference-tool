@@ -151,44 +151,44 @@ def _download_Pfam_DBDs(out_dir=out_dir):
         # For each Pfam ID...
         for pfam_id in sorted(pfam_ids):
 
-            try:
+            # try:
 
-                # Fetch MSA from Pfam
-                msa_file = pfam.fetchPfamMSA(pfam_id, alignment="seed")
+            # Fetch MSA from Pfam
+            msa_file = pfam.fetchPfamMSA(pfam_id, alignment="seed")
 
-                # For each line...
-                for line in Jglobals.parse_file(msa_file):
+            # For each line...
+            for line in Jglobals.parse_file(msa_file):
 
-                    m = re.search("^#=GF\sID\s+(\S+)$", line)
-                    if m:
-                        pfam_id_std = m.group(1)
+                m = re.search("^#=GF\sID\s+(\S+)$", line)
+                if m:
+                    pfam_id_std = m.group(1)
 
-                    m = re.search("^#=GF\sAC\s+(PF\d{5}).\d+$", line)
-                    if m:
-                        pfam_ac = m.group(1)
-                        break
+                m = re.search("^#=GF\sAC\s+(PF\d{5}).\d+$", line)
+                if m:
+                    pfam_ac = m.group(1)
+                    break
 
-                # HMM build
-                hmm_file = "%s.hmm" % pfam_id_std
-                cmd = "hmmbuild %s %s &> /dev/null" % (hmm_file, msa_file)
-                process = subprocess.run([cmd], shell=True)
+            # HMM build
+            hmm_file = "%s.hmm" % pfam_id_std
+            cmd = "hmmbuild %s %s &> /dev/null" % (hmm_file, msa_file)
+            process = subprocess.run([cmd], shell=True)
 
-                # Change file permissions
-                st = os.stat(hmm_file)
-                os.chmod(hmm_file, st.st_mode | stat.S_IEXEC)
+            # Change file permissions
+            st = os.stat(hmm_file)
+            os.chmod(hmm_file, st.st_mode | stat.S_IEXEC)
 
-                # HMM press
-                cmd = "hmmpress -f %s &> /dev/null" % hmm_file
-                process = subprocess.run([cmd], shell=True)
+            # HMM press
+            cmd = "hmmpress -f %s &> /dev/null" % hmm_file
+            process = subprocess.run([cmd], shell=True)
 
-                # Add Pfam
-                pfam_DBDs.setdefault(pfam_ac, pfam_id_std)
+            # Add Pfam
+            pfam_DBDs.setdefault(pfam_ac, pfam_id_std)
 
-                # Remove MSA file
-                os.remove(msa_file)
+            # Remove MSA file
+            os.remove(msa_file)
 
-            except:
-                print("\nCould not fetch MSA for id: %s\n" % pfam_id)
+            # except:
+            #     print("\nCould not fetch MSA for id: %s\n" % pfam_id)
 
         # Change dir
         os.chdir(out_dir)
