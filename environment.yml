@@ -1,0 +1,22 @@
+name: JASPAR-profile-inference
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - biopython=1.73
+  - blast=2.9.0
+  - curl
+  - git=2.20.1
+  - hmmer=3.2.1
+  - pandas=0.25.1
+  - pip=19.2.2
+  - python=3.7.3
+  - scipy=1.3.1
+  - setuptools=41.0.1
+  - tqdm=4.35.0
+  - pip:
+    - coreapi==2.3.3
+    - ProDy==1.10.10
+    - pyparsing==2.4.2
+    - wget==3.2
