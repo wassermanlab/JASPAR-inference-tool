@@ -1,30 +1,28 @@
 #!/usr/bin/env python
 
 import argparse
-from Bio import SearchIO, SeqIO
+from Bio import SearchIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 import coreapi
-import gzip
 import json
 import os
 import pickle
-
 # Download of Pfam/UniProt via RESTFUL API
 from prody.database import pfam, uniprot
 import re
 import subprocess
-import shutil
-import stat
-import wget
-import zipfile # for unzip 
-
-# Import globals
-from __init__ import Jglobals
+import sys
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
+
+# Append JASPAR-profile-inference to path
+sys.path.append(os.path.join(out_dir, os.pardir))
+
+# Import globals
+from __init__ import Jglobals
 
 #-------------#
 # Functions   #
