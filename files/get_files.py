@@ -6,14 +6,18 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 import coreapi
+from functools import partial
 import json
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import pickle
 # Download of Pfam/UniProt via RESTFUL API
 from prody.database import pfam, uniprot
 import re
 import subprocess
 import sys
+import tqdm
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
@@ -37,6 +41,8 @@ def parse_args():
 
     parser.add_argument("-d", "--devel", action="store_true", help="development mode (uses hfaistos; default = False)")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
+    parser.add_argument("--threads", default=1, help="threads to use (default = 1)", metavar="INT")
+
 
     return(parser.parse_args())
 
@@ -46,9 +52,9 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    get_pfam(args.devel, os.path.abspath(args.o))
+    get_pfam(args.devel, os.path.abspath(args.o), args.threads)
 
-def get_pfam(devel=False, out_dir=out_dir):
+def get_pfam(devel=False, out_dir=out_dir, threads=1):
 
     # Globals
     global client
@@ -74,8 +80,8 @@ def get_pfam(devel=False, out_dir=out_dir):
     if devel:
         jaspar_url = "http://hfaistos.uio.no:8002/"
 
-    # Download Pfam DBDs
-    _download_Pfam_DBDs(out_dir)
+    # Download Pfam DBD hidden Markov models
+    _download_Pfam_DBD_HMMs(out_dir)
 
     # For each taxon...
     for taxon in Jglobals.taxons:
@@ -83,27 +89,36 @@ def get_pfam(devel=False, out_dir=out_dir):
         # Download JASPAR profiles
         _download_JASPAR_profiles(taxon, out_dir)
 
-        # Download UniProt sequences
+        # Get information for each profile
+        _get_profile_info(taxon, out_dir)
+
+        # Download TF sequences from UniProt
         _download_UniProt_sequences(taxon, out_dir)
 
         # Get Pfam alignments
         _get_Pfam_alignments(taxon, out_dir)
 
-def _download_Pfam_DBDs(out_dir=out_dir):
+    # Get Tomtom database
+    _get_Tomtom_db(out_dir)
 
-    # Initialize
-    pfam_DBDs = {}
-    pfam_ids = set()
-    url = "http://cisbp.ccbr.utoronto.ca/data/2.00/DataFiles/Bulk_downloads/EntireDataset/"
-    cisbp_file = "TF_Information_all_motifs.txt.zip"
-    faulty_pfam_ids = {
-        "DUF260": "LOB",
-        "FLO_LFY": "SAM_LFY",
-    }
+    # Get Tomtom pairs
+    _get_Tomtom_pairs(out_dir, threads)
+
+def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
     # Skip if Pfam DBD file already exists
     pfam_DBD_file = os.path.join(out_dir, "pfam-DBDs.json")
     if not os.path.exists(pfam_DBD_file):
+
+        # Initialize
+        pfam_DBDs = {}
+        pfam_ids = set()
+        url = "http://cisbp.ccbr.utoronto.ca/data/2.00/DataFiles/Bulk_downloads/EntireDataset/"
+        cisbp_file = "TF_Information_all_motifs.txt.zip"
+        faulty_pfam_ids = {
+            "DUF260": "LOB",
+            "FLO_LFY": "SAM_LFY",
+        }
 
         # Change dir
         os.chdir(out_dir)
@@ -211,9 +226,35 @@ def _download_Pfam_DBDs(out_dir=out_dir):
     os.chdir(cwd)
 
 def _download_JASPAR_profiles(taxon, out_dir=out_dir):
+        
+    # Skip if taxon directory already exists
+    taxon_dir = os.path.join(out_dir, taxon)
+    if not os.path.exists(taxon_dir):
 
-    # Initialize
-    url = os.path.join(jaspar_url, "api", "v1", "taxon", taxon)
+        # Initialize
+        jaspar_file = "JASPAR2018_CORE_%s_redundant_pfms_meme.zip" % taxon
+        if "hfaistos.uio.no:8002" in jaspar_url:
+            jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
+
+        # Create taxon directory
+        os.makedirs(taxon_dir)
+
+        # Move to taxon directory
+        os.chdir(taxon_dir)
+
+        # Get JASPAR profiles
+        os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download", "CORE", jaspar_file))
+
+        # Unzip
+        os.system("unzip -qq %s" % jaspar_file)
+
+        # Remove zip files
+        os.remove("%s" % jaspar_file)
+
+        # Change dir
+        os.chdir(cwd)
+
+def _get_profile_info(taxon, out_dir=out_dir):
 
     # Skip if taxon profiles JSON file already exists
     profiles_json_file = os.path.join(out_dir, taxon + profiles_file_ext)
@@ -221,6 +262,7 @@ def _download_JASPAR_profiles(taxon, out_dir=out_dir):
 
         # Initialize
         profiles = {}
+        url = os.path.join(jaspar_url, "api", "v1", "taxon", taxon)
         response = client.get(url)
         json_obj = json.loads(codec.encode(response))
 
@@ -545,6 +587,75 @@ def _readPSIBLASToutformat(psiblast_alignment):
             alignment += m.group(1)
 
     return(alignment)
+
+def _get_Tomtom_db(out_dir=out_dir):
+
+    # Skip if Tomtom database already exists
+    tomtom_db = os.path.join(out_dir, "jaspar_core.meme")
+    if not os.path.exists(tomtom_db):
+
+        # Get all JASPAR profiles
+        jaspar_profiles = Path(out_dir).glob("*/*.meme")
+
+        # For each JASPAR profile...
+        for jaspar_profile in jaspar_profiles:
+
+            # Append
+            os.system("cat %s >> %s" % (jaspar_profile, tomtom_db))
+
+def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
+
+    # Skip if Tomtom JSON file already exists
+    tomtom_json_file = os.path.join(out_dir, "tomtom.json")
+    if not os.path.exists(tomtom_json_file):
+
+        # Initialize
+        tomtom = {}
+        tomtom_db = os.path.join(out_dir, "jaspar_core.meme")
+
+        # Get all JASPAR profiles
+        jaspar_profiles = [str(f) for f in Path(out_dir).glob("*/*.meme")]
+
+        # Parallelize
+        pool = Pool(threads)
+        parallelized = partial(Tomtom, database=tomtom_db, out_dir=out_dir)
+        for _ in tqdm(pool.imap(parallelized, iter(jaspar_profiles)), total=len(jaspar_profiles)):
+            pass
+        pool.close()
+        pool.join()
+
+        # # Write
+        # Jglobals.write(
+        #     tomtom_json_file,
+        #     json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
+        # )
+
+def Tomtom(meme_file, database, out_dir=out_dir):
+    # From http://meme-suite.org/doc/tomtom.html;
+    # In order to compute the scores, Tomtom needs to know the frequencies of the letters
+    # of the sequence alphabet in the database being searched (the "background" letter
+    # frequencies). By default, the background letter frequencies included in the query
+    # motif file are used. The scores of columns that overlap for a given offset are summed.
+    # This summed score is then converted to a p-value. The reported p-value is the minimal
+    # p-value over all possible offsets. To compensate for multiple testing, each reported
+    # p-value is converted to an E-value by multiplying it by twice the number of target
+    # motifs. As a second type of multiple-testing correction, q-values for each match are
+    # computed from the set of p-values and reported.
+
+    # From PMID:17324271;
+    # [...]
+    # We show that Tomtom correctly assigns E values less than 0.01 to a large percentage
+    # of positive matches.
+    # [...]
+
+    # Skip if output directory already exists
+    m = re.search("(MA\d{4}.\d).meme$", meme_file)
+    output_dir = os.path.join(out_dir, "tomtom", m.group(1))
+    if not os.path.isdir(output_dir):
+
+        # Run Tomtom
+        cmd = "tomtom -thresh 0.01 -evalue -o %s %s" % (output_dir, meme_file, database)
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 #-------------#
 # Main        #
