@@ -41,7 +41,7 @@ def parse_args():
 
     parser.add_argument("-d", "--devel", action="store_true", help="development mode (uses hfaistos; default = False)")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
-    parser.add_argument("--threads", default=1, help="threads to use (default = 1)", metavar="INT")
+    parser.add_argument("--threads", default=1, type=int help="threads to use (default = 1)", metavar="INT")
 
 
     return(parser.parse_args())
