@@ -625,7 +625,7 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
         pool.join()
 
         # Move to taxon directory
-        os.chdir(taxon_dir)
+        os.chdir(out_dir)
 
         # For each JASPAR profile...
         for jaspar_profile in jaspar_profiles:
