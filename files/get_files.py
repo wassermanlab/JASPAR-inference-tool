@@ -17,7 +17,7 @@ from prody.database import pfam, uniprot
 import re
 import subprocess
 import sys
-import tqdm
+from tqdm import tqdm
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
@@ -631,22 +631,24 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
         # )
 
 def Tomtom(meme_file, database, out_dir=out_dir):
-    # From http://meme-suite.org/doc/tomtom.html;
-    # In order to compute the scores, Tomtom needs to know the frequencies of the letters
-    # of the sequence alphabet in the database being searched (the "background" letter
-    # frequencies). By default, the background letter frequencies included in the query
-    # motif file are used. The scores of columns that overlap for a given offset are summed.
-    # This summed score is then converted to a p-value. The reported p-value is the minimal
-    # p-value over all possible offsets. To compensate for multiple testing, each reported
-    # p-value is converted to an E-value by multiplying it by twice the number of target
-    # motifs. As a second type of multiple-testing correction, q-values for each match are
-    # computed from the set of p-values and reported.
+    """
+    From http://meme-suite.org/doc/tomtom.html;
+    In order to compute the scores, Tomtom needs to know the frequencies of the letters
+    of the sequence alphabet in the database being searched (the "background" letter
+    frequencies). By default, the background letter frequencies included in the query
+    motif file are used. The scores of columns that overlap for a given offset are summed.
+    This summed score is then converted to a p-value. The reported p-value is the minimal
+    p-value over all possible offsets. To compensate for multiple testing, each reported
+    p-value is converted to an E-value by multiplying it by twice the number of target
+    motifs. As a second type of multiple-testing correction, q-values for each match are
+    computed from the set of p-values and reported.
 
-    # From PMID:17324271;
-    # [...]
-    # We show that Tomtom correctly assigns E values less than 0.01 to a large percentage
-    # of positive matches.
-    # [...]
+    From PMID:17324271;
+    [...]
+    We show that Tomtom correctly assigns E values less than 0.01 to a large percentage
+    of positive matches.
+    [...]
+    """
 
     # Skip if output directory already exists
     m = re.search("(MA\d{4}.\d).meme$", meme_file)
