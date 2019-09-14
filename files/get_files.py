@@ -637,6 +637,10 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
             # For each line...
             for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
 
+                # Skip comments
+                if line[0].startswith("#"):
+                    continue
+
                 # Skip header
                 if line[0] == "Query_ID":
                     continue
