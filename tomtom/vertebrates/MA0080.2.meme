@@ -1,0 +1,20 @@
+MEME version 4
+
+ALPHABET= ACGT
+
+strands: + -
+
+Background letter frequencies
+A 0.25 C 0.25 G 0.25 T 0.25
+
+MOTIF MA0080.2 SPI1
+letter-probability matrix: alength= 4 w= 7 nsites= 42 E= 0
+ 0.785714  0.071429  0.142857  0.000000
+ 0.095238  0.000000  0.880952  0.023810
+ 0.095238  0.000000  0.904762  0.000000
+ 1.000000  0.000000  0.000000  0.000000
+ 0.976190  0.000000  0.023810  0.000000
+ 0.119048  0.071429  0.785714  0.023810
+ 0.071429  0.119048  0.047619  0.761905
+URL http://jaspar.genereg.net/matrix/MA0080.2
+

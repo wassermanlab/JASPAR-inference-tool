@@ -9,6 +9,7 @@ dependencies:
   - curl
   - git=2.20.1
   - hmmer=3.2.1
+  - meme=5.0.5
   - pandas=0.25.1
   - pip=19.2.2
   - python=3.7.3
