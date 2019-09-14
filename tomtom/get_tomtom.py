@@ -144,32 +144,37 @@ def _get_tomtom_evalues(out_dir=out_dir):
         if os.path.isdir(tomtom_dir):
             shutil.rmtree(tomtom_dir)
 
-        # For each taxon...
-        for taxon in Jglobals.taxons:
+        # # For each taxon...
+        # for taxon in Jglobals.taxons:
 
-            # For each MEME file...
-            for meme_file in os.listdir(taxon):
+        #     # For each MEME file...
+        #     for meme_file in os.listdir(taxon):
 
-                # Initialize
-                m = re.search("(MA\d{4}.\d).meme", meme_file)
-                tomtom.setdefault(m.group(1), [])
+        #         # Initialize
+        #         m = re.search("(MA\d{4}.\d).meme", meme_file)
+        #         tomtom.setdefault(m.group(1), [])
 
-                # Run Tomtom
-                cmd = "tomtom -thresh 0.01 -evalue %s %s" % (os.path.join(taxon, meme_file), jaspar_database)
-                process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Run Tomtom
+        cmd = "tomtom -thresh 0.01 -evalue %s %s" % (jaspar_database, jaspar_database)
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-                # For each line...
-                for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
+        # For each line...
+        for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
 
-                    # Skip header
-                    if line[0] != m.group(1):
-                        continue
+            # Skip header
+            if line[0] == "Query_ID":
+                continue
 
-                    # Add to Tomtom
-                    tomtom[line[0]].append(line[1])
+            # Skip self
+            if line[0] == line[1]:
+                continue
 
-                # Remove Tomtom directory
-                shutil.rmtree(tomtom_dir)
+            # Add to Tomtom
+            tomtom.setdefault(line[0], [])
+            tomtom[line[0]].append(line[1])
+
+        # Remove Tomtom directory
+        shutil.rmtree(tomtom_dir)
 
         # Change dir
         os.chdir(cwd)
