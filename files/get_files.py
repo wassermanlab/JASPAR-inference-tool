@@ -624,11 +624,42 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
         pool.close()
         pool.join()
 
-        # # Write
-        # Jglobals.write(
-        #     tomtom_json_file,
-        #     json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
-        # )
+        # Move to taxon directory
+        os.chdir(taxon_dir)
+
+        # For each JASPAR profile...
+        for jaspar_profile in jaspar_profiles:
+
+            # Initialize
+            m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
+            tomtom_dir = ".%s" % m.group(1)
+
+            # For each line...
+            for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
+
+                # Skip header
+                if line[0] == "Query_ID":
+                    continue
+
+                # Skip self
+                if line[0] == line[1]:
+                    continue
+
+                # Add to Tomtom
+                tomtom.setdefault(line[0], [])
+                tomtom[line[0]].append(line[1])
+
+            # Remove Tomtom directory
+            # shutil.rmtree(tomtom_dir)
+
+        # Write
+        Jglobals.write(
+            tomtom_json_file,
+            json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
+        )
+
+        # Change dir
+        os.chdir(cwd)
 
 def Tomtom(meme_file, database, out_dir=out_dir):
     """
