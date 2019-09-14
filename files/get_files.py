@@ -619,7 +619,7 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
         # Parallelize
         pool = Pool(threads)
         parallelized = partial(Tomtom, database=tomtom_db, out_dir=out_dir)
-        for _ in tqdm(pool.imap(parallelized, iter(jaspar_profiles)), total=len(jaspar_profiles)):
+        for _ in tqdm(pool.imap(parallelized, jaspar_profiles), total=len(jaspar_profiles)):
             pass
         pool.close()
         pool.join()
@@ -652,11 +652,11 @@ def Tomtom(meme_file, database, out_dir=out_dir):
 
     # Skip if output directory already exists
     m = re.search("(MA\d{4}.\d).meme$", meme_file)
-    output_dir = os.path.join(out_dir, "tomtom", m.group(1))
+    output_dir = os.path.join(out_dir, ".%s" % m.group(1))
     if not os.path.isdir(output_dir):
 
         # Run Tomtom
-        cmd = "tomtom -thresh 0.01 -evalue -o %s %s" % (output_dir, meme_file, database)
+        cmd = "tomtom -thresh 0.01 -evalue -o %s %s %s" % (output_dir, meme_file, database)
         process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 #-------------#
