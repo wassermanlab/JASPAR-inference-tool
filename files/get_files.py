@@ -101,6 +101,7 @@ def get_pfam(devel=False, out_dir=out_dir, threads=1):
 
     # Get Tomtom database
     _get_Tomtom_db(out_dir)
+    exit(0)
 
     # Get Tomtom pairs
     _get_Tomtom_pairs(out_dir, threads)
@@ -591,18 +592,32 @@ def _readPSIBLASToutformat(psiblast_alignment):
 
 def _get_Tomtom_db(out_dir=out_dir):
 
+    # Initialize
+    done = set()
+
     # Skip if Tomtom database already exists
-    tomtom_db = os.path.join(out_dir, "jaspar_core.meme")
+    tomtom_db = os.path.join(out_dir, "tomtom.database")
     if not os.path.exists(tomtom_db):
 
         # Get all JASPAR profiles
         jaspar_profiles = Path(out_dir).glob("*/*.meme")
 
         # For each JASPAR profile...
-        for jaspar_profile in jaspar_profiles:
+        for jaspar_profile in sorted(jaspar_profiles, reverse=True):
+
+            # Initialize
+            m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
+            matrix_id = m.group(1)
+
+            # Skip if done
+            if matrix_id in done:
+                continue
 
             # Append
             os.system("cat %s >> %s" % (jaspar_profile, tomtom_db))
+
+            # Done
+            done.add(matrix_id)
 
 def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
 
@@ -612,7 +627,7 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
 
         # Initialize
         tomtom = {}
-        tomtom_db = os.path.join(out_dir, "jaspar_core.meme")
+        tomtom_db = os.path.join(out_dir, "tomtom.database")
 
         # Get all JASPAR profiles
         jaspar_profiles = [str(f) for f in Path(out_dir).glob("*/*.meme")]
