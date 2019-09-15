@@ -99,11 +99,10 @@ def get_pfam(devel=False, out_dir=out_dir, threads=1):
         # Get Pfam alignments
         _get_Pfam_alignments(taxon, out_dir)
 
-    # Get Tomtom database
-    _get_Tomtom_db(out_dir)
-
-    # Get Tomtom pairs
-    _get_Tomtom_pairs(out_dir, threads)
+    # Get clusters
+    ## Now: from Tomtom
+    ## In the future: from matrix-clustering
+    _get_clusters(out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -589,58 +588,27 @@ def _readPSIBLASToutformat(psiblast_alignment):
 
     return(alignment)
 
-def _get_Tomtom_db(out_dir=out_dir):
-
-    # Initialize
-    done = set()
-
-    # Skip if Tomtom database already exists
-    tomtom_db = os.path.join(out_dir, "tomtom.database")
-    if not os.path.exists(tomtom_db):
-
-        # For each JASPAR profile...
-        for jaspar_profile in _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme")):
-
-            # Cat
-            os.system("cat %s >> %s" % (jaspar_profile, tomtom_db))
-
-def _get_profiles_from_latest_version(jaspar_profiles):
-
-    # Initialize
-    done = set()
-    latest_version_profiles = []
-
-    # For each profile...
-    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
-
-        # Initialize
-        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
-        matrix_id = m.group(1)
-
-        # Skip if done
-        if matrix_id in done:
-            continue
-
-        # i.e. a profile from the latest version
-        latest_version_profiles.append(str(jaspar_profile))
-
-        # Done
-        done.add(matrix_id)
-
-    return(latest_version_profiles)
-
-def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
+def _get_clusters(out_dir=out_dir, threads=1):
 
     # Skip if Tomtom JSON file already exists
-    tomtom_json_file = os.path.join(out_dir, "tomtom.json")
+    tomtom_json_file = os.path.join(out_dir, "clusters.json")
     if not os.path.exists(tomtom_json_file):
 
         # Initialize
         tomtom = {}
-        tomtom_db = os.path.join(out_dir, "tomtom.database")
 
         # Get all JASPAR profiles
         jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
+
+        # Skip if Tomtom database already exists
+        tomtom_db = os.path.join(out_dir, "tomtom.database")
+        if not os.path.exists(tomtom_db):
+
+            # For each JASPAR profile...
+            for jaspar_profile in jaspar_profiles:
+
+                # Cat to database
+                os.system("cat %s >> %s" % (jaspar_profile, tomtom_db))
 
         # Parallelize
         pool = Pool(threads)
@@ -690,6 +658,31 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
 
         # Change dir
         os.chdir(cwd)
+
+def _get_profiles_from_latest_version(jaspar_profiles):
+
+    # Initialize
+    done = set()
+    latest_version_profiles = []
+
+    # For each profile...
+    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
+
+        # Initialize
+        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
+        matrix_id = m.group(1)
+
+        # Skip if done
+        if matrix_id in done:
+            continue
+
+        # i.e. a profile from the latest version
+        latest_version_profiles.append(str(jaspar_profile))
+
+        # Done
+        done.add(matrix_id)
+
+    return(latest_version_profiles)
 
 def Tomtom(meme_file, database, out_dir=out_dir):
     """
