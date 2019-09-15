@@ -599,25 +599,36 @@ def _get_Tomtom_db(out_dir=out_dir):
     tomtom_db = os.path.join(out_dir, "tomtom.database")
     if not os.path.exists(tomtom_db):
 
-        # Get all JASPAR profiles
-        jaspar_profiles = Path(out_dir).glob("*/*.meme")
-
         # For each JASPAR profile...
-        for jaspar_profile in sorted(jaspar_profiles, reverse=True):
+        for jaspar_profile in _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme")):
 
-            # Initialize
-            m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
-            matrix_id = m.group(1)
-
-            # Skip if done
-            if matrix_id in done:
-                continue
-
-            # Append
+            # Cat
             os.system("cat %s >> %s" % (jaspar_profile, tomtom_db))
 
-            # Done
-            done.add(matrix_id)
+def _get_profiles_from_latest_version(jaspar_profiles):
+
+    # Initialize
+    done = set()
+    latest_version_profiles = []
+
+    # For each profile...
+    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
+
+        # Initialize
+        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
+        matrix_id = m.group(1)
+
+        # Skip if done
+        if matrix_id in done:
+            continue
+
+        # i.e. a profile from the latest version
+        latest_version_profiles.append(str(jaspar_profile))
+
+        # Done
+        done.add(matrix_id)
+
+    return(latest_version_profiles)
 
 def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
 
@@ -630,7 +641,7 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
         tomtom_db = os.path.join(out_dir, "tomtom.database")
 
         # Get all JASPAR profiles
-        jaspar_profiles = [str(f) for f in Path(out_dir).glob("*/*.meme")]
+        jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
 
         # Parallelize
         pool = Pool(threads)
