@@ -15,6 +15,7 @@ import pickle
 # Download of Pfam/UniProt via RESTFUL API
 from prody.database import pfam, uniprot
 import re
+import shutil
 import subprocess
 import sys
 from tqdm import tqdm
