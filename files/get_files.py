@@ -654,7 +654,7 @@ def _get_Tomtom_pairs(out_dir=out_dir, threads=1):
                 tomtom[line[0]].append(line[1])
 
             # Remove Tomtom directory
-            # shutil.rmtree(tomtom_dir)
+            shutil.rmtree(tomtom_dir)
 
         # Write
         Jglobals.write(
