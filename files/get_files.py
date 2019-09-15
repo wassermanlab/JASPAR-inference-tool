@@ -101,7 +101,6 @@ def get_pfam(devel=False, out_dir=out_dir, threads=1):
 
     # Get Tomtom database
     _get_Tomtom_db(out_dir)
-    exit(0)
 
     # Get Tomtom pairs
     _get_Tomtom_pairs(out_dir, threads)
