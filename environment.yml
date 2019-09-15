@@ -1,6 +1,6 @@
 name: JASPAR-profile-inference
 channels:
-  - rsat
+  - InsiliChem
   - conda-forge
   - bioconda
   - defaults
@@ -13,11 +13,11 @@ dependencies:
   - meme=5.0.5
   - pandas=0.25.1
   - pip=19.2.2
+  - prody=1.10.8
   - python=3.7.3
   - scipy=1.3.1
   - setuptools=41.0.1
   - tqdm=4.35.0
   - pip:
     - coreapi==2.3.3
-    - ProDy==1.10.10
     - pyparsing==2.4.2

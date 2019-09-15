@@ -40,6 +40,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("-c", choices=["rsat", "tomtom"], default="tomtom", help="cluster profiles using \"rsat\" matrix-clustering or \"tomtom\" (i.e. default)")
     parser.add_argument("-d", "--devel", action="store_true", help="development mode (uses hfaistos; default = False)")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
     parser.add_argument("--threads", default=1, type=int, help="threads to use (default = 1)", metavar="INT")
@@ -53,9 +54,9 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    get_pfam(args.devel, os.path.abspath(args.o), args.threads)
+    get_pfam(args.c, args.devel, os.path.abspath(args.o), args.threads)
 
-def get_pfam(devel=False, out_dir=out_dir, threads=1):
+def get_pfam(cluster="tomtom", devel=False, out_dir=out_dir, threads=1):
 
     # Globals
     global client
@@ -99,10 +100,13 @@ def get_pfam(devel=False, out_dir=out_dir, threads=1):
         # Get Pfam alignments
         _get_Pfam_alignments(taxon, out_dir)
 
+    # Group TFs by DBD composition
+    _group_by_DBD_composition(out_dir)
+
     # Get clusters
     ## Now: from Tomtom
     ## In the future: from matrix-clustering
-    _get_clusters(out_dir, threads)
+    _get_clusters(cluster, out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -231,25 +235,28 @@ def _download_JASPAR_profiles(taxon, out_dir=out_dir):
     taxon_dir = os.path.join(out_dir, taxon)
     if not os.path.exists(taxon_dir):
 
-        # Initialize
-        jaspar_file = "JASPAR2018_CORE_%s_redundant_pfms_meme.zip" % taxon
-        if "hfaistos.uio.no:8002" in jaspar_url:
-            jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
-
         # Create taxon directory
         os.makedirs(taxon_dir)
 
         # Move to taxon directory
         os.chdir(taxon_dir)
 
-        # Get JASPAR profiles
-        os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download", "CORE", jaspar_file))
+        # For each profile format...
+        for profile_fmt in ["meme", "transfac"]:
 
-        # Unzip
-        os.system("unzip -qq %s" % jaspar_file)
+            # Initialize
+            jaspar_file = "JASPAR2018_CORE_%s_redundant_pfms_%s.zip" % (taxon, profile_fmt)
+            if "hfaistos.uio.no:8002" in jaspar_url:
+                jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_%s.zip" % (taxon, profile_fmt)
 
-        # Remove zip files
-        os.remove("%s" % jaspar_file)
+            # Get JASPAR profiles
+            os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download", "CORE", jaspar_file))
+
+            # Unzip
+            os.system("unzip -qq %s" % jaspar_file)
+
+            # Remove zip files
+            os.remove("%s" % jaspar_file)
 
         # Change dir
         os.chdir(cwd)
@@ -588,10 +595,66 @@ def _readPSIBLASToutformat(psiblast_alignment):
 
     return(alignment)
 
-def _get_clusters(out_dir=out_dir, threads=1):
+def _group_by_DBD_composition(out_dir=out_dir):
+
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(out_dir, "groups.json")
+    if not os.path.exists(groups_json_file):
+
+        # Initialize
+        groups = {}
+
+        # Move to output directory
+        os.chdir(out_dir)
+
+        # For each taxon...
+        for taxon in Jglobals.taxons:
+
+            # Load JSON files
+            pfam_json_file = "%s.pfam.json" % taxon
+            with open(pfam_json_file) as f:
+                pfams = json.load(f)
+            uniprot_json_file = "%s.uniprot.json" % taxon
+            with open(uniprot_json_file) as f:
+                uniaccs = json.load(f)
+
+            # For each uniacc...
+            for uniacc, values in pfams.items():
+
+                # Unwind
+                domains = "+".join([v[0] for v in values])
+                alignments = [v[1] for v in values]
+
+                # Skip if no DBD
+                if domains == "":
+                    continue
+
+                # Add alignments
+                groups.setdefault(domains, [])
+                groups[domains].append([uniaccs[uniacc][0], alignments, uniacc])
+
+        # Write
+        Jglobals.write(
+            groups_json_file,
+            json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))
+        )
+
+        # Change dir
+        os.chdir(cwd)
+
+def _get_clusters(cluster="tomtom", out_dir=out_dir, threads=1):
+
+
+    if cluster == "tomtom":
+        _get_tomtom_clusters(out_dir, threads)
+
+    else:
+        _get_rsat_clusters(out_dir)
+
+def _get_tomtom_clusters(out_dir=out_dir, threads=1):
 
     # Skip if Tomtom JSON file already exists
-    tomtom_json_file = os.path.join(out_dir, "clusters.json")
+    tomtom_json_file = os.path.join(out_dir, "clusters.tomtom.json")
     if not os.path.exists(tomtom_json_file):
 
         # Initialize
@@ -618,7 +681,7 @@ def _get_clusters(out_dir=out_dir, threads=1):
         pool.close()
         pool.join()
 
-        # Move to taxon directory
+        # Move to output directory
         os.chdir(out_dir)
 
         # For each JASPAR profile...
@@ -659,31 +722,6 @@ def _get_clusters(out_dir=out_dir, threads=1):
         # Change dir
         os.chdir(cwd)
 
-def _get_profiles_from_latest_version(jaspar_profiles):
-
-    # Initialize
-    done = set()
-    latest_version_profiles = []
-
-    # For each profile...
-    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
-
-        # Initialize
-        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
-        matrix_id = m.group(1)
-
-        # Skip if done
-        if matrix_id in done:
-            continue
-
-        # i.e. a profile from the latest version
-        latest_version_profiles.append(str(jaspar_profile))
-
-        # Done
-        done.add(matrix_id)
-
-    return(latest_version_profiles)
-
 def Tomtom(meme_file, database, out_dir=out_dir):
     """
     From http://meme-suite.org/doc/tomtom.html;
@@ -712,6 +750,89 @@ def Tomtom(meme_file, database, out_dir=out_dir):
         # Run Tomtom
         cmd = "tomtom -thresh 0.01 -evalue -o %s %s %s" % (output_dir, meme_file, database)
         process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def _get_rsat_clusters(out_dir=out_dir):
+
+    # Skip if RSAT JSON file already exists
+    rsat_json_file = os.path.join(out_dir, "clusters.rsat.json")
+    if not os.path.exists(rsat_json_file):
+
+        # Initialize
+        rsat = {}
+
+        # Get all JASPAR profiles
+        jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.transfac"))
+
+        # Move to output directory
+        os.chdir(out_dir)
+
+        # Skip if RSAT directory already exists
+        rsat_dir = "rsat"
+        if not os.path.exists(rsat_dir):
+
+            # Initialize
+            profiles = {}
+
+            # Create RSAT directory
+            if not os.path.exists(rsat_dir):
+                os.makedirs(rsat_dir)
+
+            # For each profile...
+            for jaspar_profile in jaspar_profiles:
+                print(jaspar_profile)
+
+                # Add profile
+                m = re.search("(MA\d{4}.\d).transfac$", jaspar_profile)
+                profiles.setdefault(m.group(1), jaspar_profile)
+
+            # Load JSON files
+            groups_json_file = "groups.json"
+            with open(groups_json_file) as f:
+                groups = json.load(f)
+
+            # For each group...
+            for group in groups:
+
+                # Initialize
+                rsat_db = os.path.join(rsat_dir, "%s.transfac" % group)
+
+                # For each matrix IDs, alignments, uniacc...
+                for matrix_ids, alignments, uniacc in groups[group]:
+
+                    # For each matrix ID...
+                    for matrix_id in matrix_ids:
+
+                        # Skip matrix ID
+                        if matrix_id not in profiles:
+                            continue
+
+                        # Cat to database
+                        os.system("cat %s >> %s" % (profiles[matrix_id], rsat_db))
+
+def _get_profiles_from_latest_version(jaspar_profiles):
+
+    # Initialize
+    done = set()
+    latest_version_profiles = []
+
+    # For each profile...
+    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
+
+        # Initialize
+        m = re.search("(MA\d{4}).\d.(meme|transfac)$", str(jaspar_profile))
+        matrix_id = m.group(1)
+
+        # Skip if done
+        if matrix_id in done:
+            continue
+
+        # i.e. a profile from the latest version
+        latest_version_profiles.append(str(jaspar_profile))
+
+        # Done
+        done.add(matrix_id)
+
+    return(latest_version_profiles)
 
 #-------------#
 # Main        #
