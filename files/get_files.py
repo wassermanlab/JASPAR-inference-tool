@@ -241,22 +241,19 @@ def _download_JASPAR_profiles(taxon, out_dir=out_dir):
         # Move to taxon directory
         os.chdir(taxon_dir)
 
-        # For each profile format...
-        for profile_fmt in ["meme", "transfac"]:
+        # Initialize
+        jaspar_file = "JASPAR2018_CORE_%s_redundant_pfms_meme.zip" % taxon
+        if "hfaistos.uio.no:8002" in jaspar_url:
+            jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
 
-            # Initialize
-            jaspar_file = "JASPAR2018_CORE_%s_redundant_pfms_%s.zip" % (taxon, profile_fmt)
-            if "hfaistos.uio.no:8002" in jaspar_url:
-                jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_%s.zip" % (taxon, profile_fmt)
+        # Get JASPAR profiles
+        os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download", "CORE", jaspar_file))
 
-            # Get JASPAR profiles
-            os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download", "CORE", jaspar_file))
+        # Unzip
+        os.system("unzip -qq %s" % jaspar_file)
 
-            # Unzip
-            os.system("unzip -qq %s" % jaspar_file)
-
-            # Remove zip files
-            os.remove("%s" % jaspar_file)
+        # Remove zip files
+        os.remove("%s" % jaspar_file)
 
         # Change dir
         os.chdir(cwd)
@@ -390,8 +387,6 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
 
         # For each UniProt Accession...
         for uniacc in uniaccs:
-
-            print(uniacc)
 
             # Fix faulty sequences
             if uniacc in faulty_sequences:
@@ -761,7 +756,7 @@ def _get_rsat_clusters(out_dir=out_dir):
         rsat = {}
 
         # Get all JASPAR profiles
-        jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.transfac"))
+        jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
 
         # Move to output directory
         os.chdir(out_dir)
@@ -779,10 +774,9 @@ def _get_rsat_clusters(out_dir=out_dir):
 
             # For each profile...
             for jaspar_profile in jaspar_profiles:
-                print(jaspar_profile)
 
                 # Add profile
-                m = re.search("(MA\d{4}.\d).transfac$", jaspar_profile)
+                m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
                 profiles.setdefault(m.group(1), jaspar_profile)
 
             # Load JSON files
@@ -794,7 +788,7 @@ def _get_rsat_clusters(out_dir=out_dir):
             for group in groups:
 
                 # Initialize
-                rsat_db = os.path.join(rsat_dir, "%s.transfac" % group)
+                rsat_db = os.path.join(rsat_dir, "%s.meme" % group)
 
                 # For each matrix IDs, alignments, uniacc...
                 for matrix_ids, alignments, uniacc in groups[group]:
@@ -819,7 +813,7 @@ def _get_profiles_from_latest_version(jaspar_profiles):
     for jaspar_profile in sorted(jaspar_profiles, reverse=True):
 
         # Initialize
-        m = re.search("(MA\d{4}).\d.(meme|transfac)$", str(jaspar_profile))
+        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
         matrix_id = m.group(1)
 
         # Skip if done
