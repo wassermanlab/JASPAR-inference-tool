@@ -22,9 +22,10 @@ from tqdm import tqdm
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
+root_dir = os.path.join(out_dir, os.pardir)
 
 # Append JASPAR-profile-inference to path
-sys.path.append(os.path.join(out_dir, os.pardir))
+sys.path.append(root_dir)
 
 # Import globals
 from __init__ import Jglobals
@@ -104,8 +105,8 @@ def get_pfam(cluster="tomtom", devel=False, out_dir=out_dir, threads=1):
     _group_by_DBD_composition(out_dir)
 
     # Get clusters
-    ## Now: from Tomtom
-    ## In the future: from matrix-clustering
+    ## Now, from Tomtom...
+    ## ... in the near future, from matrix-clustering
     _get_clusters(cluster, out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
@@ -639,7 +640,6 @@ def _group_by_DBD_composition(out_dir=out_dir):
 
 def _get_clusters(cluster="tomtom", out_dir=out_dir, threads=1):
 
-
     if cluster == "tomtom":
         _get_tomtom_clusters(out_dir, threads)
 
@@ -779,7 +779,7 @@ def _get_rsat_clusters(out_dir=out_dir):
                 m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
                 profiles.setdefault(m.group(1), jaspar_profile)
 
-            # Load JSON files
+            # Load JSON file
             groups_json_file = "groups.json"
             with open(groups_json_file) as f:
                 groups = json.load(f)
