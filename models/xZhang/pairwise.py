@@ -105,6 +105,11 @@ def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression=
                     Ys.append(y)
                     uniaccs.append("{}*{}".format(values[i][2], values[j][2]))
 
+            # Skip if only one class in the data
+            Ys_as_ints = list(map(int, Ys))
+            if sum(Ys_as_ints) == 0 or sum(Ys_as_ints) == len(Ys):
+                continue
+
             # Add to pairwise
             pairwise.setdefault(key, [Xss, Ys, uniaccs])
 
