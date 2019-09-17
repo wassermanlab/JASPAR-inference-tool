@@ -47,7 +47,7 @@ def main():
 def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression="id"):
 
     # Skip if pairwise JSON file already exists
-    pairwise_json_file = os.path.join(out_dir, "pairwise.json")
+    pairwise_json_file = os.path.join(out_dir, "pairwise.%s+%s.json" % (cluster, regression))
     if not os.path.exists(pairwise_json_file):
 
         # Initialize
@@ -64,22 +64,15 @@ def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression=
         # Get domains
         groups = _get_groups(files_dir)
 
-        # # For each key, values...
+        # For each key, values...
         for key, values in groups.items():
-            # Skip if not enough values:
             # From PMID:1692833;
-            # DNA-binding domains vary in length. Among the shortest the AT hook,
-            # which recognizes sequences in the minor groove utilizing fewer than
-            # a dozen amino acids.
-            # 
-            # 10 values gives you a training set of 45 
-            # >>> from itertools import combinations
-            # >>> digits = "".join([str(i) for i in range(10)])
-            # >>> len(list(combinations(digits, 2)))
-            # 45
+            # DNA-binding domains vary in length. Among the shortest the AT
+            # hook, which recognizes sequences in the minor groove utilizing
+            # fewer than a dozen amino acids.
 
             # Initialize
-            Xs = []
+            Xss = []
             Ys = []
             uniaccs = []
 
@@ -90,11 +83,11 @@ def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression=
             # For each TF...
             for i in range(len(values) - 1):
 
-                # For next TF...
+                # For each next TF...
                 for j in range(i + 1, len(values)):
 
-                    # clean lists
-                    x = []
+                    # Initialize
+                    Xs = []
 
                     # Inner most loop for examining EACH different component...
                     for k in range(len(values[i][1])):
@@ -102,21 +95,18 @@ def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression=
                         # Get X
                         seq1 = _removeLowercase(values[i][1][k])
                         seq2 = _removeLowercase(values[j][1][k])
-                        x.extend(_fetchXs(seq1, seq2, regression))
+                        Xs.extend(_fetchXs(seq1, seq2, regression))
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
 
-                    # Get uniacc
-                    uniacc = "{}*{}".format(values[i][2], values[j][2])
-
-                    # Append Xs, Ys, uniaccs
-                    Xs.append(x)
+                    # Append Xs, y, uniaccs
+                    Xss.append(Xs)
                     Ys.append(y)
-                    uniaccs.append(uniacc)
+                    uniaccs.append("{}*{}".format(values[i][2], values[j][2]))
 
             # Add to pairwise
-            pairwise.setdefault(key, [Xs, Ys, uniaccs])
+            pairwise.setdefault(key, [Xss, Ys, uniaccs])
 
         # Write
         Jglobals.write(
@@ -142,13 +132,13 @@ def _get_groups(files_dir=files_dir):
 
     return(groups)
 
-def _removeLowercase(strings):
+def _removeLowercase(s):
 
-    return(strings.translate(str.maketrans("", "", string.ascii_lowercase)))
+    return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
 
 def _fetchXs(seq1 , seq2, regression="id"):
     """
-    Called for each comparison to compare the string.
+    Called for each comparison to compare the strings.
     """
 
     # Fill Xs with zeroes
