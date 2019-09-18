@@ -14,9 +14,8 @@ import pickle
 import re
 import seaborn as sns
 import sklearn
-from sklearn import linear_model
 from sklearn.linear_model import LogisticRegressionCV, RidgeCV
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
 import sys
 
 # Defaults
@@ -119,13 +118,28 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
             logReg = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=1000)
             logRegModel = logReg.fit(Xs, Ys)
             predictions = logRegModel.predict(Xs)
-            acc = accuracy_score(predictions, Ys, normalize=True)
-            results[domains].append((acc, logRegModel.coef_.tolist()[0]))
+            ##
+            ## From sklearn.metrics.confusion_matrix:
+            ##
+            ## The count of true negatives is [0][0], false negatives is [1][0],
+            ## true positives is [1][1] and false positives is [0][1].
+            ##
+            matrix = confusion_matrix(Ys, predictions)
+            tn = float(matrix[0][0])
+            fn = float(matrix[1][0])
+            tp = float(matrix[1][1])
+            fp = float(matrix[0][1])
+            accuracy =  (tp + tn) / (tp + tn + fp + fn)
+            precission = tp / (tp + fp)
+            recall = tp / (tp + fn)
+            results[domains].append(([accuracy, precission, recall], logRegModel.coef_.tolist()[0]))
             models[domains].append(logRegModel)
 
             # Verbose mode
             if verbose:
-                Jglobals.write(None, "\t*** Accuracy (LogisticRegressionCV): %s" % acc)
+                Jglobals.write(None, "\t*** Accuracy (LogisticRegressionCV): %s" % accuracy)
+                Jglobals.write(None, "\t*** Precission (LogisticRegressionCV): %s " % precission)
+                Jglobals.write(None, "\t*** Recall (LogisticRegressionCV): %s" % recall)
 
             # 2) Ridge regression (i.e. linear)
             # alphas = [0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
@@ -133,13 +147,22 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
             linReg = RidgeCV(alphas=alphas, cv=myCViterator)
             linRegModel = linReg.fit(Xs, Ys)
             predictions = linRegModel.predict(Xs)
-            acc = accuracy_score(predictions >= 0.5, Ys, normalize=True)
-            results[domains].append((acc, logRegModel.coef_.tolist()[0]))
+            matrix = confusion_matrix(Ys, predictions >= 0.5)
+            tn = float(matrix[0][0])
+            fn = float(matrix[1][0])
+            tp = float(matrix[1][1])
+            fp = float(matrix[0][1])
+            accuracy =  (tp + tn) / (tp + tn + fp + fn)
+            precission = tp / (tp + fp)
+            recall = tp / (tp + fn)
+            results[domains].append(([accuracy, precission, recall], logRegModel.coef_.tolist()[0]))
             models[domains].append(logRegModel)
 
             # Verbose mode
             if verbose:
-                Jglobals.write(None, "\t*** Accuracy (RidgeCV): %s" % acc)
+                Jglobals.write(None, "\t*** Accuracy (RidgeCV): %s" % accuracy)
+                Jglobals.write(None, "\t*** Precission (RidgeCV): %s " % precission)
+                Jglobals.write(None, "\t*** Recall (RidgeCV): %s" % recall)
 
         # Write JSON
         Jglobals.write(
