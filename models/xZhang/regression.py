@@ -15,7 +15,7 @@ import re
 import seaborn as sns
 import sklearn
 from sklearn.linear_model import LogisticRegressionCV, RidgeCV
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import average_precision_score, confusion_matrix
 import sys
 
 # Defaults
@@ -58,49 +58,35 @@ def main():
     # Make Pfam files
     train_models(os.path.abspath(args.j), os.path.abspath(args.o), args.verbose)
 
-def train_models(json_file, out_dir=out_dir, verbose=False):
-
-    # Initialize
-    models = {"Regressions": ["Logistic", "Ridge"]}
-    results = {"Regressions": ["Logistic", "Ridge"]}
-
-    # Get cluster and regression
-    # m = re.search("pairwise.(rsat|tomtom)\+(id|sim).json", json_file)
-    m = re.search("pairwise.(id|sim).json", json_file)
-    # cluster = m.group(1)
-    # regression = m.group(2)
-    regression = m.group(1)
+def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
     # Skip if JSON/pickle files already exists
-    # results_json_file = os.path.join(out_dir, "results.%s+%s.json" % (cluster, regression))
-    # models_pickle_file = os.path.join(out_dir, "models.%s+%s.pickle" % (cluster, regression))
-    results_json_file = os.path.join(out_dir, "results.%s.json" % regression)
-    models_pickle_file = os.path.join(out_dir, "models.%s.pickle" % regression)
-    if not os.path.exists(results_json_file) or not os.path.exists(models_pickle_file):
+    json_file = os.path.join(out_dir, "results.json")
+    pickle_file = os.path.join(out_dir, "models.pickle")
+    if not os.path.exists(json_file) or not os.path.exists(pickle_file):
+
+        # Initialize
+        models = {}
+        results = {}
 
         # Load JSON file
-        with open(json_file) as f:
+        with open(pairwise_file) as f:
             pairwise = json.load(f)
 
         # For each DBD composition...
         for domains, values in pairwise.items():
 
-            # Verbose mode
-            if verbose:
-                Jglobals.write(None, "\nRegressing %s..." % domains)
-
             # Initialize
-            models.setdefault(domains, [])
-            results.setdefault(domains, [])
-            Xs = np.asarray(values[0])
+            Xs = {}
+            models.setdefault(domains, {})
+            results.setdefault(domains, {})
             Ys = np.array(values[1])
+            Ys_int = Ys * 1
             tfPairs = values[2]
 
             # Verbose mode
             if verbose:
-                Jglobals.write(None, "\t*** Xs: %s / %s" % Xs.shape)
-                Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
-                Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
+                Jglobals.write(None, "\nRegressing %s..." % domains)
 
             # Leave one TF out:
             # 1. Get the TF names into a dict
@@ -118,73 +104,60 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
             # Get iterator for cross validation
             myCViterator = _leaveOneTFOut(tfIdxs, len(tfPairs))
 
-            # 1) Logistic regression
-            logReg = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=1000)
-            logRegModel = logReg.fit(Xs, Ys)
-            predictions = logRegModel.predict(Xs)
-            ##
-            ## From sklearn.metrics.confusion_matrix:
-            ##
-            ## The count of true negatives is [0][0], false negatives is [1][0],
-            ## true positives is [1][1] and false positives is [0][1].
-            ##
-            matrix = confusion_matrix(Ys, predictions)
-            tn = float(matrix[0][0])
-            fn = float(matrix[1][0])
-            tp = float(matrix[1][1])
-            fp = float(matrix[0][1])
-            accuracy = 0
-            if (tp + tn + fp + fn) > 0:
-                # Fix zeroDivisionError
-                accuracy =  (tp + tn) / (tp + tn + fp + fn)
-            precission = 0
-            if (tp + fp) > 0:
-                # Fix zeroDivisionError
-                precission = tp / (tp + fp)
-            recall = 0
-            if (tp + fn) > 0:
-                # Fix zeroDivisionError
-                recall = tp / (tp + fn)
-            results[domains].append(([accuracy, precission, recall], logRegModel.coef_.tolist()[0]))
-            models[domains].append(logRegModel)
+            # For each sequence similarity representation...
+            for similarity in ["identity", "blosum62"]:
+
+                # Add Xs
+                Xs.setdefault(similarity, np.asarray(values[0][similarity]))
+
+                # Verbose mode
+                if verbose:
+                    a, b = Xs[similarity].shape
+                    Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
 
             # Verbose mode
             if verbose:
-                Jglobals.write(None, "\t*** Accuracy (LogisticRegressionCV): %s" % accuracy)
-                Jglobals.write(None, "\t*** Precission (LogisticRegressionCV): %s " % precission)
-                Jglobals.write(None, "\t*** Recall (LogisticRegressionCV): %s" % recall)
+                Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
+                Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
 
-            # 2) Ridge regression (i.e. linear)
-            # alphas = [0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
-            alphas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0] # i.e. reg. coeff. from Andrew Ng
-            linReg = RidgeCV(alphas=alphas, cv=myCViterator)
-            linRegModel = linReg.fit(Xs, Ys)
-            predictions = linRegModel.predict(Xs)
-            matrix = confusion_matrix(Ys, predictions >= 0.5)
-            tn = float(matrix[0][0])
-            fn = float(matrix[1][0])
-            tp = float(matrix[1][1])
-            fp = float(matrix[0][1])
-            accuracy = 0
-            if (tp + tn + fp + fn) > 0:
-                # Fix zeroDivisionError
-                accuracy =  (tp + tn) / (tp + tn + fp + fn)
-            precission = 0
-            if (tp + fp) > 0:
-                # Fix zeroDivisionError
-                precission = tp / (tp + fp)
-            recall = 0
-            if (tp + fn) > 0:
-                # Fix zeroDivisionError
-                recall = tp / (tp + fn)
-            results[domains].append(([accuracy, precission, recall], logRegModel.coef_.tolist()[0]))
-            models[domains].append(logRegModel)
+            # For each regression approach...
+            for regression in ["linear", "logistic"]:
 
-            # Verbose mode
-            if verbose:
-                Jglobals.write(None, "\t*** Accuracy (RidgeCV): %s" % accuracy)
-                Jglobals.write(None, "\t*** Precission (RidgeCV): %s " % precission)
-                Jglobals.write(None, "\t*** Recall (RidgeCV): %s" % recall)
+                # If linear regression...
+                if regression == "linear":
+                    alphas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0] # i.e. reg. coeff. from Andrew Ng
+                    regModel = RidgeCV(alphas=alphas, cv=myCViterator)
+
+                # ... Else...
+                else:
+                    regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=1000)
+
+                # For each sequence similarity representation...
+                for similarity in ["identity", "blosum62"]:          
+
+                    # Fit model...
+                    fitRegModel = regModel.fit(Xs[similarity], Ys_int)
+
+                    # If linear regression...
+                    if regression == "linear":
+                        predictions = fitRegModel.predict(Xs[similarity])
+
+                    # ... Else...
+                    else:
+                        predictions = fitRegModel.predict_proba(Xs[similarity])[:,1]
+
+                    # i.e. area under the precision-recall curve
+                    avg_precision = average_precision_score(Ys_int, predictions)
+                    
+                    # Verbose mode
+                    if verbose:
+                        Jglobals.write(None, "\t*** Avg. Precision (%s + %s): %s" % (regression, similarity, avg_precision))
+
+                    # Add fitRegModel
+                    models[domains].setdefault((regression, similarity), fitRegModel)
+                    results[domains].setdefault((regression, similarity), (avg_precision, fitRegModel.coef_.tolist()[0]))
+
+            exit(0)
 
         # Write JSON
         Jglobals.write(

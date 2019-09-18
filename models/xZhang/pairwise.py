@@ -29,10 +29,8 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument("-c", choices=["rsat", "tomtom"], default="tomtom", help="cluster profiles using \"rsat\" matrix-clustering or \"tomtom\" (i.e. default)")
     parser.add_argument("-f", default=files_dir, help="files directory (from get_files.py; default=../files/)", metavar="DIR")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
-    parser.add_argument("-r", choices=["id", "sim"], default="id", help="regress on sequence identity (i.e. \"id\"; default) or similarity (i.e. \"sim\")")
 
     return(parser.parse_args())
 
@@ -42,15 +40,12 @@ def main():
     args = parse_args()
 
     # Pairwise
-    # pairwise(args.c, os.path.abspath(args.f), os.path.abspath(args.o), args.r)
-    pairwise(os.path.abspath(args.f), os.path.abspath(args.o), args.r)
+    pairwise(os.path.abspath(args.f), os.path.abspath(args.o))
 
-# def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression="id"):
-def pairwise(files_dir=files_dir, out_dir=out_dir, regression="id"):
+def pairwise(files_dir=files_dir, out_dir=out_dir):
 
     # Skip if pairwise JSON file already exists
-    # pairwise_json_file = os.path.join(out_dir, "pairwise.%s+%s.json" % (cluster, regression))
-    pairwise_json_file = os.path.join(out_dir, "pairwise.%s.json" % regression)
+    pairwise_json_file = os.path.join(out_dir, "pairwise.json")
     if not os.path.exists(pairwise_json_file):
 
         # Initialize
@@ -62,10 +57,7 @@ def pairwise(files_dir=files_dir, out_dir=out_dir, regression="id"):
 
         # Get clusters
         global clusters
-        # clusters = _get_clusters(cluster, files_dir)
-        clusters_json_file = os.path.join(files_dir, "clusters.json")
-        with open(clusters_json_file) as f:
-            clusters = json.load(f)
+        clusters = _get_clusters(files_dir)
 
         # Get domains
         groups = _get_groups(files_dir)
@@ -78,7 +70,7 @@ def pairwise(files_dir=files_dir, out_dir=out_dir, regression="id"):
             # fewer than a dozen amino acids.
 
             # Initialize
-            Xss = []
+            Xss = {}
             Ys = []
             uniaccs = []
 
@@ -92,28 +84,33 @@ def pairwise(files_dir=files_dir, out_dir=out_dir, regression="id"):
                 # For each next TF...
                 for j in range(i + 1, len(values)):
 
-                    # Initialize
-                    Xs = []
+                    # For each sequence similarity representation...
+                    for similarity in ["identity", "blosum62"]:
 
-                    # Inner most loop for examining EACH different component...
-                    for k in range(len(values[i][1])):
+                        # Initialize
+                        Xs = []
 
-                        # Get X
-                        seq1 = _removeLowercase(values[i][1][k])
-                        seq2 = _removeLowercase(values[j][1][k])
-                        Xs.extend(_fetchXs(seq1, seq2, regression))
+                        # Inner most loop for examining EACH different component...
+                        for k in range(len(values[i][1])):
+
+                            # Get X
+                            seq1 = _removeLowercase(values[i][1][k])
+                            seq2 = _removeLowercase(values[j][1][k])
+                            Xs.extend(_fetchXs(seq1, seq2, similarity))
+
+                        # Append Xs
+                        Xss.setdefault(similarity, [])
+                        Xss[similarity].append(Xs)
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
 
-                    # Append Xs, y, uniaccs
-                    Xss.append(Xs)
+                    # Append y, uniaccs
                     Ys.append(y)
                     uniaccs.append("{}*{}".format(values[i][2], values[j][2]))
 
             # Skip if only one class in the data
-            Ys_as_ints = list(map(int, Ys))
-            if sum(Ys_as_ints) == 0 or sum(Ys_as_ints) == len(Ys):
+            if len(set(Ys)) == 1:
                 continue
 
             # Add to pairwise
@@ -125,14 +122,14 @@ def pairwise(files_dir=files_dir, out_dir=out_dir, regression="id"):
             json.dumps(pairwise, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
-# def _get_clusters(cluster="tomtom", files_dir=files_dir):
+def _get_clusters(files_dir=files_dir):
 
-#     # Load JSON file
-#     clusters_json_file = os.path.join(files_dir, "clusters.%s.json" % cluster)
-#     with open(clusters_json_file) as f:
-#         clusters = json.load(f)
+    # Load JSON file
+    clusters_json_file = os.path.join(files_dir, "clusters.json")
+    with open(clusters_json_file) as f:
+        clusters = json.load(f)
 
-#     return(clusters)
+    return(clusters)
 
 def _get_groups(files_dir=files_dir):
 
@@ -147,7 +144,7 @@ def _removeLowercase(s):
 
     return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
 
-def _fetchXs(seq1 , seq2, regression="id"):
+def _fetchXs(seq1 , seq2, similarity="identity"):
     """
     Called for each comparison to compare the strings.
     """
@@ -157,11 +154,15 @@ def _fetchXs(seq1 , seq2, regression="id"):
 
     # Strings should have same length
     if len(seq1) == len(seq2):
+
         for n in range(len(seq1)):
-            if regression == "id":
+
+            if similarity == "identity":
                 scores[n] = _IDscoring(seq1[n], seq2[n])
-            else:
+
+            elif similarity == "blosum62":
                 scores[n] = _BLOSUMscoring(seq1[n], seq2[n])
+
     else:
         # there is something wrong
         print("Strings have different length!\n\tA: %s\n\tB: %s" % (seq1, seq2))
