@@ -137,7 +137,7 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
             if (tp + fp) > 0:
                 # Fix zeroDivisionError
                 precission = tp / (tp + fp)
-            recall = 0:
+            recall = 0
             if (tp + fn) > 0:
                 # Fix zeroDivisionError
                 recall = tp / (tp + fn)
@@ -169,7 +169,7 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
             if (tp + fp) > 0:
                 # Fix zeroDivisionError
                 precission = tp / (tp + fp)
-            recall = 0:
+            recall = 0
             if (tp + fn) > 0:
                 # Fix zeroDivisionError
                 recall = tp / (tp + fn)
