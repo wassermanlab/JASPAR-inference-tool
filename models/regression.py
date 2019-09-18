@@ -156,8 +156,6 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     models[domains].setdefault((regression, similarity), fitRegModel)
                     results[domains].setdefault((regression, similarity), (avg_precision, fitRegModel.coef_.tolist()[0]))
 
-            exit(0)
-
         # Write JSON
         Jglobals.write(
             results_json_file,
