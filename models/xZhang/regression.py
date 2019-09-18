@@ -129,9 +129,18 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
             fn = float(matrix[1][0])
             tp = float(matrix[1][1])
             fp = float(matrix[0][1])
-            accuracy =  (tp + tn) / (tp + tn + fp + fn)
-            precission = tp / (tp + fp)
-            recall = tp / (tp + fn)
+            accuracy = 0
+            if (tp + tn + fp + fn) > 0:
+                # Fix zeroDivisionError
+                accuracy =  (tp + tn) / (tp + tn + fp + fn)
+            precission = 0
+            if (tp + fp) > 0:
+                # Fix zeroDivisionError
+                precission = tp / (tp + fp)
+            recall = 0:
+            if (tp + fn) > 0:
+                # Fix zeroDivisionError
+                recall = tp / (tp + fn)
             results[domains].append(([accuracy, precission, recall], logRegModel.coef_.tolist()[0]))
             models[domains].append(logRegModel)
 
@@ -152,9 +161,18 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
             fn = float(matrix[1][0])
             tp = float(matrix[1][1])
             fp = float(matrix[0][1])
-            accuracy =  (tp + tn) / (tp + tn + fp + fn)
-            precission = tp / (tp + fp)
-            recall = tp / (tp + fn)
+            accuracy = 0
+            if (tp + tn + fp + fn) > 0:
+                # Fix zeroDivisionError
+                accuracy =  (tp + tn) / (tp + tn + fp + fn)
+            precission = 0
+            if (tp + fp) > 0:
+                # Fix zeroDivisionError
+                precission = tp / (tp + fp)
+            recall = 0:
+            if (tp + fn) > 0:
+                # Fix zeroDivisionError
+                recall = tp / (tp + fn)
             results[domains].append(([accuracy, precission, recall], logRegModel.coef_.tolist()[0]))
             models[domains].append(logRegModel)
 
