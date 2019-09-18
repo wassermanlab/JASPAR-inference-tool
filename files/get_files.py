@@ -41,7 +41,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-c", choices=["rsat", "tomtom"], default="tomtom", help="cluster profiles using \"rsat\" matrix-clustering or \"tomtom\" (i.e. default)")
+    # parser.add_argument("-c", choices=["rsat", "tomtom"], default="tomtom", help="cluster profiles using \"rsat\" matrix-clustering or \"tomtom\" (i.e. default)")
     parser.add_argument("-d", "--devel", action="store_true", help="development mode (uses hfaistos; default = False)")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
     parser.add_argument("--threads", default=1, type=int, help="threads to use (default = 1)", metavar="INT")
@@ -55,9 +55,11 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    get_pfam(args.c, args.devel, os.path.abspath(args.o), args.threads)
+    # get_pfam(args.c, args.devel, os.path.abspath(args.o), args.threads)
+    get_pfam(args.devel, os.path.abspath(args.o), args.threads)
 
-def get_pfam(cluster="tomtom", devel=False, out_dir=out_dir, threads=1):
+# def get_pfam(cluster="tomtom", devel=False, out_dir=out_dir, threads=1):
+def get_pfam(devel=False, out_dir=out_dir, threads=1):
 
     # Globals
     global client
@@ -105,9 +107,10 @@ def get_pfam(cluster="tomtom", devel=False, out_dir=out_dir, threads=1):
     _group_by_DBD_composition(out_dir)
 
     # Get clusters
-    ## Now, from Tomtom...
-    ## ... in the near future, from matrix-clustering
-    _get_clusters(cluster, out_dir, threads)
+    _get_tomtom_clusters(out_dir, threads)
+    # ## Now, from Tomtom...
+    # ## ... in the near future, from matrix-clustering
+    # _get_clusters(cluster, out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -638,19 +641,22 @@ def _group_by_DBD_composition(out_dir=out_dir):
         # Change dir
         os.chdir(cwd)
 
-def _get_clusters(cluster="tomtom", out_dir=out_dir, threads=1):
+# def _get_clusters(cluster="tomtom", out_dir=out_dir, threads=1):
 
-    if cluster == "tomtom":
-        _get_tomtom_clusters(out_dir, threads)
+#     if cluster == "tomtom":
+#         _get_tomtom_clusters(out_dir, threads)
 
-    else:
-        _get_rsat_clusters(out_dir)
+#     else:
+#         _get_rsat_clusters(out_dir)
 
 def _get_tomtom_clusters(out_dir=out_dir, threads=1):
 
-    # Skip if Tomtom JSON file already exists
-    tomtom_json_file = os.path.join(out_dir, "clusters.tomtom.json")
-    if not os.path.exists(tomtom_json_file):
+    # # Skip if Tomtom JSON file already exists
+    # tomtom_json_file = os.path.join(out_dir, "clusters.tomtom.json")
+    # Skip if clusters JSON file already exists
+    clusters_json_file = os.path.join(out_dir, "clusters.json")
+    # if not os.path.exists(tomtom_json_file):
+    if not os.path.exists(clusters_json_file):
 
         # Initialize
         tomtom = {}
@@ -710,7 +716,8 @@ def _get_tomtom_clusters(out_dir=out_dir, threads=1):
 
         # Write
         Jglobals.write(
-            tomtom_json_file,
+            # tomtom_json_file,
+            clusters_json_file,
             json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
@@ -746,62 +753,62 @@ def Tomtom(meme_file, database, out_dir=out_dir):
         cmd = "tomtom -thresh 0.01 -evalue -o %s %s %s" % (output_dir, meme_file, database)
         process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def _get_rsat_clusters(out_dir=out_dir):
+# def _get_rsat_clusters(out_dir=out_dir):
 
-    # Skip if RSAT JSON file already exists
-    rsat_json_file = os.path.join(out_dir, "clusters.rsat.json")
-    if not os.path.exists(rsat_json_file):
+#     # Skip if RSAT JSON file already exists
+#     rsat_json_file = os.path.join(out_dir, "clusters.rsat.json")
+#     if not os.path.exists(rsat_json_file):
 
-        # Initialize
-        rsat = {}
+#         # Initialize
+#         rsat = {}
 
-        # Get all JASPAR profiles
-        jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
+#         # Get all JASPAR profiles
+#         jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
 
-        # Move to output directory
-        os.chdir(out_dir)
+#         # Move to output directory
+#         os.chdir(out_dir)
 
-        # Skip if RSAT directory already exists
-        rsat_dir = "rsat"
-        if not os.path.exists(rsat_dir):
+#         # Skip if RSAT directory already exists
+#         rsat_dir = "rsat"
+#         if not os.path.exists(rsat_dir):
 
-            # Initialize
-            profiles = {}
+#             # Initialize
+#             profiles = {}
 
-            # Create RSAT directory
-            if not os.path.exists(rsat_dir):
-                os.makedirs(rsat_dir)
+#             # Create RSAT directory
+#             if not os.path.exists(rsat_dir):
+#                 os.makedirs(rsat_dir)
 
-            # For each profile...
-            for jaspar_profile in jaspar_profiles:
+#             # For each profile...
+#             for jaspar_profile in jaspar_profiles:
 
-                # Add profile
-                m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
-                profiles.setdefault(m.group(1), jaspar_profile)
+#                 # Add profile
+#                 m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
+#                 profiles.setdefault(m.group(1), jaspar_profile)
 
-            # Load JSON file
-            groups_json_file = "groups.json"
-            with open(groups_json_file) as f:
-                groups = json.load(f)
+#             # Load JSON file
+#             groups_json_file = "groups.json"
+#             with open(groups_json_file) as f:
+#                 groups = json.load(f)
 
-            # For each group...
-            for group in groups:
+#             # For each group...
+#             for group in groups:
 
-                # Initialize
-                rsat_db = os.path.join(rsat_dir, "%s.meme" % group)
+#                 # Initialize
+#                 rsat_db = os.path.join(rsat_dir, "%s.meme" % group)
 
-                # For each matrix IDs, alignments, uniacc...
-                for matrix_ids, alignments, uniacc in groups[group]:
+#                 # For each matrix IDs, alignments, uniacc...
+#                 for matrix_ids, alignments, uniacc in groups[group]:
 
-                    # For each matrix ID...
-                    for matrix_id in matrix_ids:
+#                     # For each matrix ID...
+#                     for matrix_id in matrix_ids:
 
-                        # Skip matrix ID
-                        if matrix_id not in profiles:
-                            continue
+#                         # Skip matrix ID
+#                         if matrix_id not in profiles:
+#                             continue
 
-                        # Cat to database
-                        os.system("cat %s >> %s" % (profiles[matrix_id], rsat_db))
+#                         # Cat to database
+#                         os.system("cat %s >> %s" % (profiles[matrix_id], rsat_db))
 
 def _get_profiles_from_latest_version(jaspar_profiles):
 

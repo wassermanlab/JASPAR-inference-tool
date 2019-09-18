@@ -29,10 +29,10 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-c", choices=["rsat", "tomtom"], default="tomtom", help="cluster profiles using \"rsat\" matrix-clustering or \"tomtom\" (i.e. default)")
+    # parser.add_argument("-c", choices=["rsat", "tomtom"], default="tomtom", help="cluster profiles using \"rsat\" matrix-clustering or \"tomtom\" (i.e. default)")
     parser.add_argument("-f", default=files_dir, help="files directory (from get_files.py; default=../files/)", metavar="DIR")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
-    parser.add_argument("-r", choices=["id", "sim"], default="id", help="logistic regression based on sequence identity (i.e. \"id\"; default) or similarity (i.e. \"sim\")")
+    parser.add_argument("-r", choices=["id", "sim"], default="id", help="regress on sequence identity (i.e. \"id\"; default) or similarity (i.e. \"sim\")")
 
     return(parser.parse_args())
 
@@ -42,12 +42,15 @@ def main():
     args = parse_args()
 
     # Pairwise
-    pairwise(args.c, os.path.abspath(args.f), os.path.abspath(args.o), args.r)
+    # pairwise(args.c, os.path.abspath(args.f), os.path.abspath(args.o), args.r)
+    pairwise(os.path.abspath(args.f), os.path.abspath(args.o), args.r)
 
-def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression="id"):
+# def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression="id"):
+def pairwise(files_dir=files_dir, out_dir=out_dir, regression="id"):
 
     # Skip if pairwise JSON file already exists
-    pairwise_json_file = os.path.join(out_dir, "pairwise.%s+%s.json" % (cluster, regression))
+    # pairwise_json_file = os.path.join(out_dir, "pairwise.%s+%s.json" % (cluster, regression))
+    pairwise_json_file = os.path.join(out_dir, "pairwise.%s.json" % regression)
     if not os.path.exists(pairwise_json_file):
 
         # Initialize
@@ -59,7 +62,10 @@ def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression=
 
         # Get clusters
         global clusters
-        clusters = _get_clusters(cluster, files_dir)
+        # clusters = _get_clusters(cluster, files_dir)
+        clusters_json_file = os.path.join(files_dir, "clusters.json")
+        with open(clusters_json_file) as f:
+            clusters = json.load(f)
 
         # Get domains
         groups = _get_groups(files_dir)
@@ -119,14 +125,14 @@ def pairwise(cluster="tomtom", files_dir=files_dir, out_dir=out_dir, regression=
             json.dumps(pairwise, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
-def _get_clusters(cluster="tomtom", files_dir=files_dir):
+# def _get_clusters(cluster="tomtom", files_dir=files_dir):
 
-    # Load JSON file
-    clusters_json_file = os.path.join(files_dir, "clusters.%s.json" % cluster)
-    with open(clusters_json_file) as f:
-        clusters = json.load(f)
+#     # Load JSON file
+#     clusters_json_file = os.path.join(files_dir, "clusters.%s.json" % cluster)
+#     with open(clusters_json_file) as f:
+#         clusters = json.load(f)
 
-    return(clusters)
+#     return(clusters)
 
 def _get_groups(files_dir=files_dir):
 
@@ -155,7 +161,7 @@ def _fetchXs(seq1 , seq2, regression="id"):
             if regression == "id":
                 scores[n] = _IDscoring(seq1[n], seq2[n])
             else:
-                scores[n] = _BLOSUMScoring(seq1[n], seq2[n])
+                scores[n] = _BLOSUMscoring(seq1[n], seq2[n])
     else:
         # there is something wrong
         print("Strings have different length!\n\tA: %s\n\tB: %s" % (seq1, seq2))

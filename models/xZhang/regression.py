@@ -65,13 +65,17 @@ def train_models(json_file, out_dir=out_dir, verbose=False):
     results = {"Regressions": ["Logistic", "Ridge"]}
 
     # Get cluster and regression
-    m = re.search("pairwise.(rsat|tomtom)\+(id|sim).json", json_file)
-    cluster = m.group(1)
-    regression = m.group(2)
+    # m = re.search("pairwise.(rsat|tomtom)\+(id|sim).json", json_file)
+    m = re.search("pairwise.(id|sim).json", json_file)
+    # cluster = m.group(1)
+    # regression = m.group(2)
+    regression = m.group(1)
 
     # Skip if JSON/pickle files already exists
-    results_json_file = os.path.join(out_dir, "results.%s+%s.json" % (cluster, regression))
-    models_pickle_file = os.path.join(out_dir, "models.%s+%s.pickle" % (cluster, regression))
+    # results_json_file = os.path.join(out_dir, "results.%s+%s.json" % (cluster, regression))
+    # models_pickle_file = os.path.join(out_dir, "models.%s+%s.pickle" % (cluster, regression))
+    results_json_file = os.path.join(out_dir, "results.%s.json" % regression)
+    models_pickle_file = os.path.join(out_dir, "models.%s.pickle" % regression)
     if not os.path.exists(results_json_file) or not os.path.exists(models_pickle_file):
 
         # Load JSON file
