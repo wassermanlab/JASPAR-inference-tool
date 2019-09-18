@@ -9,7 +9,7 @@ import sys
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
-root_dir = os.path.join(out_dir, os.pardir, os.pardir)
+root_dir = os.path.join(out_dir, os.pardir)
 files_dir = os.path.join(root_dir, "files")
 
 # Append JASPAR-profile-inference to path

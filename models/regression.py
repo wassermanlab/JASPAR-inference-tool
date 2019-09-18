@@ -6,26 +6,25 @@
 
 import argparse
 import json
-import matplotlib.pyplot as plt 
 import numpy as np
 import os
-import pandas as pd
 import pickle
 import re
-import seaborn as sns
-import sklearn
 from sklearn.linear_model import LogisticRegressionCV, RidgeCV
-from sklearn.metrics import average_precision_score, confusion_matrix
+from sklearn.metrics import average_precision_score
 import sys
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
-root_dir = os.path.join(out_dir, os.pardir, os.pardir)
+root_dir = os.path.join(out_dir, os.pardir)
 
-# Defaults for plotting
-plt.rc("font", size=14)
-sns.set(style="white")
-sns.set(style="whitegrid",color_codes=True)
+# # Defaults for plotting
+# import matplotlib.pyplot as plt 
+# import pandas as pd
+# import seaborn as sns
+# plt.rc("font", size=14)
+# sns.set(style="white")
+# sns.set(style="whitegrid",color_codes=True)
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
