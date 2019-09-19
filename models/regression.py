@@ -3,6 +3,10 @@
 # Reference:
 # https://towardsdatascience.com/
 # building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
+#
+# Notes:
+# For similarity representation "%ID", we don't really apply a regression.
+# Instead, we set a threshold on the Y at a precision >= 75%.
 
 import argparse
 import json
@@ -11,20 +15,12 @@ import os
 import pickle
 import re
 from sklearn.linear_model import LogisticRegressionCV, RidgeCV
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import precision_recall_curve
 import sys
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.join(out_dir, os.pardir)
-
-# # Defaults for plotting
-# import matplotlib.pyplot as plt 
-# import pandas as pd
-# import seaborn as sns
-# plt.rc("font", size=14)
-# sns.set(style="white")
-# sns.set(style="whitegrid",color_codes=True)
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
@@ -65,8 +61,24 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
     if not os.path.exists(json_file) or not os.path.exists(pickle_file):
 
         # Initialize
-        models = {}
-        results = {}
+        models = {
+            "Keys": "DBD composition",
+            "Values": {
+                (
+                    "regression approach",
+                    "similarity representation"
+                ) : ("Y at 75% precision", "model")
+            }
+        }
+        results = {
+            "Keys": "DBD composition",
+            "Values": {
+                (
+                    "regression approach",
+                    "similarity representation"
+                ) : (["precisions"], ["recalls"], ["Ys"], ["weights"])
+            }
+        }
 
         # Load JSON file
         with open(pairwise_file) as f:
@@ -116,7 +128,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
             # Verbose mode
             if verbose:
-                Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
+                Jglobals.write(None, "\t*** Ys: %s" % Ys_int.shape)
                 Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
 
             # For each regression approach...
@@ -132,29 +144,41 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=1000)
 
                 # For each sequence similarity representation...
-                for similarity in ["identity", "blosum62"]:          
+                for similarity in ["identity", "blosum62", "%ID"]:
+
+                    # Initialize
+                    if similarity == "%ID":
+                        if regression == "logistic":
+                            continue
+                        myXs = []
+                        for pairwise in Xs["identity"]:
+                            myXs.append([float(sum(pairwise)) * 100 / len(pairwise)])
+                        myXs = np.array(myXs)
+                    else:
+                        myXs = Xs[similarity]
 
                     # Fit model...
-                    fitRegModel = regModel.fit(Xs[similarity], Ys_int)
+                    fitRegModel = regModel.fit(myXs, Ys_int)
 
                     # If linear regression...
                     if regression == "linear":
-                        predictions = fitRegModel.predict(Xs[similarity])
+                        predictions = fitRegModel.predict(myXs)
 
                     # ... Else...
                     else:
-                        predictions = fitRegModel.predict_proba(Xs[similarity])[:,1]
+                        predictions = fitRegModel.predict_proba(myXs)[:,1]
 
-                    # i.e. area under the precision-recall curve
-                    avg_precision = average_precision_score(Ys_int, predictions)
-                    
+                    # Get precision-recall curve
+                    Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
+                    recall, y = _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75)
+
                     # Verbose mode
                     if verbose:
-                        Jglobals.write(None, "\t*** Avg. Precision (%s + %s): %s" % (regression, similarity, avg_precision))
+                        Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
 
                     # Add fitRegModel
-                    models[domains].setdefault((regression, similarity), fitRegModel)
-                    results[domains].setdefault((regression, similarity), (avg_precision, fitRegModel.coef_.tolist()[0]))
+                    models[domains].setdefault((regression, similarity), (y, fitRegModel))
+                    results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, fitRegModel.coef_.tolist()[0]))
 
         # Write JSON
         Jglobals.write(
@@ -166,7 +190,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         with open(models_pickle_file, "wb") as f:
             pickle.dump(models, f)
 
-def _leaveOneTFOut(tfIdxs, l): # dict
+def _leaveOneTFOut(tfIdxs, l):
 
     myCViterator = []
 
@@ -180,6 +204,19 @@ def _leaveOneTFOut(tfIdxs, l): # dict
         myCViterator.append((trainIdx, testIdx))
 
     return(myCViterator)
+
+def _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75):
+
+    # For each y...
+    for i in range(len(Ys)):
+
+        if Prec[i] >= threshold:
+
+            return(Rec[i], Ys[i])
+
+    # Return worst case scenario:
+    # i.e. recall = 1 and y = 1
+    return(0.0, 1.0)
 
 #-------------#
 # Main        #
