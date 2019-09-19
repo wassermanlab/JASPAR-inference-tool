@@ -41,7 +41,6 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument("-c", choices=["rsat", "tomtom"], default="tomtom", help="cluster profiles using \"rsat\" matrix-clustering or \"tomtom\" (i.e. default)")
     parser.add_argument("-d", "--devel", action="store_true", help="development mode (uses hfaistos; default = False)")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
     parser.add_argument("--threads", default=1, type=int, help="threads to use (default = 1)", metavar="INT")
@@ -55,10 +54,8 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    # get_pfam(args.c, args.devel, os.path.abspath(args.o), args.threads)
     get_pfam(args.devel, os.path.abspath(args.o), args.threads)
 
-# def get_pfam(cluster="tomtom", devel=False, out_dir=out_dir, threads=1):
 def get_pfam(devel=False, out_dir=out_dir, threads=1):
 
     # Globals
@@ -108,9 +105,6 @@ def get_pfam(devel=False, out_dir=out_dir, threads=1):
 
     # Get clusters
     _get_tomtom_clusters(out_dir, threads)
-    # ## Now, from Tomtom...
-    # ## ... in the near future, from matrix-clustering
-    # _get_clusters(cluster, out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -503,19 +497,23 @@ def hmmScan(seq_file, hmm_file, non_overlapping_domains=False):
         yield(pfam_ac, start, end, evalue)
 
 def _readDomainsTab(file_name):
+    """
+    From PMID:22942020;
+    A hit has equal probability of being in the same clan as a different clan
+    when the E-value is 0.01 (log10 = −2). When the E-value is 10−5, the pro-
+    bability that a sequence belongs to the same clan is >95%.
+
+    From CIS-BP paper;
+    We scanned all protein sequences for putative DNA-binding domains (DBDs)
+    using the 81 Pfam (Finn et al., 2010) models listed in (Weirauch and
+    Hughes, 2011) and the HMMER tool (Eddy, 2009), with the recommended de-
+    tection thresholds of Per-sequence Eval < 0.01 and Per-domain conditional
+    Eval < 0.01.
+    """
 
     # Initialize
     domains = []
-    # From PMID:22942020;
-    # A hit has equal probability of being in the same clan as a different clan when the
-    # E-value is 0.01 (log10 = −2). When the E-value is 10−5, the probability that a sequence
-    # belongs to the same clan is >95%.
     cutoff_mod = 1e-5
-    # From CIS-BP paper;
-    # We scanned all protein sequences for putative DNA-binding domains (DBDs) using the 81
-    # Pfam (Finn et al., 2010) models listed in (Weirauch and Hughes, 2011) and the HMMER tool
-    # (Eddy, 2009), with the recommended detection thresholds of Per-sequence Eval < 0.01 and
-    # Per-domain conditional Eval < 0.01.
     cutoff_dom = 0.01
 
     # For each result...
@@ -541,6 +539,15 @@ def _readDomainsTab(file_name):
     return(domains)
 
 def _getNonOverlappingDomains(domains):
+    """
+    Do domains 1 & 2 overlap?
+    ---------1111111---------
+    -------22222-------------  True
+    ----------22222----------  True
+    -------------22222-------  True
+    -----22222---------------  False
+    ---------------22222-----  False
+    """
 
     # Initialize
     nov_domains = []
@@ -554,13 +561,6 @@ def _getNonOverlappingDomains(domains):
         # For each non-overlapping domain...
         for nov_domain in nov_domains:
 
-            # domains 1 & 2 overlap?
-            # ---------1111111---------
-            # -------22222-------------  True
-            # ----------22222----------  True
-            # -------------22222-------  True
-            # -----22222---------------  False
-            # ---------------22222-----  False
             if domain[1] < nov_domain[2] and domain[2] > nov_domain[1]:
                 domains_overlap = True
                 break
@@ -641,21 +641,10 @@ def _group_by_DBD_composition(out_dir=out_dir):
         # Change dir
         os.chdir(cwd)
 
-# def _get_clusters(cluster="tomtom", out_dir=out_dir, threads=1):
-
-#     if cluster == "tomtom":
-#         _get_tomtom_clusters(out_dir, threads)
-
-#     else:
-#         _get_rsat_clusters(out_dir)
-
 def _get_tomtom_clusters(out_dir=out_dir, threads=1):
 
-    # # Skip if Tomtom JSON file already exists
-    # tomtom_json_file = os.path.join(out_dir, "clusters.tomtom.json")
     # Skip if clusters JSON file already exists
     clusters_json_file = os.path.join(out_dir, "clusters.json")
-    # if not os.path.exists(tomtom_json_file):
     if not os.path.exists(clusters_json_file):
 
         # Initialize
@@ -720,6 +709,13 @@ def _get_tomtom_clusters(out_dir=out_dir, threads=1):
             clusters_json_file,
             json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
         )
+
+        # For each taxon...
+        for taxon in Jglobals.taxons:
+
+            # Remove taxon directory
+            if os.path.isdir(taxon):
+                shutil.rmtree(taxon)
 
         # Change dir
         os.chdir(cwd)
