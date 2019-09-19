@@ -39,8 +39,8 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-j", help="json file (from pairwise.py)", metavar="JSON")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
+    parser.add_argument("-p", help="pickle file from pairwise.py", metavar="PICKLE")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose mode (default = False)")
 
     return(parser.parse_args())
@@ -51,7 +51,7 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    train_models(os.path.abspath(args.j), os.path.abspath(args.o), args.verbose)
+    train_models(os.path.abspath(args.p), os.path.abspath(args.o), args.verbose)
 
 def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
@@ -80,9 +80,9 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
             }
         }
 
-        # Load JSON file
-        with open(pairwise_file) as f:
-            pairwise = json.load(f)
+        # Load pickle file
+        with open(pairwise_file, "rb") as f:
+            pairwise = pickle.load(f)
 
         # For each DBD composition...
         for domains, values in pairwise.items():

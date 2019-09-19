@@ -4,6 +4,7 @@ import argparse
 from Bio.SubsMat.MatrixInfo import blosum62
 import json
 import os
+import pickle
 import string
 import sys
 
@@ -44,9 +45,9 @@ def main():
 
 def pairwise(files_dir=files_dir, out_dir=out_dir):
 
-    # Skip if pairwise JSON file already exists
-    pairwise_json_file = os.path.join(out_dir, "pairwise.json")
-    if not os.path.exists(pairwise_json_file):
+    # Skip if pickle file already exists
+    pickle_file = os.path.join(out_dir, "pairwise.pickle")
+    if not os.path.exists(pickle_file):
 
         # Initialize
         pairwise = {}
@@ -116,11 +117,9 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
             # Add to pairwise
             pairwise.setdefault(key, [Xss, Ys, uniaccs])
 
-        # Write
-        Jglobals.write(
-            pairwise_json_file,
-            json.dumps(pairwise, sort_keys=True, indent=4, separators=(",", ": "))
-        )
+        # Write pickle file
+        with open(pickle_file, "wb") as f:
+            pickle.dump(pairwise, f)
 
 def _get_clusters(files_dir=files_dir):
 
