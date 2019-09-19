@@ -664,19 +664,19 @@ def _get_tomtom_clusters(out_dir=out_dir, threads=1):
         # Get all JASPAR profiles
         jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
 
-        # Skip if Tomtom database already exists
-        tomtom_db = os.path.join(out_dir, "tomtom.database")
-        if not os.path.exists(tomtom_db):
+        # Skip if JASPAR MEME database already exists
+        database = os.path.join(out_dir, "jaspar.meme")
+        if not os.path.exists(database):
 
             # For each JASPAR profile...
             for jaspar_profile in jaspar_profiles:
 
                 # Cat to database
-                os.system("cat %s >> %s" % (jaspar_profile, tomtom_db))
+                os.system("cat %s >> %s" % (jaspar_profile, database))
 
         # Parallelize
         pool = Pool(threads)
-        parallelized = partial(Tomtom, database=tomtom_db, out_dir=out_dir)
+        parallelized = partial(Tomtom, database=database, out_dir=out_dir)
         for _ in tqdm(pool.imap(parallelized, jaspar_profiles), total=len(jaspar_profiles)):
             pass
         pool.close()
@@ -736,12 +736,6 @@ def Tomtom(meme_file, database, out_dir=out_dir):
     p-value is converted to an E-value by multiplying it by twice the number of target
     motifs. As a second type of multiple-testing correction, q-values for each match are
     computed from the set of p-values and reported.
-
-    From PMID:17324271;
-    [...]
-    We show that Tomtom correctly assigns E values less than 0.01 to a large percentage
-    of positive matches.
-    [...]
     """
 
     # Skip if output directory already exists
@@ -750,65 +744,8 @@ def Tomtom(meme_file, database, out_dir=out_dir):
     if not os.path.isdir(output_dir):
 
         # Run Tomtom
-        cmd = "tomtom -thresh 0.01 -evalue -o %s %s %s" % (output_dir, meme_file, database)
+        cmd = "tomtom -thresh 0.05 -evalue -o %s %s %s" % (output_dir, meme_file, database)
         process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-# def _get_rsat_clusters(out_dir=out_dir):
-
-#     # Skip if RSAT JSON file already exists
-#     rsat_json_file = os.path.join(out_dir, "clusters.rsat.json")
-#     if not os.path.exists(rsat_json_file):
-
-#         # Initialize
-#         rsat = {}
-
-#         # Get all JASPAR profiles
-#         jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
-
-#         # Move to output directory
-#         os.chdir(out_dir)
-
-#         # Skip if RSAT directory already exists
-#         rsat_dir = "rsat"
-#         if not os.path.exists(rsat_dir):
-
-#             # Initialize
-#             profiles = {}
-
-#             # Create RSAT directory
-#             if not os.path.exists(rsat_dir):
-#                 os.makedirs(rsat_dir)
-
-#             # For each profile...
-#             for jaspar_profile in jaspar_profiles:
-
-#                 # Add profile
-#                 m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
-#                 profiles.setdefault(m.group(1), jaspar_profile)
-
-#             # Load JSON file
-#             groups_json_file = "groups.json"
-#             with open(groups_json_file) as f:
-#                 groups = json.load(f)
-
-#             # For each group...
-#             for group in groups:
-
-#                 # Initialize
-#                 rsat_db = os.path.join(rsat_dir, "%s.meme" % group)
-
-#                 # For each matrix IDs, alignments, uniacc...
-#                 for matrix_ids, alignments, uniacc in groups[group]:
-
-#                     # For each matrix ID...
-#                     for matrix_id in matrix_ids:
-
-#                         # Skip matrix ID
-#                         if matrix_id not in profiles:
-#                             continue
-
-#                         # Cat to database
-#                         os.system("cat %s >> %s" % (profiles[matrix_id], rsat_db))
 
 def _get_profiles_from_latest_version(jaspar_profiles):
 
