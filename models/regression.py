@@ -141,7 +141,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
                 # ... Else...
                 else:
-                    regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=1000)
+                    regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
 
                 # For each sequence similarity representation...
                 for similarity in ["identity", "blosum62", "%ID"]:
@@ -152,7 +152,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                             continue
                         myXs = []
                         for pairwise in Xs["identity"]:
-                            myXs.append([float(sum(pairwise)) * 100 / len(pairwise)])
+                            myXs.append([float(sum(pairwise)) / len(pairwise)])
                         myXs = np.array(myXs)
                     else:
                         myXs = Xs[similarity]
@@ -182,12 +182,12 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
         # Write JSON
         Jglobals.write(
-            results_json_file,
+            json_file,
             json.dumps(results, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
         # Write pickle file
-        with open(models_pickle_file, "wb") as f:
+        with open(pickle_file, "wb") as f:
             pickle.dump(models, f)
 
 def _leaveOneTFOut(tfIdxs, l):
