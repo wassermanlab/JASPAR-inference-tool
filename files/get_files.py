@@ -103,8 +103,8 @@ def get_pfam(devel=False, out_dir=out_dir, threads=1):
     # Group TFs by DBD composition
     _group_by_DBD_composition(out_dir)
 
-    # Get clusters
-    _get_tomtom_clusters(out_dir, threads)
+    # Group matrices by Tomtom similarity
+    _group_by_Tomtom(out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -597,7 +597,7 @@ def _readPSIBLASToutformat(psiblast_alignment):
 def _group_by_DBD_composition(out_dir=out_dir):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.json")
+    groups_json_file = os.path.join(out_dir, "groups.DBDs.json")
     if not os.path.exists(groups_json_file):
 
         # Initialize
@@ -641,11 +641,11 @@ def _group_by_DBD_composition(out_dir=out_dir):
         # Change dir
         os.chdir(cwd)
 
-def _get_tomtom_clusters(out_dir=out_dir, threads=1):
+def _group_by_Tomtom(out_dir=out_dir, threads=1):
 
-    # Skip if clusters JSON file already exists
-    clusters_json_file = os.path.join(out_dir, "clusters.json")
-    if not os.path.exists(clusters_json_file):
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(out_dir, "groups.tomtom.json")
+    if not os.path.exists(groups_json_file):
 
         # Initialize
         tomtom = {}
@@ -681,32 +681,15 @@ def _get_tomtom_clusters(out_dir=out_dir, threads=1):
             m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
             tomtom_dir = ".%s" % m.group(1)
 
-            # For each line...
-            for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
-
-                # Skip comments
-                if line[0].startswith("#"):
-                    continue
-
-                # Skip header
-                if line[0] == "Query_ID":
-                    continue
-
-                # Skip self
-                if line[0] == line[1]:
-                    continue
-
-                # Add to Tomtom
-                tomtom.setdefault(line[0], [])
-                tomtom[line[0]].append(line[1])
+            # Get hits
+            tomtom.setdefault(m.group(1), _get_tomtom_hits(tomtom_dir))
 
             # Remove Tomtom directory
             shutil.rmtree(tomtom_dir)
 
         # Write
         Jglobals.write(
-            # tomtom_json_file,
-            clusters_json_file,
+            groups_json_file,
             json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
@@ -740,7 +723,7 @@ def Tomtom(meme_file, database, out_dir=out_dir):
     if not os.path.isdir(output_dir):
 
         # Run Tomtom
-        cmd = "tomtom -thresh 0.05 -evalue -o %s %s %s" % (output_dir, meme_file, database)
+        cmd = "tomtom -o %s %s %s" % (output_dir, meme_file, database)
         process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def _get_profiles_from_latest_version(jaspar_profiles):
@@ -767,6 +750,31 @@ def _get_profiles_from_latest_version(jaspar_profiles):
         done.add(matrix_id)
 
     return(latest_version_profiles)
+
+def _get_tomtom_hits(tomtom_dir):
+
+    # Intialize
+    hits = []
+
+    # For each line...
+    for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
+
+        # Skip comments
+        if line[0].startswith("#"):
+            continue
+
+        # Skip header
+        if line[0] == "Query_ID":
+            continue
+
+        # Skip self
+        if line[0] == line[1]:
+            continue
+
+        # Add to hits
+        hits.append([line[1], float(line[4])])
+
+    return(hits)
 
 #-------------#
 # Main        #
