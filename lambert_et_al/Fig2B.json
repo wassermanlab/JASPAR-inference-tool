@@ -1,13 +1,26 @@
 {
-    "Homeodomain":
-        [
-            0.5599999999999999,
-            "identity"
-        ],
-    "Myb/SANT":
-        [
-            0.5352380952380952,
-            "identity"
-        ],
-      
+    "Homeodomain": [
+        0.5599999999999999,
+        "identity"
+    ],
+    "Myb/SANT": [
+        0.5352380952380952,
+        "identity"
+    ],
+    "GATA": [
+        0.3695238095238095,
+        "identity"
+    ],
+    "C2H2 ZF": [
+        0.19619047619047603,
+        "identity"
+    ],
+    "bHLH": [
+        0.22857142857142854,
+        "identity"
+    ],
+    "Zinc cluster": [
+        0.18285714285714272,
+        "identity"
+    ],
 }
