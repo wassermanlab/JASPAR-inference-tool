@@ -47,7 +47,7 @@ def main():
 def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
     # Skip if pickle file already exists
-    pickle_file = os.path.join(out_dir, "pairwise_%s.pickle" % evalue)
+    pickle_file = os.path.join(out_dir, "pairwise.pickle")
     if not os.path.exists(pickle_file):
 
         # Initialize
