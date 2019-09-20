@@ -47,7 +47,7 @@ def main():
 def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
     # Skip if pickle file already exists
-    pickle_file = os.path.join(out_dir, "pairwise.%s.pickle" % evalue)
+    pickle_file = os.path.join(out_dir, "pairwise_%s.pickle" % evalue)
     if not os.path.exists(pickle_file):
 
         # Initialize
@@ -62,7 +62,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
         # Get Tomtom groups
         global tomtom
-        tomtom = _get_tomtom_groups(files_dir)
+        tomtom = _get_tomtom_groups(evalue, files_dir)
 
         # For each key, values...
         for key, values in groups.items():
@@ -105,7 +105,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                         Xss[similarity].append(Xs)
 
                     # Get Y
-                    y = _fetchY(values[i][0], values[j][0], evalue)
+                    y = _fetchY(values[i][0], values[j][0])
 
                     # Append y, uniaccs
                     Ys.append(y)
@@ -125,20 +125,36 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 def _get_DBD_groups(files_dir=files_dir):
 
     # Load JSON file
-    groups_json_file = os.path.join(files_dir, "groups.json")
+    groups_json_file = os.path.join(files_dir, "groups.DBDs.json")
     with open(groups_json_file) as f:
         groups = json.load(f)
 
     return(groups)
 
-def _get_tomtom_groups(files_dir=files_dir):
+def _get_tomtom_groups(evalue=0.05, files_dir=files_dir):
+
+    # Initialize
+    tomtom_filtered = {}
 
     # Load JSON file
-    clusters_json_file = os.path.join(files_dir, "clusters.json")
-    with open(clusters_json_file) as f:
-        tomtom = json.load(f)
+    groups_json_file = os.path.join(files_dir, "groups.tomtom.json")
+    with open(groups_json_file) as f:
+        tomtom_unfiltered = json.load(f)
 
-    return(tomtom)
+    for matrix_id in tomtom_unfiltered:
+
+        # Initialize
+        matrix_ids = set()
+
+        for m, e in tomtom_unfiltered[matrix_id]:
+
+            if e <= evalue:
+                matrix_ids.add(m)
+
+        if len(matrix_ids) > 0:
+            tomtom_filtered.setdefault(matrix_id, matrix_ids)
+
+    return(tomtom_filtered)
 
 def _removeLowercase(s):
 
@@ -189,7 +205,7 @@ def _BLOSUMscoring(aa1, aa2):
         else:
             return(blosum62[(aa2, aa1)])
 
-def _fetchY(maIDlist1, maIDlist2, evalue=0.05):
+def _fetchY(maIDlist1, maIDlist2):
     """
     get the list of maID from 1 and 2 to see if any of them is correlated.
     """
@@ -201,26 +217,14 @@ def _fetchY(maIDlist1, maIDlist2, evalue=0.05):
         if maID1 not in tomtom:
             continue
 
-        maID1set = set([m for m, e tomtom[maID1] if e <= evalue])
-
-        # Skip matrix ID
-        if len(maID1set):
-            continue
-
         for maID2 in maIDlist2:
 
             # Skip matrix ID
             if maID2 not in tomtom:
                 continue
 
-            maID2set = set([m for m, e tomtom[maID2] if e <= evalue])
-
-            # Skip matrix ID
-            if len(maID2set):
-                continue
-
             # If profiles were clustered together...
-            if maID2 in maID1set and maID1 in maID2set:
+            if maID2 in tomtom[maID1] and maID1 in tomtom[maID2]:
                 return(True)
 
     return(False)
