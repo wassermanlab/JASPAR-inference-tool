@@ -1,26 +1,22 @@
 {
-    "Homeodomain": [
-        0.5599999999999999,
-        "identity"
-    ],
-    "Myb/SANT": [
-        0.5352380952380952,
-        "identity"
-    ],
-    "GATA": [
-        0.3695238095238095,
-        "identity"
-    ],
-    "C2H2 ZF": [
-        0.19619047619047603,
-        "identity"
-    ],
-    "bHLH": [
-        0.22857142857142854,
-        "identity"
-    ],
-    "Zinc cluster": [
-        0.18285714285714272,
-        "identity"
-    ],
+    "Homeodomain": [0.5599999999999999, "identity"],
+    "Myb/SANT": [0.5352380952380952, "identity"],
+    "GATA": [0.3695238095238095, "identity"],
+    "C2H2 ZF": [0.19619047619047603, "identity"],
+    "bHLH": [0.22857142857142854, "identity"],
+    "Zinc cluster": [0.18285714285714272, "identity"],
+    "Ets": [0.9352380952380952, "identity"],
+    "Sox": [0.9352380952380952, "identity"],
+    "T-box": [0.7676190476190475, "identity"],
+    "Pipsqueak": [0.22857142857142854. "identity"],
+    "bZIP": [0.13523809523809516, "blosum62"],
+    "Forkhead": [0.2723809523809523, "blosum62"],
+    "AP2": [0.3904761904761904, "blosum62"],
+    "Nuclear receptor": [0.9142857142857143, "blosum62"],
+    "E2F": [0.9561904761904761, "blosum62"],
+    "DM": [0.9219047619047618, "blosum62"],
+    "RFX": [0.8552380952380951, "blosum62"],
+    "SBP": [0.899047619047619, "blosum62"],
+    "NAC/NAM": [0.4342857142857143, "blosum62"],
+    "HSF": [1.0, "blosum62"]
 }
