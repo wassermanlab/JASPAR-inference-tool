@@ -30,6 +30,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("-e", default=0.05, type=float, help="e-value threshold (default = 0.05)", metavar="FLOAT")
     parser.add_argument("-f", default=files_dir, help="files directory (from get_files.py; default=../files/)", metavar="DIR")
     parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
 
@@ -41,9 +42,9 @@ def main():
     args = parse_args()
 
     # Pairwise
-    pairwise(os.path.abspath(args.f), os.path.abspath(args.o))
+    pairwise(args.e, os.path.abspath(args.f), os.path.abspath(args.o))
 
-def pairwise(files_dir=files_dir, out_dir=out_dir):
+def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
     # Skip if pickle file already exists
     pickle_file = os.path.join(out_dir, "pairwise.pickle")
@@ -56,12 +57,12 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
-        # Get clusters
-        global clusters
-        clusters = _get_clusters(files_dir)
+        # Get groups by DBD composition
+        groups = _get_DBD_groups(files_dir)
 
-        # Get domains
-        groups = _get_groups(files_dir)
+        # Get Tomtom groups
+        global tomtom
+        tomtom = _get_tomtom_groups(evalue, files_dir)
 
         # For each key, values...
         for key, values in groups.items():
@@ -121,23 +122,39 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
         with open(pickle_file, "wb") as f:
             pickle.dump(pairwise, f)
 
-def _get_clusters(files_dir=files_dir):
+def _get_DBD_groups(files_dir=files_dir):
 
     # Load JSON file
-    clusters_json_file = os.path.join(files_dir, "clusters.json")
-    with open(clusters_json_file) as f:
-        clusters = json.load(f)
-
-    return(clusters)
-
-def _get_groups(files_dir=files_dir):
-
-    # Load JSON file
-    groups_json_file = os.path.join(files_dir, "groups.json")
+    groups_json_file = os.path.join(files_dir, "groups.DBDs.json")
     with open(groups_json_file) as f:
         groups = json.load(f)
 
     return(groups)
+
+def _get_tomtom_groups(evalue=0.05, files_dir=files_dir):
+
+    # Initialize
+    tomtom_filtered = {}
+
+    # Load JSON file
+    groups_json_file = os.path.join(files_dir, "groups.tomtom.json")
+    with open(groups_json_file) as f:
+        tomtom_unfiltered = json.load(f)
+
+    for matrix_id in tomtom_unfiltered:
+
+        # Initialize
+        matrix_ids = set()
+
+        for m, e in tomtom_unfiltered[matrix_id]:
+
+            if e <= evalue:
+                matrix_ids.add(m)
+
+        if len(matrix_ids) > 0:
+            tomtom_filtered.setdefault(matrix_id, matrix_ids)
+
+    return(tomtom_filtered)
 
 def _removeLowercase(s):
 
@@ -197,17 +214,17 @@ def _fetchY(maIDlist1, maIDlist2):
     for maID1 in maIDlist1:
 
         # Skip matrix ID
-        if maID1 not in clusters:
+        if maID1 not in tomtom:
             continue
 
         for maID2 in maIDlist2:
 
             # Skip matrix ID
-            if maID2 not in clusters:
+            if maID2 not in tomtom:
                 continue
 
             # If profiles were clustered together...
-            if maID2 in clusters[maID1] and maID1 in clusters[maID2]:
+            if maID2 in tomtom[maID1] and maID1 in tomtom[maID2]:
                 return(True)
 
     return(False)
