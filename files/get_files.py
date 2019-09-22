@@ -30,6 +30,9 @@ sys.path.append(root_dir)
 # Import globals
 from __init__ import Jglobals
 
+# Import rost curve
+from infer_profile import _is_alignment_over_Rost_seq_id_curve
+
 #-------------#
 # Functions   #
 #-------------#
@@ -53,10 +56,10 @@ def main():
     # Parse arguments
     args = parse_args()
 
-    # Make Pfam files
-    get_pfam(args.devel, os.path.abspath(args.o), args.threads)
+    # Get files
+    get_files(args.devel, os.path.abspath(args.o), args.threads)
 
-def get_pfam(devel=False, out_dir=out_dir, threads=1):
+def get_files(devel=False, out_dir=out_dir, threads=1):
 
     # Globals
     global client
@@ -105,6 +108,9 @@ def get_pfam(devel=False, out_dir=out_dir, threads=1):
 
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(out_dir, threads)
+
+    # Group matrices by BLAST
+    _group_by_blast(out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -666,7 +672,7 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
         # Parallelize
         pool = Pool(threads)
         parallelized = partial(Tomtom, database=database, out_dir=out_dir)
-        for _ in tqdm(pool.imap(parallelized, jaspar_profiles), total=len(jaspar_profiles)):
+        for _ in tqdm(pool.imap(parallelized, jaspar_profiles), desc="Tomtom", total=len(jaspar_profiles)):
             pass
         pool.close()
         pool.join()
@@ -775,6 +781,12 @@ def _get_tomtom_hits(tomtom_dir):
         hits.append([line[1], float(line[4])])
 
     return(hits)
+
+def _group_by_blast(out_dir=out_dir, threads=1):
+
+    blast_results = _SeqRecord_blast_search(seq_record, files_dir, dummy_dir, taxons)
+    blast_homologs = _filter_results_under_the_Rost_seq_id_curve(blast_results, n)
+
 
 #-------------#
 # Main        #
