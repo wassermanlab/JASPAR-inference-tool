@@ -100,6 +100,9 @@ def get_files(devel=False, out_dir=out_dir, threads=1):
         # Download TF sequences from UniProt
         _download_UniProt_sequences(taxon, out_dir)
 
+        # Format BLAST+ database
+        _format_BLAST_database(taxon, out_dir)
+
         # Get Pfam alignments
         _get_Pfam_alignments(taxon, out_dir)
 
@@ -410,6 +413,26 @@ def _download_UniProt_sequences(taxon, out_dir=out_dir):
     # Change dir
     os.chdir(cwd)
 
+def _format_BLAST_database(taxon, out_dir=out_dir):
+
+    # Skip if taxon FASTA file already exists
+    fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
+    if not os.path.exists(fasta_file):
+
+        # Load JSON file
+        uniprot_json_file = taxon + uniprot_file_ext
+        with open(uniprot_json_file) as f:
+            uniaccs = json.load(f)
+
+        # For each UniProt Accession...
+        for uniacc in sorted(uniaccs):
+            Jglobals.write(fasta_file, ">%s\n%s" % (uniacc, uniaccs[uniacc][1]))
+
+
+        # Make BLAST+ database
+        cmd = "makeblastdb -in %s -dbtype prot" % fasta_file
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 def _get_Pfam_alignments(taxon, out_dir=out_dir):
 
     # Skip if Pfam JSON file already exists
@@ -688,7 +711,7 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
             tomtom_dir = ".%s" % m.group(1)
 
             # Get hits
-            tomtom.setdefault(m.group(1), _get_tomtom_hits(tomtom_dir))
+            tomtom.setdefault(m.group(1), _get_Tomtom_hits(tomtom_dir))
 
             # Remove Tomtom directory
             shutil.rmtree(tomtom_dir)
@@ -757,7 +780,7 @@ def _get_profiles_from_latest_version(jaspar_profiles):
 
     return(latest_version_profiles)
 
-def _get_tomtom_hits(tomtom_dir):
+def _get_Tomtom_hits(tomtom_dir):
 
     # Intialize
     hits = []
@@ -782,11 +805,13 @@ def _get_tomtom_hits(tomtom_dir):
 
     return(hits)
 
-def _group_by_blast(out_dir=out_dir, threads=1):
+# def _group_by_BLAST(out_dir=out_dir, threads=1):
 
-    blast_results = _SeqRecord_blast_search(seq_record, files_dir, dummy_dir, taxons)
-    blast_homologs = _filter_results_under_the_Rost_seq_id_curve(blast_results, n)
+#     # BLAST+ search
+#     blast_results = _SeqRecord_BLAST_search(seq_record, files_dir, dummy_dir, taxons)
 
+#     # Filter results below the Rost's sequence identity curve
+#     blast_homologs = _filter_results_below_the_Rost_seq_id_curve(blast_results, n)
 
 #-------------#
 # Main        #
