@@ -77,6 +77,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
             # Initialize
             Xss = {}
+            BLASTXss = []
             Ys = []
             uniaccs = []
 
@@ -89,9 +90,6 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
                 # For each next TF...
                 for j in range(i + 1, len(values)):
-
-                    # BLAST+ Xs
-                    blast_Xs = _fetchBLASTXs(values[i][2], values[j][2])
 
                     # For each sequence similarity representation...
                     for similarity in ["identity", "blosum62"]:
@@ -111,15 +109,14 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                         Xss.setdefault(similarity, [])
                         Xss[similarity].append(Xs)
 
-                        # Append BLAST to Xs
-                        blast_similarity = "%s+blast" % similarity
-                        Xss.setdefault(blast_similarity, [])
-                        Xss[blast_similarity].append(Xs+blast_Xs)
+                    # BLAST+ Xs
+                    BLASTXs = _fetchBLASTXs(values[i][2], values[j][2])
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
 
-                    # Append y, uniaccs
+                    # Append BLAST+ Xs, y, uniaccs
+                    BLASTXss.append(BLASTXs)
                     Ys.append(y)
                     uniaccs.append("{}*{}".format(values[i][2], values[j][2]))
 
@@ -128,7 +125,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                 continue
 
             # Add to pairwise
-            pairwise.setdefault(key, [Xss, Ys, uniaccs])
+            pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
 
         # Write pickle file
         with open(pickle_file, "wb") as f:
@@ -201,13 +198,6 @@ def _get_BLAST_groups(files_dir=files_dir):
 
     return(blast_filtered)
 
-def _fetchBLASTXs(uacc1, uacc2):
-
-    try:
-        return(blast[uacc1][uacc2])
-    except:
-        return([0.0, 0.0, 0.0, 0.0])
-
 def _removeLowercase(s):
 
     return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
@@ -256,6 +246,13 @@ def _BLOSUMscoring(aa1, aa2):
             return(blosum62[(aa1, aa2)])
         else:
             return(blosum62[(aa2, aa1)])
+
+def _fetchBLASTXs(uacc1, uacc2):
+
+    try:
+        return(blast[uacc1][uacc2])
+    except:
+        return([0.0, 0.0, 0.0, 0.0])
 
 def _fetchY(maIDlist1, maIDlist2):
     """
