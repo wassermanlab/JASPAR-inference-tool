@@ -87,13 +87,17 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
+            if domains != "Homeodomain":
+                continue
+
             # Initialize
             Xs = {}
             models.setdefault(domains, {})
             results.setdefault(domains, {})
-            Ys = np.array(values[1])
+            BLASTXs = np.array(values[1])
+            Ys = np.array(values[2])
             Ys_int = Ys * 1
-            tfPairs = values[2]
+            tfPairs = values[3]
 
             # Verbose mode
             if verbose:
@@ -128,6 +132,8 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
             # Verbose mode
             if verbose:
+                a, b = BLASTXs.shape
+                Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
                 Jglobals.write(None, "\t*** Ys: %s" % Ys_int.shape)
                 Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
 
@@ -146,39 +152,46 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                 # For each sequence similarity representation...
                 for similarity in ["identity", "blosum62", "%ID"]:
 
-                    # Initialize
-                    if similarity == "%ID":
-                        if regression == "logistic":
-                            continue
-                        myXs = []
-                        for pairwise in Xs["identity"]:
-                            myXs.append([float(sum(pairwise)) / len(pairwise)])
-                        myXs = np.array(myXs)
-                    else:
-                        myXs = Xs[similarity]
+                    # For use BLAST+ Xs...
+                    for use_blast_Xs in [False, True]:
 
-                    # Fit model...
-                    fitRegModel = regModel.fit(myXs, Ys_int)
+                        # Initialize
+                        if similarity == "%ID":
+                            if regression == "logistic":
+                                continue
+                            if use_blast_Xs:
+                                continue
+                            myXs = []
+                            for pairwise in Xs["identity"]:
+                                myXs.append([float(sum(pairwise)) / len(pairwise)])
+                            myXs = np.array(myXs)
+                        elif use_blast_Xs:
+                            myXs = np.concatenate((Xs[similarity], BLASTXs), axis=1)
+                        else:
+                            myXs = Xs[similarity]
 
-                    # If linear regression...
-                    if regression == "linear":
-                        predictions = fitRegModel.predict(myXs)
+                        # Fit model...
+                        fitRegModel = regModel.fit(myXs, Ys_int)
 
-                    # ... Else...
-                    else:
-                        predictions = fitRegModel.predict_proba(myXs)[:,1]
+                        # If linear regression...
+                        if regression == "linear":
+                            predictions = fitRegModel.predict(myXs)
 
-                    # Get precision-recall curve
-                    Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
-                    recall, y = _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75)
+                        # ... Else...
+                        else:
+                            predictions = fitRegModel.predict_proba(myXs)[:,1]
 
-                    # Verbose mode
-                    if verbose:
-                        Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
+                        # Get precision-recall curve
+                        Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
+                        recall, y = _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75)
 
-                    # Add fitRegModel
-                    models[domains].setdefault((regression, similarity), (y, fitRegModel))
-                    results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, fitRegModel.coef_.tolist()[0]))
+                        # Verbose mode
+                        if verbose:
+                            Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {} + BLAST+ = {}): {}".format(regression, similarity, use_blast_Xs, recall))
+
+                        # # Add fitRegModel
+                        # models[domains].setdefault((regression, similarity), (y, fitRegModel))
+                        # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, fitRegModel.coef_.tolist()[0]))
 
         # Write JSON
         Jglobals.write(
