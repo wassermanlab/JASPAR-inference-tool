@@ -27,12 +27,9 @@ root_dir = os.path.join(out_dir, os.pardir)
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
 
-# Import globals
+# Import JASPAR-profile-inference functions
 from __init__ import Jglobals
-from infer_profile import _SeqRecord_BLAST_search, _filter_results_below_the_Rost_seq_id_curve
-
-# Import rost curve
-from infer_profile import _is_alignment_over_Rost_seq_id_curve
+from infer_profile import _SeqRecord_BLAST_search
 
 #-------------#
 # Functions   #
@@ -428,7 +425,6 @@ def _format_BLAST_database(taxon, out_dir=out_dir):
         # For each UniProt Accession...
         for uniacc in sorted(uniaccs):
             Jglobals.write(fasta_file, ">%s\n%s" % (uniacc, uniaccs[uniacc][1]))
-
 
         # Make BLAST+ database
         cmd = "makeblastdb -in %s -dbtype prot" % fasta_file

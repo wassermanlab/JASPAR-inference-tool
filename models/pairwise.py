@@ -62,7 +62,11 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
         # Get Tomtom groups
         global tomtom
-        tomtom = _get_tomtom_groups(evalue, files_dir)
+        tomtom = _get_Tomtom_groups(evalue, files_dir)
+
+        # Get BLAST+ groups
+        global blast
+        blast = _get_BLAST_groups(files_dir)
 
         # For each key, values...
         for key, values in groups.items():
@@ -86,6 +90,9 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                 # For each next TF...
                 for j in range(i + 1, len(values)):
 
+                    # BLAST+ Xs
+                    blast_Xs = _fetchBLASTXs(values[i][2], values[j][2])
+
                     # For each sequence similarity representation...
                     for similarity in ["identity", "blosum62"]:
 
@@ -103,6 +110,11 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                         # Append Xs
                         Xss.setdefault(similarity, [])
                         Xss[similarity].append(Xs)
+
+                        # Append BLAST to Xs
+                        blast_similarity = "%s+blast" % similarity
+                        Xss.setdefault(blast_similarity, [])
+                        Xss[blast_similarity].append(Xs+blast_Xs)
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
@@ -131,7 +143,7 @@ def _get_DBD_groups(files_dir=files_dir):
 
     return(groups)
 
-def _get_tomtom_groups(evalue=0.05, files_dir=files_dir):
+def _get_Tomtom_groups(evalue=0.05, files_dir=files_dir):
 
     # Initialize
     tomtom_filtered = {}
@@ -155,6 +167,46 @@ def _get_tomtom_groups(evalue=0.05, files_dir=files_dir):
             tomtom_filtered.setdefault(matrix_id, matrix_ids)
 
     return(tomtom_filtered)
+
+def _get_BLAST_groups(files_dir=files_dir):
+
+    # Initialize
+    blast_filtered = {}
+
+    # Load JSON file
+    groups_json_file = os.path.join(files_dir, "groups.blast.json")
+    with open(groups_json_file) as f:
+        blast_unfiltered = json.load(f)
+
+    for uniacc in blast_unfiltered:
+
+        for t, qse, tse, e, s, pid, al, psim, jc in blast_unfiltered[uniacc]:
+
+            # (t) identifier of target sequence;
+            # (qse, tse) start and end-position in query and in target;
+            # (e) E-value;
+            # (s) bit score;
+            # (pid) percentage of identical matches;
+            # (al) alignment length;
+            # (psim) percentage of positive-scoring matches; and
+            # (jc) joint coverage (i.e. square root of the coverage
+            # on the query and the target).
+            s = s / al # transformation of bit score
+            pid = pid / 100.0
+            psim = psim / 100.0
+            jc = jc / 100.0
+
+            blast_filtered.setdefault(uniacc, {})
+            blast_filtered[uniacc].setdefault(t, [s, pid, psim, jc])
+
+    return(blast_filtered)
+
+def _fetchBLASTXs(uacc1, uacc2):
+
+    try:
+        return(blast[uacc1][uacc2])
+    except:
+        return([0.0, 0.0, 0.0, 0.0])
 
 def _removeLowercase(s):
 
