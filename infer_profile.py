@@ -3,7 +3,6 @@
 import os, re
 import argparse
 from Bio import pairwise2
-from Bio import SeqIO
 from Bio.SubsMat.MatrixInfo import blosum62
 from functools import partial
 import json
@@ -159,7 +158,7 @@ def _SeqRecord_BLAST_search(seq_record, files_dir, taxons=Jglobals.taxons):
 
     # Initialize
     blast_results = set()
-    outfmt = "6 sseqid pident length qstart qend sstart send evalue bitscore ppos qlen slen"
+    outfmt = "sseqid pident length qstart qend sstart send evalue bitscore ppos qlen slen"
 
     # For each taxon...
     for taxon in taxons:
@@ -167,56 +166,50 @@ def _SeqRecord_BLAST_search(seq_record, files_dir, taxons=Jglobals.taxons):
         # Taxon db
         taxon_db = os.path.join(files_dir, "%s.fa" % taxon)
 
-        # Homology search
-        try:
+        # Run BLAST+
+        cmd = "blastp -db %s -outfmt \"6 %s\"" % (taxon_db, outfmt)
+        process = subprocess.Popen([cmd], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        fasta_sequence = ">%s\n%s" % (seq_record.id, seq_record.seq)
+        process.stdin.write(fasta_sequence.encode())
+        (blast_records, blast_errors) = process.communicate()
 
-            # Run BLASTP
-            cmd = "blastp -db % -outfmt %s" % (taxon_db, outfmt)
-            process = subprocess.Popen([cmd], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            fasta_sequence = ">%s\n%s" % (seq_record.id, seq_record.seq)
-            process.stdin.write(fasta_sequence.encode())
-            (blast_records, blast_errors) = process.communicate()
+        # For each BLAST+ record...
+        for blast_record in blast_records.decode("utf-8").split("\n"):
 
-            # For each BLAST+ record...
-            for blast_record in blast_records.decode("utf-8").split("\n"):
+            # Custom BLAST+ record:
+            # (1) identifier of target sequence;
+            # (2) percentage of identical matches;
+            # (3) alignment length;
+            # (4-5, 6-7) start and end-position in query and in target;
+            # (8) E-value;
+            # (9) bit score;
+            # (10) percentage of positive-scoring matches; and
+            # (4-7, 11, 12) joint coverage (i.e. square root of the coverage
+            # on the query and the target).
+            blast_record = blast_record.split("\t")
 
-                # Custom BLAST+ record:
-                # (1) identifier of target sequence;
-                # (2) percentage of identical matches;
-                # (3) alignment length;
-                # (4-5, 6-7) start and end-position in query and in target;
-                # (8) E-value;
-                # (9) bit score;
-                # (10) percentage of positive-scoring matches; and
-                # (4-7, 11, 12) joint coverage (i.e. square root of the coverage
-                # on the query and the target).
-                blast_record = blast_record.split("\t")
+            # Skip if not a BLAST+ record
+            if len(blast_record) != 12: continue
 
-                # Skip if not a BLAST+ record
-                if len(blast_record) != 9: continue
+            # Get BLAST+ record
+            target_id = blast_record[0]
+            percent_identities = float(blast_record[1])
+            alignment_length = int(blast_record[2])
+            query_start_end = "%s-%s" % (blast_record[3], blast_record[4])
+            target_start_end = "%s-%s" % (blast_record[5], blast_record[6])
+            e_value = float(blast_record[7])
+            score = float(blast_record[8])
+            percent_similarity = float(blast_record[9])
+            query_aligned_residues = int(blast_record[4]) - int(blast_record[3]) + 1
+            query_length = float(blast_record[10])
+            target_aligned_residues = int(blast_record[6]) - int(blast_record[5]) + 1
+            target_length = float(blast_record[11])
+            query_coverage = query_aligned_residues * 100 / query_length
+            target_coverage = target_aligned_residues * 100 / target_length
+            joint_coverage = math.sqrt(query_coverage * target_coverage)
 
-                # Get BLAST+ record
-                target_id = blast_record[0]
-                percent_identities = float(blast_record[1])
-                alignment_length = int(blast_record[2])
-                query_start_end = "%s-%s" % (blast_record[3], blast_record[4])
-                target_start_end = "%s-%s" % (blast_record[5], blast_record[6])
-                e_value = float(blast_record[7])
-                score = float(blast_record[8])
-                percent_similarity = float(blast_record[9])
-                query_aligned_residues = int(blast_record[4]) - int(blast_record[3]) + 1
-                query_length = float(blast_record[10])
-                target_aligned_residues = int(blast_record[6]) - int(blast_record[5]) + 1
-                target_length = float(blast_record[11])
-                query_coverage = query_aligned_residues * 100 / query_length
-                target_coverage = target_aligned_residues * 100 / target_length
-                joint_coverage = math.sqrt(query_coverage * target_coverage)
-
-                # Add BLAST+ record to search results
-                blast_results.add((seq_record.id, target, query_start_end, target_start_end, e_value, score, percent_identities, alignment_length, percent_similarity, joint_coverage))
-
-        except:
-            raise ValueError("Could not exec BLAST+!")
+            # Add BLAST+ record to search results
+            blast_results.add((seq_record.id, target_id, query_start_end, target_start_end, e_value, score, percent_identities, alignment_length, percent_similarity, joint_coverage))
 
     # Return results sorted by score
     return list(sorted(blast_results, key=lambda x: x[-1], reverse=True))

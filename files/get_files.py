@@ -29,6 +29,7 @@ sys.path.append(root_dir)
 
 # Import globals
 from __init__ import Jglobals
+from infer_profile import _SeqRecord_BLAST_search, _filter_results_below_the_Rost_seq_id_curve
 
 # Import rost curve
 from infer_profile import _is_alignment_over_Rost_seq_id_curve
@@ -112,8 +113,8 @@ def get_files(devel=False, out_dir=out_dir, threads=1):
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(out_dir, threads)
 
-    # Group matrices by BLAST
-    _group_by_blast(out_dir, threads)
+    # Group UniProt Accessions by BLAST
+    _group_by_BLAST(out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -805,13 +806,41 @@ def _get_Tomtom_hits(tomtom_dir):
 
     return(hits)
 
-# def _group_by_BLAST(out_dir=out_dir, threads=1):
+def _group_by_BLAST(out_dir=out_dir, threads=1):
 
-#     # BLAST+ search
-#     blast_results = _SeqRecord_BLAST_search(seq_record, files_dir, dummy_dir, taxons)
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(out_dir, "groups.blast.json")
+    if not os.path.exists(groups_json_file):
 
-#     # Filter results below the Rost's sequence identity curve
-#     blast_homologs = _filter_results_below_the_Rost_seq_id_curve(blast_results, n)
+        # Initialize
+        blast = {}
+        seq_records = []
+
+        # For each taxon...
+        for taxon in Jglobals.taxons:
+
+            # Intialize
+            fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
+
+            # For each SeqRecord...
+            for seq_record in Jglobals.parse_fasta_file(fasta_file):
+                seq_records.append(seq_record)
+
+        # Parallelize
+        pool = Pool(threads)
+        parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
+        for blast_results in tqdm(pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)):
+            blast_results = list(zip(*blast_results))
+            uniacc = blast_results.pop(0)
+            blast.setdefault(uniacc[0], list(zip(*blast_results)))
+        pool.close()
+        pool.join()
+
+        # Write
+        Jglobals.write(
+            groups_json_file,
+            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
+        )
 
 #-------------#
 # Main        #

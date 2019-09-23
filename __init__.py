@@ -7,6 +7,7 @@ __email__ = "oriol@cmmt.ubc.ca, nzhang@cmmt.ubc.ca"
 __organization__ = "[Wasserman Lab](http://www.cisreg.ca)"
 __version__ = "2.0.1"
 
+from Bio import SeqIO
 import gzip
 import pandas
 import sys
@@ -33,14 +34,14 @@ class Globals(object):
 
         # Initialize
         raiseValueError = False
-        
-        # Open file handle
+
+        # Open gzip file as handle
         if file_name.endswith(".gz"):
             try:
                 handle = gzip.open(file_name, mode)
             except:
                 raiseValueError = True
-
+        # Open zip file as handle
         elif file_name.endswith(".zip"):
             try:
                 zf = ZipFile(file_name, mode)
@@ -50,13 +51,13 @@ class Globals(object):
                     break
             except:
                 raiseValueError = True
-
+        # Open file as handle
         else:
             try:
                 handle = open(file_name, mode)
             except:
                 raiseValueError = True
-        
+
         if raiseValueError:
             raise ValueError("Could not open file handle: %s" % file_name)
 
@@ -64,7 +65,7 @@ class Globals(object):
 
     def parse_file(self, file_name):
         """
-        Parses a file and yields lines one by one.
+        Parses a file and yields lines one by one as a {str}.
         @input:
         file_name {str}
         @yield: {str}
@@ -75,14 +76,13 @@ class Globals(object):
 
         # For each line...
         for line in handle:
-
             yield(line.strip("\n"))
 
         handle.close()
 
     def parse_csv_file(self, file_name, delimiter=","):
         """
-        Parses a CSV file and yields lines one by one as a list.
+        Parses a CSV file and yields lines one by one as a {list}.
         @input:
         file_name {str}
         delimiter {str} e.g. "\t"; default = ","
@@ -101,7 +101,7 @@ class Globals(object):
 
     def parse_tsv_file(self, file_name):
         """
-        Parses a TSV file and yields lines one by one as a list.
+        Parses a TSV file and yields lines one by one as a {list}.
         @input:
         file_name {str}
         @yield: {list}
@@ -109,16 +109,14 @@ class Globals(object):
 
         # For each line...
         for line in self.parse_csv_file(file_name, delimiter="\t"):
-
             yield(line)
 
     def parse_fasta_file(self, file_name):
         """
-        Parses a FASTA file and yields sequences one by one  as a list of
-        length 2 (i.e. [{header}, {sequence}]).
+        Parses a FASTA file and yields sequences one by one as a {SeqRecord}.
         @input:
         file_name {str}
-        @yield: {list}
+        @yield: {SeqRecord}
         """
 
         # Get file handle
@@ -126,11 +124,7 @@ class Globals(object):
 
         # For each SeqRecord...
         for seq_record in SeqIO.parse(handle, "fasta"):
-            # Initialize
-            header = seq_record.id
-            sequence = str(seq_record.seq).upper()
-
-            yield(header, sequence)
+            yield(seq_record)
 
         handle.close()
 
@@ -150,7 +144,6 @@ class Globals(object):
             handle.close()
 
         else:
-
             sys.stdout.write("%s\n" % content)
 
 Jglobals = Globals()
