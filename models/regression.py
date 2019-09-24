@@ -88,6 +88,9 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
+            if domains != "HLH+HLH":
+                continue
+
             # Initialize
             Xs = {}
             # BLASTXs = {}
