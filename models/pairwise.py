@@ -77,7 +77,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
             # Initialize
             Xss = {}
-            BLASTXss = []
+            BLASTXss = {}
             Ys = []
             uniaccs = []
 
@@ -96,27 +96,30 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
                         # Initialize
                         Xs = []
+                        BLASTXs = []
+
 
                         # Inner most loop for examining EACH different component...
                         for k in range(len(values[i][1])):
 
-                            # Get X
+                            # Get Xs
                             seq1 = _removeLowercase(values[i][1][k])
                             seq2 = _removeLowercase(values[j][1][k])
                             Xs.extend(_fetchXs(seq1, seq2, similarity))
 
+                        # Get BLAST+ Xs
+                        BLASTXs = _fetchBLASTXs(values[i][2], values[j][2], similarity)
+
                         # Append Xs
                         Xss.setdefault(similarity, [])
                         Xss[similarity].append(Xs)
-
-                    # BLAST+ Xs
-                    BLASTXs = _fetchBLASTXs(values[i][2], values[j][2])
+                        BLASTXss.setdefault(similarity, [])
+                        BLASTXss[similarity].append(BLASTXs)
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
 
-                    # Append BLAST+ Xs, y, uniaccs
-                    BLASTXss.append(BLASTXs)
+                    # Append, y, uniaccs
                     Ys.append(y)
                     uniaccs.append("{}*{}".format(values[i][2], values[j][2]))
 
@@ -188,13 +191,14 @@ def _get_BLAST_groups(files_dir=files_dir):
             # (psim) percentage of positive-scoring matches; and
             # (jc) joint coverage (i.e. square root of the coverage
             # on the query and the target).
-            s = s / al # transformation of bit score
+            # s = s / al # transformation of bit score
             pid = pid / 100.0
             psim = psim / 100.0
             jc = jc / 100.0
 
             blast_filtered.setdefault(uniacc, {})
-            blast_filtered[uniacc].setdefault(t, [s, pid, psim, jc])
+            # blast_filtered[uniacc].setdefault(t, [s, pid, psim, jc])
+            blast_filtered[uniacc].setdefault(t, [pid, psim, jc])
 
     return(blast_filtered)
 
@@ -247,12 +251,21 @@ def _BLOSUMscoring(aa1, aa2):
         else:
             return(blosum62[(aa2, aa1)])
 
-def _fetchBLASTXs(uacc1, uacc2):
+def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
 
-    try:
-        return(blast[uacc1][uacc2])
-    except:
-        return([0.0, 0.0, 0.0, 0.0])
+    # Initialize
+    BLASTXs = [0.0, 0.0]
+
+    if uacc1 in blast:
+        if uacc2 in blast[uacc1]:
+            if similarity == "identity":
+                BLASTXs[0] = blast[uacc1][uacc2][0]
+                BLASTXs[1] = blast[uacc1][uacc2][2]
+            elif similarity == "blosum62":
+                BLASTXs[0] = blast[uacc1][uacc2][1]
+                BLASTXs[1] = blast[uacc1][uacc2][2]
+
+    return(BLASTXs)
 
 def _fetchY(maIDlist1, maIDlist2):
     """

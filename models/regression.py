@@ -92,9 +92,9 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
             # Initialize
             Xs = {}
+            BLASTXs = {}
             models.setdefault(domains, {})
             results.setdefault(domains, {})
-            BLASTXs = np.array(values[1])
             Ys = np.array(values[2])
             Ys_int = Ys * 1
             tfPairs = values[3]
@@ -124,16 +124,17 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
                 # Add Xs
                 Xs.setdefault(similarity, np.asarray(values[0][similarity]))
+                BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
 
                 # Verbose mode
                 if verbose:
                     a, b = Xs[similarity].shape
                     Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
+                    a, b = BLASTXs[similarity].shape
+                    Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
 
             # Verbose mode
             if verbose:
-                a, b = BLASTXs.shape
-                Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
                 Jglobals.write(None, "\t*** Ys: %s" % Ys_int.shape)
                 Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
 
@@ -166,7 +167,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                                 myXs.append([float(sum(pairwise)) / len(pairwise)])
                             myXs = np.array(myXs)
                         elif use_blast_Xs:
-                            myXs = np.concatenate((Xs[similarity], BLASTXs), axis=1)
+                            myXs = np.concatenate((Xs[similarity], BLASTXs[similarity]), axis=1)
                         else:
                             myXs = Xs[similarity]
 
@@ -192,6 +193,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                         # # Add fitRegModel
                         # models[domains].setdefault((regression, similarity), (y, fitRegModel))
                         # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, fitRegModel.coef_.tolist()[0]))
+            exit(0)
 
         # Write JSON
         Jglobals.write(
