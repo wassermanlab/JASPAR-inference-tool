@@ -221,6 +221,13 @@ def _leaveOneTFOut(tfIdxs, l):
     return(myCViterator)
 
 def _get_tf_recall_curve(tfPairs, predictions, Ys):
+    """
+    From sklearn.metrics.precision_recall_curve
+
+    The last precision and recall values are "1." and "0." respectively and do
+    not have a corresponding threshold. This ensures that the graph starts on
+    the y axis.
+    """
 
     # Initialize
     tf_recall = []
@@ -240,19 +247,20 @@ def _get_tf_recall_curve(tfPairs, predictions, Ys):
 
         tf_recall.append(float(len(tfs_recalled)) / len(tfs))
 
-    return(tf_recall)
+    # Append a last recall value of 0.0
+    tf_recall.append(0.0)
+
+    return(np.array(tf_recall))
 
 def _get_value_at_precision_threshold(Prec, values, threshold=0.75):
 
-    if len(Prec) == len(values):
+    # For each y...
+    for i in range(len(Prec)):
 
-        # For each y...
-        for i in range(len(Prec)):
+        if Prec[i] >= threshold or i == len(values):
+            break
 
-            if Prec[i] >= threshold:
-                return(values[i])
-
-    return(0.0)
+    return(values[i])
 
 #-------------#
 # Main        #
