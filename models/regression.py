@@ -92,12 +92,14 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
             # Initialize
             Xs = {}
-            BLASTXs = {}
+            # BLASTXs = {}
             models.setdefault(domains, {})
             results.setdefault(domains, {})
-            Ys = np.array(values[2])
+            # Ys = np.array(values[2])
+            Ys = np.array(values[1])
             Ys_int = Ys * 1
-            tfPairs = values[3]
+            # tfPairs = values[3]
+            tfPairs = values[2]
 
             # Verbose mode
             if verbose:
@@ -123,14 +125,14 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
                 # Add Xs
                 Xs.setdefault(similarity, np.asarray(values[0][similarity]))
-                BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
+                # BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
 
                 # Verbose mode
                 if verbose:
                     a, b = Xs[similarity].shape
                     Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
-                    a, b = BLASTXs[similarity].shape
-                    Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
+                    # a, b = BLASTXs[similarity].shape
+                    # Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
 
             # Verbose mode
             if verbose:
@@ -152,47 +154,49 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                 # For each sequence similarity representation...
                 for similarity in ["identity", "blosum62", "%ID"]:
 
-                    # For use BLAST+ Xs...
-                    for use_blast_Xs in [False, True]:
+                    # # For use BLAST+ Xs...
+                    # for use_blast_Xs in [False, True]:
 
-                        # Initialize
-                        if similarity == "%ID":
-                            if regression == "logistic":
-                                continue
-                            if use_blast_Xs:
-                                continue
-                            myXs = []
-                            for pairwise in Xs["identity"]:
-                                myXs.append([float(sum(pairwise)) / len(pairwise)])
-                            myXs = np.array(myXs)
-                        elif use_blast_Xs:
-                            myXs = np.concatenate((Xs[similarity], BLASTXs[similarity]), axis=1)
-                        else:
-                            myXs = Xs[similarity]
+                    # Initialize
+                    if similarity == "%ID":
+                        if regression == "logistic":
+                            continue
+                        # if use_blast_Xs:
+                        #     continue
+                        myXs = []
+                        for pairwise in Xs["identity"]:
+                            myXs.append([float(sum(pairwise)) / len(pairwise)])
+                        myXs = np.array(myXs)
+                    # elif use_blast_Xs:
+                    #     myXs = np.concatenate((Xs[similarity], BLASTXs[similarity]), axis=1)
+                    else:
+                        myXs = Xs[similarity]
 
-                        # Fit model...
-                        fitRegModel = regModel.fit(myXs, Ys_int)
+                    # Fit model...
+                    fitRegModel = regModel.fit(myXs, Ys_int)
 
-                        # If linear regression...
-                        if regression == "linear":
-                            predictions = fitRegModel.predict(myXs)
+                    # If linear regression...
+                    if regression == "linear":
+                        predictions = fitRegModel.predict(myXs)
 
-                        # ... Else...
-                        else:
-                            predictions = fitRegModel.predict_proba(myXs)[:,1]
+                    # ... Else...
+                    else:
+                        predictions = fitRegModel.predict_proba(myXs)[:,1]
 
-                        # Get precision-recall curve
-                        Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
-                        recall, y = _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75)
-                        tf_recall = _get_tf_recall_at_y_threshold(tfPairs, predictions, Ys_int, y)
+                    # Get precision-recall curve
+                    Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
+                    recall, y = _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75)
+                    tf_recall = _get_tf_recall_at_y_threshold(tfPairs, predictions, y)
 
-                        # Verbose mode
-                        if verbose:
-                            Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {} + BLAST+ = {}): {}".format(regression, similarity, use_blast_Xs, recall))
+                    # Verbose mode
+                    if verbose:
+                        # Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {} + BLAST+ = {}): {}".format(regression, similarity, use_blast_Xs, recall))
+                        Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
+                        Jglobals.write(None, "\t*** Recalled TFs at 75% Precision threshold ({} + {}): {}".format(regression, similarity, tf_recall))
 
-                        # # Add fitRegModel
-                        # models[domains].setdefault((regression, similarity), (y, fitRegModel))
-                        # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, fitRegModel.coef_.tolist()[0]))
+                    # # Add fitRegModel
+                    # models[domains].setdefault((regression, similarity), (y, fitRegModel))
+                    # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, fitRegModel.coef_.tolist()[0]))
             exit(0)
 
         # Write JSON
@@ -233,7 +237,8 @@ def _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75):
     # i.e. recall = 1 and y = 1
     return(0.0, 1.0)
 
-def _get_tf_recall_at_y_threshold(tfPairs, predictions, Ys, threshold=0.75):
+# def _get_tf_recall_at_y_threshold(tfPairs, predictions, Ys, threshold=0.75):
+def _get_tf_recall_at_y_threshold(tfPairs, predictions, threshold=0.75):
 
     # Initialize
     tfs = set(tf for tfPair in tfPairs for tf in tfPair)
@@ -242,13 +247,11 @@ def _get_tf_recall_at_y_threshold(tfPairs, predictions, Ys, threshold=0.75):
     # For each predictions...
     for i in range(len(predictions)):
         if predictions[i] >= threshold:
+            # if Ys[i]:
             recalled_tfs.add(tfPairs[i][0])
             recalled_tfs.add(tfPairs[i][1])
 
-    print(len(tfs))
-    print(len(recalled_tfs))
-    exit(0)
-
+    return(float(len(recalled_tfs)) / len(tfs))
 
 #-------------#
 # Main        #

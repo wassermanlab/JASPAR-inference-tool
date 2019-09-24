@@ -64,20 +64,16 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
         global tomtom
         tomtom = _get_Tomtom_groups(evalue, files_dir)
 
-        # Get BLAST+ groups
-        global blast
-        blast = _get_BLAST_groups(files_dir)
+        # # Get BLAST+ groups
+        # global blast
+        # blast = _get_BLAST_groups(files_dir)
 
         # For each key, values...
         for key, values in groups.items():
-            # From PMID:1692833;
-            # DNA-binding domains vary in length. Among the shortest the AT
-            # hook, which recognizes sequences in the minor groove utilizing
-            # fewer than a dozen amino acids.
 
             # Initialize
             Xss = {}
-            BLASTXss = {}
+            # BLASTXss = {}
             Ys = []
             uniaccs = []
 
@@ -96,8 +92,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
                         # Initialize
                         Xs = []
-                        BLASTXs = []
-
+                        # BLASTXs = []
 
                         # Inner most loop for examining EACH different component...
                         for k in range(len(values[i][1])):
@@ -107,14 +102,14 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                             seq2 = _removeLowercase(values[j][1][k])
                             Xs.extend(_fetchXs(seq1, seq2, similarity))
 
-                        # Get BLAST+ Xs
-                        BLASTXs = _fetchBLASTXs(values[i][2], values[j][2], similarity)
+                        # # Get BLAST+ Xs
+                        # BLASTXs = _fetchBLASTXs(values[i][2], values[j][2], similarity)
 
                         # Append Xs
                         Xss.setdefault(similarity, [])
                         Xss[similarity].append(Xs)
-                        BLASTXss.setdefault(similarity, [])
-                        BLASTXss[similarity].append(BLASTXs)
+                        # BLASTXss.setdefault(similarity, [])
+                        # BLASTXss[similarity].append(BLASTXs)
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
@@ -128,7 +123,8 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                 continue
 
             # Add to pairwise
-            pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
+            # pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
+            pairwise.setdefault(key, [Xss, Ys, uniaccs])
 
         # Write pickle file
         with open(pickle_file, "wb") as f:
@@ -251,21 +247,21 @@ def _BLOSUMscoring(aa1, aa2):
         else:
             return(blosum62[(aa2, aa1)])
 
-def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
+# def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
 
-    # Initialize
-    BLASTXs = [0.0, 0.0]
+#     # Initialize
+#     BLASTXs = [0.0, 0.0]
 
-    if uacc1 in blast:
-        if uacc2 in blast[uacc1]:
-            if similarity == "identity":
-                BLASTXs[0] = blast[uacc1][uacc2][0]
-                BLASTXs[1] = blast[uacc1][uacc2][2]
-            elif similarity == "blosum62":
-                BLASTXs[0] = blast[uacc1][uacc2][1]
-                BLASTXs[1] = blast[uacc1][uacc2][2]
+#     if uacc1 in blast:
+#         if uacc2 in blast[uacc1]:
+#             if similarity == "identity":
+#                 BLASTXs[0] = blast[uacc1][uacc2][0]
+#                 BLASTXs[1] = blast[uacc1][uacc2][2]
+#             elif similarity == "blosum62":
+#                 BLASTXs[0] = blast[uacc1][uacc2][1]
+#                 BLASTXs[1] = blast[uacc1][uacc2][2]
 
-    return(BLASTXs)
+#     return(BLASTXs)
 
 def _fetchY(maIDlist1, maIDlist2):
     """

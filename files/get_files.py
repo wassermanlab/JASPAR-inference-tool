@@ -110,8 +110,8 @@ def get_files(devel=False, out_dir=out_dir, threads=1):
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(out_dir, threads)
 
-    # Group UniProt Accessions by BLAST
-    _group_by_BLAST(out_dir, threads)
+    # # Group UniProt Accessions by BLAST
+    # _group_by_BLAST(out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -802,41 +802,41 @@ def _get_Tomtom_hits(tomtom_dir):
 
     return(hits)
 
-def _group_by_BLAST(out_dir=out_dir, threads=1):
+# def _group_by_BLAST(out_dir=out_dir, threads=1):
 
-    # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.blast.json")
-    if not os.path.exists(groups_json_file):
+#     # Skip if groups JSON file already exists
+#     groups_json_file = os.path.join(out_dir, "groups.blast.json")
+#     if not os.path.exists(groups_json_file):
 
-        # Initialize
-        blast = {}
-        seq_records = []
+#         # Initialize
+#         blast = {}
+#         seq_records = []
 
-        # For each taxon...
-        for taxon in Jglobals.taxons:
+#         # For each taxon...
+#         for taxon in Jglobals.taxons:
 
-            # Intialize
-            fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
+#             # Intialize
+#             fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
 
-            # For each SeqRecord...
-            for seq_record in Jglobals.parse_fasta_file(fasta_file):
-                seq_records.append(seq_record)
+#             # For each SeqRecord...
+#             for seq_record in Jglobals.parse_fasta_file(fasta_file):
+#                 seq_records.append(seq_record)
 
-        # Parallelize
-        pool = Pool(threads)
-        parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
-        for blast_results in tqdm(pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)):
-            blast_results = list(zip(*blast_results))
-            uniacc = blast_results.pop(0)
-            blast.setdefault(uniacc[0], list(zip(*blast_results)))
-        pool.close()
-        pool.join()
+#         # Parallelize
+#         pool = Pool(threads)
+#         parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
+#         for blast_results in tqdm(pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)):
+#             blast_results = list(zip(*blast_results))
+#             uniacc = blast_results.pop(0)
+#             blast.setdefault(uniacc[0], list(zip(*blast_results)))
+#         pool.close()
+#         pool.join()
 
-        # Write
-        Jglobals.write(
-            groups_json_file,
-            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
-        )
+#         # Write
+#         Jglobals.write(
+#             groups_json_file,
+#             json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
+#         )
 
 #-------------#
 # Main        #
