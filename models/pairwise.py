@@ -121,7 +121,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
                     # Append, y, uniaccs
                     Ys.append(y)
-                    uniaccs.append("{}*{}".format(values[i][2], values[j][2]))
+                    uniaccs.append((values[i][2], values[j][2]))
 
             # Skip if only one class in the data
             if len(set(Ys)) == 1:

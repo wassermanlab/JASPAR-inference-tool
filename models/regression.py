@@ -108,12 +108,11 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
             # 2. For each TF, figure out which index to include
             tfIdxs = {}
             for tfPair in tfPairs:
-                for tf in tfPair.split("*"):
+                for tf in tfPair:
                     tfIdxs.setdefault(tf, [])
             for tf, idxs in tfIdxs.items():
                 for i in range(len(tfPairs)):
-                    tfs = set(tfPairs[i].split("*"))
-                    if tf in tfs:
+                    if tf in tfPairs[i]:
                         idxs.append(i)
 
             # Get iterator for cross validation
@@ -185,6 +184,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                         # Get precision-recall curve
                         Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
                         recall, y = _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75)
+                        tf_recall = _get_tf_recall_at_y_threshold(tfPairs, predictions, Ys_int, y)
 
                         # Verbose mode
                         if verbose:
@@ -232,6 +232,23 @@ def _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75):
     # Return worst case scenario:
     # i.e. recall = 1 and y = 1
     return(0.0, 1.0)
+
+def _get_tf_recall_at_y_threshold(tfPairs, predictions, Ys, threshold=0.75):
+
+    # Initialize
+    tfs = set(tf for tfPair in tfPairs for tf in tfPair)
+    recalled_tfs = set()
+
+    # For each predictions...
+    for i in range(len(predictions)):
+        if predictions[i] >= threshold:
+            recalled_tfs.add(tfPairs[i][0])
+            recalled_tfs.add(tfPairs[i][1])
+
+    print(len(tfs))
+    print(len(recalled_tfs))
+    exit(0)
+
 
 #-------------#
 # Main        #
