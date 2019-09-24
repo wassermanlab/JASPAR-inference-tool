@@ -260,7 +260,7 @@ def _get_value_at_precision_threshold(Prec, values, threshold=0.75):
     # For each y...
     for i in range(len(Prec)):
 
-        if Prec[i] >= threshold or i == len(values):
+        if Prec[i] >= threshold or i +1 == len(values):
             break
 
     return(values[i])
