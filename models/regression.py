@@ -88,6 +88,9 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
+            if domains != "HLH+HLH":
+                continue
+
             # Initialize
             Xs = {}
             # BLASTXs = {}
@@ -249,7 +252,11 @@ def _get_value_at_precision_threshold(Prec, values, threshold=0.75):
 
         if Prec[i] >= threshold:
 
-            return(values[i])
+            try:
+                return(values[i])
+
+            except:
+                pass
 
     return(values[-1])
 
