@@ -55,10 +55,11 @@ def main():
 
 def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
-    # Skip if JSON/pickle files already exists
-    json_file = os.path.join(out_dir, "results.json")
-    pickle_file = os.path.join(out_dir, "models.pickle")
-    if not os.path.exists(json_file) or not os.path.exists(pickle_file):
+    # Skip if pickle file already exists
+    models_file = os.path.join(out_dir, "models.pickle")
+    # results_file = os.path.join(out_dir, "results.pickle")
+    # if not os.path.exists(models_file) or not os.path.exists(results_file):
+    if not os.path.exists(models_file):
 
         # Initialize
         models = {
@@ -67,18 +68,18 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                 (
                     "regression approach",
                     "similarity representation"
-                ) : ("Y at 75% precision", "model")
+                ) : (["precisions"], ["recalls"], ["Ys"], ["TF recalls"], "recall at 75% precision", "Y at 75% precision", "TF recall at 75% precision", "model")
             }
         }
-        results = {
-            "Keys": "DBD composition",
-            "Values": {
-                (
-                    "regression approach",
-                    "similarity representation"
-                ) : (["precisions"], ["recalls"], ["Ys"], ["weights"])
-            }
-        }
+        # results = {
+        #     "Keys": "DBD composition",
+        #     "Values": {
+        #         (
+        #             "regression approach",
+        #             "similarity representation"
+        #         ) : (["precisions"], ["recalls"], ["Ys"], ["weights"])
+        #     }
+        # }
 
         # Load pickle file
         with open(pairwise_file, "rb") as f:
@@ -87,14 +88,14 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
-            if domains != "Homeodomain":
+            if domains != "WRKY":
                 continue
 
             # Initialize
             Xs = {}
             # BLASTXs = {}
             models.setdefault(domains, {})
-            results.setdefault(domains, {})
+            # results.setdefault(domains, {})
             # Ys = np.array(values[2])
             Ys = np.array(values[1])
             Ys_int = Ys * 1
@@ -152,25 +153,27 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
 
                 # For each sequence similarity representation...
-                for similarity in ["identity", "blosum62", "%ID"]:
+                # for similarity in ["identity", "blosum62", "%ID"]:
+                for similarity in ["identity", "blosum62"]:
+
 
                     # # For use BLAST+ Xs...
                     # for use_blast_Xs in [False, True]:
 
                     # Initialize
-                    if similarity == "%ID":
-                        if regression == "logistic":
-                            continue
-                        # if use_blast_Xs:
-                        #     continue
-                        myXs = []
-                        for pairwise in Xs["identity"]:
-                            myXs.append([float(sum(pairwise)) / len(pairwise)])
-                        myXs = np.array(myXs)
-                    # elif use_blast_Xs:
-                    #     myXs = np.concatenate((Xs[similarity], BLASTXs[similarity]), axis=1)
-                    else:
-                        myXs = Xs[similarity]
+                    # if similarity == "%ID":
+                    #     if regression == "logistic":
+                    #         continue
+                    #     # if use_blast_Xs:
+                    #     #     continue
+                    #     myXs = []
+                    #     for pairwise in Xs["identity"]:
+                    #         myXs.append([float(sum(pairwise)) / len(pairwise)])
+                    #     myXs = np.array(myXs)
+                    # # elif use_blast_Xs:
+                    # #     myXs = np.concatenate((Xs[similarity], BLASTXs[similarity]), axis=1)
+                    # else:
+                    myXs = Xs[similarity]
 
                     # Fit model...
                     fitRegModel = regModel.fit(myXs, Ys_int)
@@ -185,8 +188,10 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
                     # Get precision-recall curve
                     Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
-                    recall, y = _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75)
-                    tf_recall = _get_tf_recall_at_y_threshold(tfPairs, predictions, y)
+                    tfRec = _get_tf_recall_curve(tfPairs, predictions, Ys)
+                    recall = _get_value_at_precision_threshold(Prec, Rec, threshold=0.75)
+                    y = _get_value_at_precision_threshold(Prec, Ys, threshold=0.75)
+                    tf_recall = _get_value_at_precision_threshold(Prec, tfRec, threshold=0.75)
 
                     # Verbose mode
                     if verbose:
@@ -194,19 +199,13 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                         Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
                         Jglobals.write(None, "\t*** Recalled TFs at 75% Precision threshold ({} + {}): {}".format(regression, similarity, tf_recall))
 
-                    # # Add fitRegModel
-                    # models[domains].setdefault((regression, similarity), (y, fitRegModel))
-                    # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, fitRegModel.coef_.tolist()[0]))
-            exit(0)
-
-        # Write JSON
-        Jglobals.write(
-            json_file,
-            json.dumps(results, sort_keys=True, indent=4, separators=(",", ": "))
-        )
+                    # Add fitRegModel
+                    # models[domains].setdefault((regression, similarity), (recall, tf_recall, y, fitRegModel))
+                    # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, fitRegModel.coef_.tolist()[0]))
+                    models[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, recall, y, tf_recall, fitRegModel))
 
         # Write pickle file
-        with open(pickle_file, "wb") as f:
+        with open(models_file, "wb") as f:
             pickle.dump(models, f)
 
 def _leaveOneTFOut(tfIdxs, l):
@@ -224,34 +223,38 @@ def _leaveOneTFOut(tfIdxs, l):
 
     return(myCViterator)
 
-def _get_recall_and_y_at_precision_threshold(Prec, Rec, Ys, threshold=0.75):
+def _get_tf_recall_curve(tfPairs, predictions, Ys):
+
+    # Initialize
+    tf_recall = []
+    tfs = set(tf for tfPair in tfPairs for tf in tfPair)
 
     # For each y...
-    for i in range(len(Ys)):
+    for y in Ys:
+
+        # Initialize
+        tfs_recalled = set()
+
+        # For each predictions...
+        for i in range(len(predictions)):
+            if predictions[i] >= y:
+                tfs_recalled.add(tfPairs[i][0])
+                tfs_recalled.add(tfPairs[i][1])
+
+        tf_recall.append(float(len(tfs_recalled)) / len(tfs))
+
+    return(tf_recall)
+
+def _get_value_at_precision_threshold(Prec, values, threshold=0.75):
+
+    # For each y...
+    for i in range(len(Prec)):
 
         if Prec[i] >= threshold:
 
-            return(Rec[i], Ys[i])
+            return(values[i])
 
-    # Return worst case scenario:
-    # i.e. recall = 1 and y = 1
-    return(0.0, 1.0)
-
-# def _get_tf_recall_at_y_threshold(tfPairs, predictions, Ys, threshold=0.75):
-def _get_tf_recall_at_y_threshold(tfPairs, predictions, threshold=0.75):
-
-    # Initialize
-    tfs = set(tf for tfPair in tfPairs for tf in tfPair)
-    recalled_tfs = set()
-
-    # For each predictions...
-    for i in range(len(predictions)):
-        if predictions[i] >= threshold:
-            # if Ys[i]:
-            recalled_tfs.add(tfPairs[i][0])
-            recalled_tfs.add(tfPairs[i][1])
-
-    return(float(len(recalled_tfs)) / len(tfs))
+    return(values[-1])
 
 #-------------#
 # Main        #
