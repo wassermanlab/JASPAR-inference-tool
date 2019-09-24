@@ -244,18 +244,15 @@ def _get_tf_recall_curve(tfPairs, predictions, Ys):
 
 def _get_value_at_precision_threshold(Prec, values, threshold=0.75):
 
-    # For each y...
-    for i in range(len(Prec)):
+    if len(Prec) == len(values):
 
-        if Prec[i] >= threshold:
+        # For each y...
+        for i in range(len(Prec)):
 
-            try:
+            if Prec[i] >= threshold:
                 return(values[i])
 
-            except:
-                pass
-
-    return(values[-1])
+    return(0.0)
 
 #-------------#
 # Main        #
