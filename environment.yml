@@ -12,7 +12,7 @@ dependencies:
   - hmmer=3.2.1
   - matplotlib=3.1.1
   - meme=5.0.5
-  - pandas=0.25.1
+  - pandas=0.25.0
   - pip=19.2.2
   - prody=1.10.8
   - pyparsing=2.4.2
