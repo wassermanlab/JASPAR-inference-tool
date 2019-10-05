@@ -9,6 +9,8 @@ dependencies:
   - blast=2.9.0
   - curl
   - git=2.20.1
+  - ipython=7.8.0
+  - jupyter=1.0.0
   - hmmer=3.2.1
   - matplotlib=3.1.1
   - meme=5.0.5

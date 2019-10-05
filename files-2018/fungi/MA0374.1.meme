@@ -1,0 +1,20 @@
+MEME version 4
+
+ALPHABET= ACGT
+
+strands: + -
+
+Background letter frequencies
+A 0.25 C 0.25 G 0.25 T 0.25
+
+MOTIF MA0374.1 RSC3
+letter-probability matrix: alength= 4 w= 7 nsites= 100 E= 0
+ 0.000000  0.910000  0.050000  0.040000
+ 0.000000  0.000000  1.000000  0.000000
+ 0.000000  1.000000  0.000000  0.000000
+ 0.000000  0.000000  1.000000  0.000000
+ 0.060606  0.555556  0.181818  0.202020
+ 0.190000  0.300000  0.370000  0.140000
+ 0.227723  0.257426  0.336634  0.178218
+URL http://jaspar.genereg.net/matrix/MA0374.1
+

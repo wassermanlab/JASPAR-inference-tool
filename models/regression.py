@@ -3,19 +3,15 @@
 # Reference:
 # https://towardsdatascience.com/
 # building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
-#
-# Notes:
-# For similarity representation "%ID", we don't really apply a regression.
-# Instead, we set a threshold on the Y at a precision >= 75%.
 
 import argparse
-import json
 import numpy as np
 import os
 import pickle
-import re
 from sklearn.linear_model import LogisticRegressionCV, RidgeCV
 from sklearn.metrics import precision_recall_curve
+from sklearn.multiclass import OneVsRestClassifier
+# from sklearn.preprocessing import MultiLabelBinarizer
 import sys
 
 # Defaults
@@ -34,14 +30,18 @@ from __init__ import Jglobals
 
 def parse_args():
     """
-    This function parses arguments provided via the command line and returns an {argparse} object.
+    This function parses arguments provided via the command line and returns
+    an {argparse} object.
     """
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
-    parser.add_argument("-p", help="pickle file from pairwise.py", metavar="PICKLE")
-    parser.add_argument("-v", "--verbose", action="store_true", help="verbose mode (default = False)")
+    parser.add_argument("-o", default=out_dir, metavar="DIR",
+        help="output directory (default = ./)")
+    parser.add_argument("-p", metavar="PICKLE",
+        help="pickle file from pairwise.py")
+    parser.add_argument("-v", "--verbose", action="store_true",
+        help="verbose mode (default = False)")
 
     return(parser.parse_args())
 
@@ -88,16 +88,23 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
+            if domains != "AP2":
+                continue
+
             # Initialize
             Xs = {}
             # BLASTXs = {}
             models.setdefault(domains, {})
             # results.setdefault(domains, {})
-            # Ys = np.array(values[2])
-            Ys = np.array(values[1])
-            Ys_int = Ys * 1
-            # tfPairs = values[3]
-            tfPairs = values[2]
+            # Ys = np.array(values[1])
+            Ys = np.array(values[2])
+            # print(Ys[:10])
+            # Ys_transform = MultiLabelBinarizer().fit_transform(Ys)
+            # print(Ys_transform[:10])
+            # exit(0)
+            # Ys_int = Ys * 1
+            # tfPairs = values[2]
+            tfPairs = values[3]
 
             # Verbose mode
             if verbose:
@@ -134,7 +141,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
             # Verbose mode
             if verbose:
-                Jglobals.write(None, "\t*** Ys: %s" % Ys_int.shape)
+                Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
                 Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
 
             # For each regression approach...
@@ -147,48 +154,50 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
                 # ... Else...
                 else:
+                    continue
                     regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
 
                 # For each sequence similarity representation...
                 # for similarity in ["identity", "blosum62", "%ID"]:
                 for similarity in ["identity", "blosum62"]:
 
-
                     # # For use BLAST+ Xs...
                     # for use_blast_Xs in [False, True]:
 
                     # Initialize
+                    myXs = Xs[similarity]
                     # if similarity == "%ID":
                     #     if regression == "logistic":
                     #         continue
                     #     # if use_blast_Xs:
                     #     #     continue
-                    #     myXs = []
-                    #     for pairwise in Xs["identity"]:
-                    #         myXs.append([float(sum(pairwise)) / len(pairwise)])
-                    #     myXs = np.array(myXs)
+                    #     myXs = np.array([float(sum(p)) / len(p) for p in Xs["identity"]])
                     # # elif use_blast_Xs:
-                    # #     myXs = np.concatenate((Xs[similarity], BLASTXs[similarity]), axis=1)
-                    # else:
-                    myXs = Xs[similarity]
+                    # #     myXs = np.concatenate((myXs, BLASTXs[similarity]), axis=1)
 
                     # Fit model...
-                    fitRegModel = regModel.fit(myXs, Ys_int)
+                    # fitRegModel = OneVsRestClassifier(regModel).fit(myXs, Ys_transform)
+                    fitRegModel = regModel.fit(myXs, Ys)
 
-                    # If linear regression...
+                    # Predict
                     if regression == "linear":
                         predictions = fitRegModel.predict(myXs)
 
                     # ... Else...
                     else:
-                        predictions = fitRegModel.predict_proba(myXs)[:,1]
+                        predictions = fitRegModel.predict_proba(myXs)
 
-                    # Get precision-recall curve
-                    Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
-                    tfRec = _get_tf_recall_curve(tfPairs, predictions, Ys)
-                    recall = _get_value_at_precision_threshold(Prec, Rec, threshold=0.75)
-                    y = _get_value_at_precision_threshold(Prec, Ys, threshold=0.75)
-                    tf_recall = _get_value_at_precision_threshold(Prec, tfRec, threshold=0.75)
+                    for i in range(100):
+                        print(Ys[i], predictions[i], abs(Ys[i] - predictions[i]))
+                    exit(0)
+
+                    # # Get precision-recall curve
+                    # Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
+                    
+                    # tfRec = _get_tf_recall_curve(tfPairs, Ys_int, predictions, Ys)
+                    # recall = _get_value_at_precision_threshold(Prec, Rec, threshold=0.75)
+                    # y = _get_value_at_precision_threshold(Prec, Ys, threshold=0.75)
+                    # tf_recall = _get_value_at_precision_threshold(Prec, tfRec, threshold=0.75)
 
                     # Verbose mode
                     if verbose:
@@ -220,7 +229,7 @@ def _leaveOneTFOut(tfIdxs, l):
 
     return(myCViterator)
 
-def _get_tf_recall_curve(tfPairs, predictions, Ys):
+def _get_tf_recall_curve(tfPairs, labels, predictions, Ys):
     """
     From sklearn.metrics.precision_recall_curve
 
@@ -231,7 +240,7 @@ def _get_tf_recall_curve(tfPairs, predictions, Ys):
 
     # Initialize
     tf_recall = []
-    tfs = set(tf for tfPair in tfPairs for tf in tfPair)
+    tfs = set(tf for i in range(len(tfPairs)) if labels[i] == 1 for j in tfPair)
 
     # For each y...
     for y in Ys:

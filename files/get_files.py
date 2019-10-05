@@ -37,14 +37,18 @@ from infer_profile import _SeqRecord_BLAST_search
 
 def parse_args():
     """
-    This function parses arguments provided via the command line and returns an {argparse} object.
+    This function parses arguments provided via the command line and returns
+    an {argparse} object.
     """
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-d", "--devel", action="store_true", help="development mode (uses hfaistos; default = False)")
-    parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
-    parser.add_argument("--threads", default=1, type=int, help="threads to use (default = 1)", metavar="INT")
+    parser.add_argument("-d", "--devel", action="store_true",
+        help="development mode (uses hfaistos; default = False)")
+    parser.add_argument("-o", default=out_dir, metavar="DIR",
+        help="output directory (default = ./)")
+    parser.add_argument("--threads", default=1, type=int, metavar="INT",
+        help="threads to use (default = 1)")
 
 
     return(parser.parse_args())
@@ -110,8 +114,8 @@ def get_files(devel=False, out_dir=out_dir, threads=1):
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(out_dir, threads)
 
-    # # Group UniProt Accessions by BLAST
-    # _group_by_BLAST(out_dir, threads)
+    # Group UniProt Accessions by BLAST
+    _group_by_BLAST(out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -140,7 +144,8 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
         # Get DBDs
         cmd = "unzip -p %s | cut -f 11 | sort | uniq | grep -v DBDs" % cisbp_file
-        process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
         # For each output line...
         for line in process.stdout.decode("utf-8").split("\n"):
@@ -188,11 +193,13 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
             # HMM build
             hmm_file = "%s.hmm" % pfam_id_std
             cmd = "hmmbuild %s %s" % (hmm_file, msa_file)
-            process = subprocess.run([cmd],shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            process = subprocess.run([cmd],shell=True, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL)
 
             # HMM press
             cmd = "hmmpress -f %s" % hmm_file
-            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL)
 
             # Add Pfam
             pfam_DBDs.setdefault(pfam_ac, pfam_id_std)
@@ -216,7 +223,8 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
             # HMM press
             cmd = "hmmpress -f %s" % hmm_db
-            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            process = subprocess.run([cmd], shell=True,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         # Write
         Jglobals.write(
@@ -252,7 +260,8 @@ def _download_JASPAR_profiles(taxon, out_dir=out_dir):
             jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
 
         # Get JASPAR profiles
-        os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download", "CORE", jaspar_file))
+        os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download",
+            "CORE", jaspar_file))
 
         # Unzip
         os.system("unzip -qq %s" % jaspar_file)
@@ -428,7 +437,8 @@ def _format_BLAST_database(taxon, out_dir=out_dir):
 
         # Make BLAST+ database
         cmd = "makeblastdb -in %s -dbtype prot" % fasta_file
-        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
 
 def _get_Pfam_alignments(taxon, out_dir=out_dir):
 
@@ -504,7 +514,8 @@ def hmmScan(seq_file, hmm_file, non_overlapping_domains=False):
 
     # Scan
     cmd = "hmmscan --domtblout %s %s %s" % (out_file, hmm_file, seq_file)
-    process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL)
 
     # Read domains
     domains = _readDomainsTab(out_file)
@@ -526,7 +537,7 @@ def _readDomainsTab(file_name):
     """
     From PMID:22942020;
     A hit has equal probability of being in the same clan as a different clan
-    when the E-value is 0.01 (log10 = −2). When the E-value is 10−5, the pro-
+    when the E-value is 0.01 (log 10 = -2). When the E-value is 10-5, the pro-
     bability that a sequence belongs to the same clan is >95%.
 
     From CIS-BP paper;
@@ -560,7 +571,8 @@ def _readDomainsTab(file_name):
                     continue
 
                 # Append domain
-                domains.append((mod.id, dom.query_start, dom.query_end, dom.evalue_cond))
+                domains.append((mod.id, dom.query_start, dom.query_end,
+                    dom.evalue_cond))
 
     return(domains)
 
@@ -692,7 +704,9 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
         # Parallelize
         pool = Pool(threads)
         parallelized = partial(Tomtom, database=database, out_dir=out_dir)
-        for _ in tqdm(pool.imap(parallelized, jaspar_profiles), desc="Tomtom", total=len(jaspar_profiles)):
+        for _ in tqdm(
+            pool.imap(parallelized, jaspar_profiles), desc="Tomtom", total=len(jaspar_profiles)
+        ):
             pass
         pool.close()
         pool.join()
@@ -732,15 +746,16 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
 def Tomtom(meme_file, database, out_dir=out_dir):
     """
     From http://meme-suite.org/doc/tomtom.html;
-    In order to compute the scores, Tomtom needs to know the frequencies of the letters
-    of the sequence alphabet in the database being searched (the "background" letter
-    frequencies). By default, the background letter frequencies included in the query
-    motif file are used. The scores of columns that overlap for a given offset are summed.
-    This summed score is then converted to a p-value. The reported p-value is the minimal
-    p-value over all possible offsets. To compensate for multiple testing, each reported
-    p-value is converted to an E-value by multiplying it by twice the number of target
-    motifs. As a second type of multiple-testing correction, q-values for each match are
-    computed from the set of p-values and reported.
+    In order to compute the scores, Tomtom needs to know the frequencies of
+    the letters of the sequence alphabet in the database being searched (the
+    "background" letter frequencies). By default, the background letter fre-
+    quencies included in the query motif file are used. The scores of columns
+    that overlap for a given offset are summed. This summed score is then con-
+    verted to a p-value. The reported p-value is the minimal p-value over all
+    possible offsets. To compensate for multiple testing, each reported p-value
+    is converted to an E-value by multiplying it by twice the number of target
+    motifs. As a second type of multiple-testing correction, q-values for each
+    match arecomputed from the set of p-values and reported.
     """
 
     # Skip if output directory already exists
@@ -750,7 +765,8 @@ def Tomtom(meme_file, database, out_dir=out_dir):
 
         # Run Tomtom
         cmd = "tomtom -o %s %s %s" % (output_dir, meme_file, database)
-        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
 
 def _get_profiles_from_latest_version(jaspar_profiles):
 
@@ -802,41 +818,43 @@ def _get_Tomtom_hits(tomtom_dir):
 
     return(hits)
 
-# def _group_by_BLAST(out_dir=out_dir, threads=1):
+def _group_by_BLAST(out_dir=out_dir, threads=1):
 
-#     # Skip if groups JSON file already exists
-#     groups_json_file = os.path.join(out_dir, "groups.blast.json")
-#     if not os.path.exists(groups_json_file):
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(out_dir, "groups.blast.json")
+    if not os.path.exists(groups_json_file):
 
-#         # Initialize
-#         blast = {}
-#         seq_records = []
+        # Initialize
+        blast = {}
+        seq_records = []
 
-#         # For each taxon...
-#         for taxon in Jglobals.taxons:
+        # For each taxon...
+        for taxon in Jglobals.taxons:
 
-#             # Intialize
-#             fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
+            # Intialize
+            fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
 
-#             # For each SeqRecord...
-#             for seq_record in Jglobals.parse_fasta_file(fasta_file):
-#                 seq_records.append(seq_record)
+            # For each SeqRecord...
+            for seq_record in Jglobals.parse_fasta_file(fasta_file):
+                seq_records.append(seq_record)
 
-#         # Parallelize
-#         pool = Pool(threads)
-#         parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
-#         for blast_results in tqdm(pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)):
-#             blast_results = list(zip(*blast_results))
-#             uniacc = blast_results.pop(0)
-#             blast.setdefault(uniacc[0], list(zip(*blast_results)))
-#         pool.close()
-#         pool.join()
+        # Parallelize
+        pool = Pool(threads)
+        parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
+        for blast_results in tqdm(
+            pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)
+        ):
+            blast_results = list(zip(*blast_results))
+            uniacc = blast_results.pop(0)
+            blast.setdefault(uniacc[0], list(zip(*blast_results)))
+        pool.close()
+        pool.join()
 
-#         # Write
-#         Jglobals.write(
-#             groups_json_file,
-#             json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
-#         )
+        # Write
+        Jglobals.write(
+            groups_json_file,
+            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
+        )
 
 #-------------#
 # Main        #

@@ -2,7 +2,10 @@
 
 import argparse
 from Bio.SubsMat.MatrixInfo import blosum62
+from collections import Counter
 import json
+import math
+from numpy import log10 as log
 import os
 import pickle
 import string
@@ -25,14 +28,18 @@ from __init__ import Jglobals
 
 def parse_args():
     """
-    This function parses arguments provided via the command line and returns an {argparse} object.
+    This function parses arguments provided via the command line and returns
+    an {argparse} object.
     """
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-e", default=0.05, type=float, help="e-value threshold (default = 0.05)", metavar="FLOAT")
-    parser.add_argument("-f", default=files_dir, help="files directory (from get_files.py; default=../files/)", metavar="DIR")
-    parser.add_argument("-o", default=out_dir, help="output directory (default = ./)", metavar="DIR")
+    # parser.add_argument("-e", default=0.05, type=float, metavar="FLOAT",
+    #     help="e-value threshold (default = 0.05)")
+    parser.add_argument("-f", default=files_dir, metavar="DIR",
+        help="files directory (from get_files.py; default=../files/)")
+    parser.add_argument("-o", default=out_dir, metavar="DIR",
+        help="output directory (default = ./)")
 
     return(parser.parse_args())
 
@@ -42,9 +49,11 @@ def main():
     args = parse_args()
 
     # Pairwise
-    pairwise(args.e, os.path.abspath(args.f), os.path.abspath(args.o))
+    # pairwise(args.e, os.path.abspath(args.f), os.path.abspath(args.o))
+    pairwise(os.path.abspath(args.f), os.path.abspath(args.o))
 
-def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
+# def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
+def pairwise(files_dir=files_dir, out_dir=out_dir):
 
     # Skip if pickle file already exists
     pickle_file = os.path.join(out_dir, "pairwise.pickle")
@@ -62,24 +71,25 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
         # Get Tomtom groups
         global tomtom
-        tomtom = _get_Tomtom_groups(evalue, files_dir)
+        # tomtom = _get_Tomtom_groups(evalue, files_dir)
+        tomtom = _get_Tomtom_groups(files_dir)
 
-        # # Get BLAST+ groups
-        # global blast
-        # blast = _get_BLAST_groups(files_dir)
+        # Get BLAST+ groups
+        global blast
+        blast = _get_BLAST_groups(files_dir)
 
         # For each key, values...
         for key, values in groups.items():
 
             # Initialize
             Xss = {}
-            # BLASTXss = {}
+            BLASTXss = {}
             Ys = []
             uniaccs = []
 
-            # Skip if not enough TFs
-            if len(values) < 3:
-                continue
+            # # Skip if not enough TFs
+            # if len(values) < 3:
+            #     continue
 
             # For each TF...
             for i in range(len(values) - 1):
@@ -92,7 +102,7 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 
                         # Initialize
                         Xs = []
-                        # BLASTXs = []
+                        BLASTXs = []
 
                         # Inner most loop for examining EACH different component...
                         for k in range(len(values[i][1])):
@@ -102,14 +112,14 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                             seq2 = _removeLowercase(values[j][1][k])
                             Xs.extend(_fetchXs(seq1, seq2, similarity))
 
-                        # # Get BLAST+ Xs
-                        # BLASTXs = _fetchBLASTXs(values[i][2], values[j][2], similarity)
+                        # Get BLAST+ Xs
+                        BLASTXs = _fetchBLASTXs(values[i][2], values[j][2], similarity)
 
                         # Append Xs
                         Xss.setdefault(similarity, [])
                         Xss[similarity].append(Xs)
-                        # BLASTXss.setdefault(similarity, [])
-                        # BLASTXss[similarity].append(BLASTXs)
+                        BLASTXss.setdefault(similarity, [])
+                        BLASTXss[similarity].append(BLASTXs)
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
@@ -118,13 +128,13 @@ def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
                     Ys.append(y)
                     uniaccs.append((values[i][2], values[j][2]))
 
-            # Skip if only one class in the data
-            if len(set(Ys)) == 1:
-                continue
+            # # Skip if not enough classes in the data
+            # if len(set([tuple(y) for y in Ys])) < 3:
+            #     continue
 
             # Add to pairwise
-            # pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
-            pairwise.setdefault(key, [Xss, Ys, uniaccs])
+            # pairwise.setdefault(key, [Xss, Ys, uniaccs])
+            pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
 
         # Write pickle file
         with open(pickle_file, "wb") as f:
@@ -139,7 +149,8 @@ def _get_DBD_groups(files_dir=files_dir):
 
     return(groups)
 
-def _get_Tomtom_groups(evalue=0.05, files_dir=files_dir):
+# def _get_Tomtom_groups(evalue=0.05, files_dir=files_dir):
+def _get_Tomtom_groups(files_dir=files_dir):
 
     # Initialize
     tomtom_filtered = {}
@@ -151,16 +162,18 @@ def _get_Tomtom_groups(evalue=0.05, files_dir=files_dir):
 
     for matrix_id in tomtom_unfiltered:
 
-        # Initialize
-        matrix_ids = set()
+        # # Initialize
+        # matrix_ids = set()
 
         for m, e in tomtom_unfiltered[matrix_id]:
 
-            if e <= evalue:
-                matrix_ids.add(m)
+        #     if e <= evalue:
+        #         matrix_ids.add(m)
 
-        if len(matrix_ids) > 0:
-            tomtom_filtered.setdefault(matrix_id, matrix_ids)
+        # if len(matrix_ids) > 0:
+        #     tomtom_filtered.setdefault(matrix_id, matrix_ids)
+            tomtom_filtered.setdefault(matrix_id, {})
+            tomtom_filtered[matrix_id].setdefault(m, e)
 
     return(tomtom_filtered)
 
@@ -247,21 +260,21 @@ def _BLOSUMscoring(aa1, aa2):
         else:
             return(blosum62[(aa2, aa1)])
 
-# def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
+def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
 
-#     # Initialize
-#     BLASTXs = [0.0, 0.0]
+    # Initialize
+    BLASTXs = [0.0, 0.0]
 
-#     if uacc1 in blast:
-#         if uacc2 in blast[uacc1]:
-#             if similarity == "identity":
-#                 BLASTXs[0] = blast[uacc1][uacc2][0]
-#                 BLASTXs[1] = blast[uacc1][uacc2][2]
-#             elif similarity == "blosum62":
-#                 BLASTXs[0] = blast[uacc1][uacc2][1]
-#                 BLASTXs[1] = blast[uacc1][uacc2][2]
+    if uacc1 in blast:
+        if uacc2 in blast[uacc1]:
+            if similarity == "identity":
+                BLASTXs[0] = blast[uacc1][uacc2][0]
+                BLASTXs[1] = blast[uacc1][uacc2][2]
+            elif similarity == "blosum62":
+                BLASTXs[0] = blast[uacc1][uacc2][1]
+                BLASTXs[1] = blast[uacc1][uacc2][2]
 
-#     return(BLASTXs)
+    return(BLASTXs)
 
 def _fetchY(maIDlist1, maIDlist2):
     """
@@ -283,9 +296,13 @@ def _fetchY(maIDlist1, maIDlist2):
 
             # If profiles were clustered together...
             if maID2 in tomtom[maID1] and maID1 in tomtom[maID2]:
-                return(True)
 
-    return(False)
+                joint_evalue = math.sqrt(tomtom[maID1][maID2] * tomtom[maID2][maID1])
+                log_evalue = log(joint_evalue)
+
+                return(max(min(1.0, 0 - log_evalue / 10), 0.0))
+
+    return(0.0)
 
 #-------------#
 # Main        #
