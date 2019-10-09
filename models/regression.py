@@ -7,6 +7,7 @@
 import argparse
 from glmnet import ElasticNet, LogitNet
 import numpy as np
+from operator import itemgetter 
 import os
 import pickle
 # from sklearn.linear_model import LogisticRegressionCV, RidgeCV
@@ -170,6 +171,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     # for use_blast_Xs in [False, True]:
 
                     # Initialize
+                    predictions = []
                     myXs = Xs[similarity]
                     # if similarity == "%ID":
                     #     if regression == "logistic":
@@ -180,12 +182,27 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     # # elif use_blast_Xs:
                     # #     myXs = np.concatenate((myXs, BLASTXs[similarity]), axis=1)
 
-                    # Fit model...
-                    # fitRegModel = OneVsRestClassifier(regModel).fit(myXs, Ys_transform)
-                    m = m.fit(myXs, Ys)
+                    # For each cross-validation...
+                    for i in range(len(myCViterator)):
 
-                    p = m.predict(myXs)
-                    print(p)
+                        # Initialize
+                        x = itemgetter(*myCViterator[i][0])(myXs)
+                        y = itemgetter(*myCViterator[i][0])(Ys)
+                        x_test = itemgetter(*myCViterator[i][1])(myXs)
+                        y_test = itemgetter(*myCViterator[i][1])(Ys)
+
+                        # Fit model...
+                        # fitRegModel = OneVsRestClassifier(regModel).fit(myXs, Ys_transform)
+                        m_cv = m.fit(x, y)
+
+                        # Predict
+                        p = m_cv.predict(x_test)
+
+                        # Add CV predictions
+                        predictions.append((p, y_test))
+
+
+                    print(predictions)
                     exit(0)
 
                     # # Predict
@@ -236,7 +253,7 @@ def _leaveOneTFOut(tfIdxs, l):
 
         myCViterator.append((trainIdx, testIdx))
 
-    return(iter(myCViterator))
+    return(myCViterator)
 
 def _get_tf_recall_curve(tfPairs, labels, predictions, Ys):
     """

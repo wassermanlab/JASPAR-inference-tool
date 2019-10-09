@@ -5,7 +5,7 @@ channels:
   - insilichem
   - defaults
 dependencies:
-  - biopython=1.73
+  - biopython=1.75
   - blast=2.9.0
   - curl
   - git=2.20.1
