@@ -235,19 +235,16 @@ def _get_motifs(cisbp_dir):
     for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.motifs.sql")):
 
         # If valid line...
-        m = re.search("\('(.+)', '(.+)', '(.+)', '.+', 'PBM', '.+', '.+', '.+'\),*", line)
+        m = re.search("\('(.+)', '(.+)', '.+', '.+', 'PBM', '.+', '.+', '.+'\),*", line)
         if m:
 
-            # Ignore if no k-mers pickle file
+            # Ignore if no k-mers pickle file...
             if not os.path.exists(os.path.join(kmers_dir, "%s.pickle" % m.group(1))):
                 continue
 
-            print(m.group(1), m.group(2), m.group(3))
-            exit(0)
+            motifs.setdefault(m.group(1), m.group(2)])
 
-            # Skip if not characterized protein sequence #
-            if m.group(4) == "NULL": continue
-            motifs.setdefault(m.group(1), [m.group(2), m.group(3), re.sub("[^A-Z]", "X", m.group(4).upper())])
+    return(motifs)
 
 def _get_families(cisbp_dir):
 
@@ -260,6 +257,8 @@ def _get_families(cisbp_dir):
         # If valid line...
         m = re.search("\('(.+)', '(.+)', '.+', \d+, .+\),*", line)
         if m:
+            print(m.group(1), m.group(2))
+            exit(0)
             families.setdefault(m.group(1), set(m.group(2).split(",")))
 
     return(families)
