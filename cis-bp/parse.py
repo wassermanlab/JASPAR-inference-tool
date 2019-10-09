@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
-from Bio import motifs
-from Bio.Alphabet import IUPAC
-from Bio.Seq import Seq
-import gzip
 import numpy
 import operator
 import os
+import pickle
 import re
 import shutil
 import socket
@@ -124,32 +121,33 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
     # Get k-mers
     kmers = motifs.pop(0)
 
-    print(kmers)
-    exit(0)
-
     # Change dir
     os.chdir(kmers_dir)
 
-    # # For each motif...
-    # for motif in motifs:
+    # For each motif...
+    for motif in motifs:
 
-    #     # Skip if motif file already exists
-    #     motif_file = os.path.join(os.path.abspath(options.output_dir), "motifs", "%s.txt" % motif[0])
-    #     if not os.path.exists(motif_file):
-    #         # Initialize #
-    #         positions = []
-    #         functions.write(motif_file, "#k-mer,complementary;e-score")                
-    #         # For each motif... #
-    #         for i in range(len(motifs)):
-    #             if motifs[i][0] == motif[0]:
-    #                 positions.append(i)
-    #         # For each k-mer... #
-    #         for i in range(1, len(kmers)):
-    #             values = [motifs[j][i] for j in positions if motifs[j][i] is not None]
-    #             if len(values) > 0:
-    #                 functions.write(motif_file, "%s;%s;%s" % (kmers[i], triads.get_complementary_dna_sequence(kmers[i]), '{0:.3g}'.format(numpy.mean(map(float, values)))))
-    #             else:
-    #                 functions.write(motif_file, "%s;%s;None" % (kmers[i], triads.get_complementary_dna_sequence(kmers[i])))
+        print(motif)
+        exit(0)
+
+        # Skip if pickle file already exists
+        pickle_file = "%s.pickle" % motif
+        if not os.path.exists(pickle_file):
+
+            # Initialize #
+            positions = []
+            functions.write(motif_file, "#k-mer,complementary;e-score")                
+            # For each motif... #
+            for i in range(len(motifs)):
+                if motifs[i][0] == motif[0]:
+                    positions.append(i)
+            # For each k-mer... #
+            for i in range(1, len(kmers)):
+                values = [motifs[j][i] for j in positions if motifs[j][i] is not None]
+                if len(values) > 0:
+                    functions.write(motif_file, "%s;%s;%s" % (kmers[i], triads.get_complementary_dna_sequence(kmers[i]), '{0:.3g}'.format(numpy.mean(map(float, values)))))
+                else:
+                    functions.write(motif_file, "%s;%s;None" % (kmers[i], triads.get_complementary_dna_sequence(kmers[i])))
     # ##############################
     # # 1.2 Parse motif sources    #
     # ##############################
