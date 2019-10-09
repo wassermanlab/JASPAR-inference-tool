@@ -138,7 +138,7 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
             for k in range(1, len(kmers)):
 
                 # If E-score < 0.45...
-                float(motif[i]) >= 0.45:
+                if float(motif[i]) >= 0.45:
                     positive_kmers.add(kmers[i])
 
             # Write pickle file
