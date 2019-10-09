@@ -239,7 +239,7 @@ def _get_motifs(cisbp_dir):
         if m:
 
             # Ignore if no k-mers pickle file
-            if not os.path.exists(kmers_dir, "%s.pickle" % m.group(1)):
+            if not os.path.exists(os.path.join(kmers_dir, "%s.pickle" % m.group(1))):
                 continue
 
             print(m.group(1), m.group(2), m.group(3))
