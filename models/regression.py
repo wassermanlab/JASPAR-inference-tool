@@ -5,12 +5,13 @@
 # building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
 
 import argparse
+from glmnet import ElasticNet, LogitNet
 import numpy as np
 import os
 import pickle
-from sklearn.linear_model import LogisticRegressionCV, RidgeCV
-from sklearn.metrics import precision_recall_curve
-from sklearn.multiclass import OneVsRestClassifier
+# from sklearn.linear_model import LogisticRegressionCV, RidgeCV
+# from sklearn.metrics import precision_recall_curve
+# from sklearn.multiclass import OneVsRestClassifier
 # from sklearn.preprocessing import MultiLabelBinarizer
 import sys
 
@@ -149,13 +150,17 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
                 # If linear regression...
                 if regression == "linear":
-                    alphas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0] # i.e. reg. coeff. from Andrew Ng
-                    regModel = RidgeCV(alphas=alphas, cv=myCViterator)
+                    # alphas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0] # i.e. reg. coeff. from Andrew Ng
+                    # regModel = RidgeCV(alphas=alphas, cv=myCViterator)
+                    m = ElasticNet()
 
                 # ... Else...
                 else:
                     continue
-                    regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
+                    # regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
+                    m = LogitNet()
+                
+                # m.CV = myCViterator
 
                 # For each sequence similarity representation...
                 # for similarity in ["identity", "blosum62", "%ID"]:
@@ -177,15 +182,19 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
                     # Fit model...
                     # fitRegModel = OneVsRestClassifier(regModel).fit(myXs, Ys_transform)
-                    fitRegModel = regModel.fit(myXs, Ys)
+                    m = m.fit(myXs, Ys)
 
-                    # Predict
-                    if regression == "linear":
-                        predictions = fitRegModel.predict(myXs)
+                    p = m.predict(myXs)
+                    print(p)
+                    exit(0)
 
-                    # ... Else...
-                    else:
-                        predictions = fitRegModel.predict_proba(myXs)
+                    # # Predict
+                    # if regression == "linear":
+                    #     predictions = fitRegModel.predict(myXs)
+
+                    # # ... Else...
+                    # else:
+                    #     predictions = fitRegModel.predict_proba(myXs)
 
                     for i in range(100):
                         print(Ys[i], predictions[i], abs(Ys[i] - predictions[i]))
@@ -227,7 +236,7 @@ def _leaveOneTFOut(tfIdxs, l):
 
         myCViterator.append((trainIdx, testIdx))
 
-    return(myCViterator)
+    return(iter(myCViterator))
 
 def _get_tf_recall_curve(tfPairs, labels, predictions, Ys):
     """
