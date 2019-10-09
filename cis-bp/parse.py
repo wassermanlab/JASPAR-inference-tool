@@ -32,14 +32,11 @@ class TF(object):
     """
 
     def __init__(self, id=None, name=None, specie=None, family=None, motifs=None, sources=None, sequences=None, file_name=None):
-        self._file = file_name
+
         self._id = id
-        self._name = name
-        self._specie = specie
         self._family = family
         self._motifs = motifs
-        self._sources = sources
-        self._sequences = sequences
+        self._file = file_name
 
         if self._file is not None:
             self._parse_file()
@@ -59,17 +56,17 @@ class TF(object):
     def get_id(self):
         return self._id
 
-    def get_name(self):
-        return self._name
-
     def get_family(self, format=True):
-        if self._family[0] == "AP-2": return "AP2" # Fixes weird AP-2 family annotation
+
+        if self._family[0] == "AP-2":
+            return "AP2" # Fixes weird AP-2 family annotation
         
         if format:
             family = self._family[0]
             family = family.replace("/", "_")
             family = family.replace(" ", "_")
-            return family
+
+            return (family)
             
         return self._family[0]
 
@@ -107,7 +104,7 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
     # Initialize
     cwd = os.getcwd()
 
-    # If k-mers dir does not exist...
+    # If k-mers directory does not exist...
     global kmers_dir
     kmers_dir = os.path.join(output_dir, "kmers")
     if not os.path.exists(kmers_dir):
@@ -154,7 +151,36 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
         # Change dir
         os.chdir(cwd)
 
-    # If TFs dir does not exist...
+    # If MEME directory does not exis...
+    meme_dir = os.path.join(output_dir, "meme")
+    if not os.path.exists(meme_dir):
+
+        # Create TFs dir
+        os.makedirs(meme_dir)
+
+        # Change dir
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
+        # For each k-mers pickle file...
+        for pickle_file in os.listdir(kmers_dir):
+
+            # If valid file...
+            m = re.search("^(M\d{4}_1.02).pickle$")
+            if m:
+
+                # Reformat PWM to MEME
+                pwm_file = os.path.join(cisbp_dir, "pwms", "%s.txt" % m.group(1))
+                meme_file = os.path.join(meme_dir, "%s.meme" % m.group(1))
+                cmd = "python reformat2meme.py -i %s -m $m -o %s" % (pwm_file,
+                    m.group(1), meme_file)
+                process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL)
+
+        # Change dir
+        os.chdir(cwd)
+    exit(0)
+
+    # If TFs directory does not exist...
     tfs_dir = os.path.join(output_dir, "tfs")
     if not os.path.exists(tfs_dir):
 
@@ -174,19 +200,11 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
         for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.tfs.sql")):
 
             # If valid line...
-            m = re.search("\('(.+)', '(.+)', '.+', '.+', '(.+)', '(.+)', 'D'\),*", line)
+            m = re.search("\('(.+)', '(.+)', '.+', '.+', '.+', '.+', '\w'\),*", line)
             if m:
 
-                print(line)
-                exit(0)
+                if m.group(1) in motifs:
 
-                # For each motif...
-                for motif in motifs:
-                    if motifs[motif][0] == m.group(1):
-                        tf_motifs.append(motif)
-                        tf_sources.append(sources[motifs[motif][1]])
-                        tf_sequences.append(motifs[motif][2])
-                if len(tf_motifs) > 0:
                     tf_obj = TF(m.group(1), m.group(3), re.sub("_", " ", m.group(4)), families[m.group(2)], tf_motifs, tf_sources, tf_sequences)
                     # Skip if TF file already exists #
                     tf_file = os.path.join(os.path.abspath(options.output_dir), "tfs", "%s.txt" % m.group(1))

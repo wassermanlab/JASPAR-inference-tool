@@ -193,7 +193,7 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
             # HMM build
             hmm_file = "%s.hmm" % pfam_id_std
             cmd = "hmmbuild %s %s" % (hmm_file, msa_file)
-            process = subprocess.run([cmd],shell=True, stdout=subprocess.DEVNULL,
+            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
 
             # HMM press
