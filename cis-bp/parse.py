@@ -177,6 +177,9 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
             m = re.search("\('(.+)', '(.+)', '.+', '.+', '(.+)', '(.+)', 'D'\),*", line)
             if m:
 
+                print(line)
+                exit(0)
+
                 # For each motif...
                 for motif in motifs:
                     if motifs[motif][0] == m.group(1):
@@ -242,7 +245,8 @@ def _get_motifs(cisbp_dir):
             if not os.path.exists(os.path.join(kmers_dir, "%s.pickle" % m.group(1))):
                 continue
 
-            motifs.setdefault(m.group(1), m.group(2))
+            motifs.setdefault(m.group(2), [])
+            motifs[m.group(2)].append(m.group(1))
 
     return(motifs)
 
@@ -257,8 +261,6 @@ def _get_families(cisbp_dir):
         # If valid line...
         m = re.search("\('(.+)', '(.+)', '.+', \d+, .+\),*", line)
         if m:
-            print(m.group(1), m.group(2))
-            exit(0)
             families.setdefault(m.group(1), set(m.group(2).split(",")))
 
     return(families)
