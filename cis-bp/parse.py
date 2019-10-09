@@ -127,27 +127,24 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
     # For each motif...
     for motif in motifs:
 
-        print(motif)
-        exit(0)
-
         # Skip if pickle file already exists
-        pickle_file = "%s.pickle" % motif
+        pickle_file = "%s.pickle" % motif[0]
         if not os.path.exists(pickle_file):
 
-            # Initialize #
-            positions = []
-            functions.write(motif_file, "#k-mer,complementary;e-score")                
-            # For each motif... #
-            for i in range(len(motifs)):
-                if motifs[i][0] == motif[0]:
-                    positions.append(i)
-            # For each k-mer... #
-            for i in range(1, len(kmers)):
-                values = [motifs[j][i] for j in positions if motifs[j][i] is not None]
-                if len(values) > 0:
-                    functions.write(motif_file, "%s;%s;%s" % (kmers[i], triads.get_complementary_dna_sequence(kmers[i]), '{0:.3g}'.format(numpy.mean(map(float, values)))))
-                else:
-                    functions.write(motif_file, "%s;%s;None" % (kmers[i], triads.get_complementary_dna_sequence(kmers[i])))
+            # Initialize
+            positive_kmers = set()
+
+            # For each k-mer...
+            for k in range(1, len(kmers)):
+
+                # If E-score < 0.45...
+                float(motif[i]) >= 0.45:
+                    positive_kmers.add(kmers[i])
+
+            # Write pickle file
+            with open(pickle_file, "wb") as f:
+                pickle.dump(positive_kmers, f)
+
     # ##############################
     # # 1.2 Parse motif sources    #
     # ##############################
