@@ -106,109 +106,93 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
 
     # Initialize
     cwd = os.getcwd()
-    kmers_dir = os.path.join(output_dir, "kmers")
 
-    # Create k-mers dir
+    # If k-mers dir does not exist...
+    kmers_dir = os.path.join(output_dir, "kmers")
     if not os.path.exists(kmers_dir):
+
+        # Create k-mers dir
         os.makedirs(kmers_dir)
 
-    # Get motifs
-    motifs = _get_motifs(cisbp_dir)
+        # Get motifs
+        motifs = _get_motifs(cisbp_dir)
 
-    # Transpose matrix
-    motifs = list(zip(*motifs))
+        # Transpose matrix
+        motifs = list(zip(*motifs))
 
-    # Get k-mers
-    kmers = motifs.pop(0)
+        # Get k-mers
+        kmers = motifs.pop(0)
 
-    # Change dir
-    os.chdir(kmers_dir)
+        # Change dir
+        os.chdir(kmers_dir)
 
-    # For each motif...
-    for motif in motifs:
+        # For each motif...
+        for motif in motifs:
 
-        # Skip if pickle file already exists
-        pickle_file = "%s.pickle" % motif[0]
-        if not os.path.exists(pickle_file):
+            # Skip if pickle file already exists
+            pickle_file = "%s.pickle" % motif[0]
+            if not os.path.exists(pickle_file):
 
-            # Initialize
-            positive_kmers = set()
+                # Initialize
+                positive_kmers = set()
 
-            # For each k-mer...
-            for k in range(1, len(kmers)):
+                # For each k-mer...
+                for k in range(1, len(kmers)):
 
-                # If E-score < 0.45...
-                try:
-                    if float(motif[k]) >= 0.45:
-                        positive_kmers.add(kmers[k])
-                except:
-                    pass
+                    # If E-score < 0.45...
+                    try:
+                        if float(motif[k]) >= 0.45:
+                            positive_kmers.add(kmers[k])
+                    except:
+                        pass
 
-            # Write pickle file
-            with open(pickle_file, "wb") as f:
-                pickle.dump(positive_kmers, f)
+                # Write pickle file
+                with open(pickle_file, "wb") as f:
+                    pickle.dump(positive_kmers, f)
 
-    # ##############################
-    # # 1.2 Parse motif sources    #
-    # ##############################
-    # if options.verbose: sys.stdout.write("\t\t-- parsing motif sources...\n")
-    # # Initialize #
-    # sources = {}
-    # # For each line... #
-    # for line in functions.parse_file(os.path.join(os.path.abspath(options.cisbp_dir), "cisbp_1.02.motif_sources.sql")):
-    #     m = re.search("\('(.+)', '(.+)', '.+', '.+', \d+, '.+', '.+'\),*", line)
-    #     if m:
-    #         sources.setdefault(m.group(1), m.group(2))
-    # ##############################
-    # # 1.3 Parse motifs info      #
-    # ##############################
-    # if options.verbose: sys.stdout.write("\t\t-- parsing motif information...\n")
-    # # Initialize #
-    # motifs = {}
-    # # For each line... #
-    # for line in functions.parse_file(os.path.join(os.path.abspath(options.cisbp_dir), "cisbp_1.02.motifs.sql")):
-    #     m = re.search("\('(.+)', '(.+)', '(.+)', '.+', 'PBM', '(.+)', '.+', '.+'\),*", line)
-    #     if m:
-    #         # Skip if motif file does not exist #
-    #         if not os.path.exists(os.path.join(os.path.abspath(options.output_dir), "motifs", "%s.txt" % m.group(1))): continue
-    #         # Skip if not characterized protein sequence #
-    #         if m.group(4) == "NULL": continue
-    #         motifs.setdefault(m.group(1), [m.group(2), m.group(3), re.sub("[^A-Z]", "X", m.group(4).upper())])
-    # ##############################
-    # # 1.4 Parse TFs families     #
-    # ##############################
-    # if options.verbose: sys.stdout.write("\t\t-- parsing TF families...\n")
-    # # Initialize #
-    # families = {}
-    # # For each line... #
-    # for line in functions.parse_file(os.path.join(os.path.abspath(options.cisbp_dir), "cisbp_1.02.tf_families.sql")):
-    #     m = re.search("\('(.+)', '(.+)', '.+', \d+, .+\),*", line)
-    #     if m:
-    #         families.setdefault(m.group(1), set(m.group(2).split(",")))
-    # ##############################
-    # # 1.5 Parse TFs info         #
-    # ##############################
-    # if options.verbose: sys.stdout.write("\t\t-- parsing TF information...\n")
-    # # For each line... #
-    # for line in functions.parse_file(os.path.join(os.path.abspath(options.cisbp_dir), "cisbp_1.02.tfs.sql")):
-    #     m = re.search("\('(.+)', '(.+)', '.+', '.+', '(.+)', '(.+)', 'D'\),*", line)
-    #     if m:
-    #         # Initialize #
-    #         tf_motifs = []
-    #         tf_sources = []
-    #         tf_sequences = []
-    #         # For each motif... #
-    #         for motif in motifs:
-    #             if motifs[motif][0] == m.group(1):
-    #                 tf_motifs.append(motif)
-    #                 tf_sources.append(sources[motifs[motif][1]])
-    #                 tf_sequences.append(motifs[motif][2])
-    #         if len(tf_motifs) > 0:
-    #             tf_obj = TF(m.group(1), m.group(3), re.sub("_", " ", m.group(4)), families[m.group(2)], tf_motifs, tf_sources, tf_sequences)
-    #             # Skip if TF file already exists #
-    #             tf_file = os.path.join(os.path.abspath(options.output_dir), "tfs", "%s.txt" % m.group(1))
-    #             if not os.path.exists(tf_file):
-    #                 tf_obj.write(tf_file)
+        # Change dir
+        os.chdir(cwd)
+
+    # If TFs dir does not exist...
+    tfs_dir = os.path.join(output_dir, "tfs")
+    if not os.path.exists(tfs_dir):
+
+        # Create TFs dir
+        os.makedirs(tfs_dir)
+
+        # Change dir
+        os.chdir(tfs_dir)
+
+        # Get families
+        families = _get_families(cisbp_dir)
+        ##############################
+        # 1.5 Parse TFs info         #
+        ##############################
+        if options.verbose: sys.stdout.write("\t\t-- parsing TF information...\n")
+        # For each line... #
+        for line in functions.parse_file(os.path.join(os.path.abspath(options.cisbp_dir), "cisbp_1.02.tfs.sql")):
+            m = re.search("\('(.+)', '(.+)', '.+', '.+', '(.+)', '(.+)', 'D'\),*", line)
+            if m:
+                # Initialize #
+                tf_motifs = []
+                tf_sources = []
+                tf_sequences = []
+                # For each motif... #
+                for motif in motifs:
+                    if motifs[motif][0] == m.group(1):
+                        tf_motifs.append(motif)
+                        tf_sources.append(sources[motifs[motif][1]])
+                        tf_sequences.append(motifs[motif][2])
+                if len(tf_motifs) > 0:
+                    tf_obj = TF(m.group(1), m.group(3), re.sub("_", " ", m.group(4)), families[m.group(2)], tf_motifs, tf_sources, tf_sequences)
+                    # Skip if TF file already exists #
+                    tf_file = os.path.join(os.path.abspath(options.output_dir), "tfs", "%s.txt" % m.group(1))
+                    if not os.path.exists(tf_file):
+                        tf_obj.write(tf_file)
+
+
+        # Change dir
+        os.chdir(cwd)
 
 def _get_motifs(cisbp_dir):
 
@@ -241,6 +225,43 @@ def _get_motifs(cisbp_dir):
                     motifs[-1].append(None)
 
     return(motifs)
+
+def _get_families(cisbp_dir):
+
+    # Initialize
+    families = {
+        "AP2": set(),
+        "C2H2 ZF": set(),
+        "DM": set(),
+        "E2F": set(),
+        "Ets": set(),
+        "Forkhead": set(),
+        "GATA": set(),
+        "HSF": set(),
+        "Homeodomain": set(),
+        "Myb/SANT": set(),
+        "NAC/NAM": set(),
+        "Nuclear receptor": set(),
+        "Pipsqueak": set(),
+        "RFX": set(),
+        "SBP": set(),
+        "Sox": set(),
+        "T-box": set(),
+        "Zinc cluster": set(),
+        "bHLH": set(),
+        "bZIP": set(),
+    }
+
+    # For each line...
+    for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.tf_families.sql")):
+
+        # If valid line...
+        m = re.search("\('(.+)', '(.+)', '.+', \d+, .+\),*", line)
+        if m:
+            if m.group(2) not in families:
+                print(m.group(2))
+            else:
+                families[m.group(2)].append(m.group(1))
 
 # ###############################
 # # 2. Get associated PBM files #
