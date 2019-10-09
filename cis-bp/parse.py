@@ -242,7 +242,7 @@ def _get_motifs(cisbp_dir):
             if not os.path.exists(os.path.join(kmers_dir, "%s.pickle" % m.group(1))):
                 continue
 
-            motifs.setdefault(m.group(1), m.group(2)])
+            motifs.setdefault(m.group(1), m.group(2))
 
     return(motifs)
 
