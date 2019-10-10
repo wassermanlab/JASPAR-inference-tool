@@ -102,10 +102,21 @@ def main():
 def parse_cisbp(cisbp_dir, output_dir="./"):
 
     # Initialize
+    global cwd
     cwd = os.getcwd()
 
+    # Get k-mers
+    _get_kmers(cisbp_dir, output_dir)
+
+    # Cis-BP to MEME format
+    _reformat_to_meme(cisbp_dir, output_dir)
+
+    # Group TFs by DBD composition
+    _group_by_DBD_composition(cisbp_dir, output_dir)
+
+def _get_kmers(cisbp_dir, output_dir="./"):
+
     # If k-mers directory does not exist...
-    global kmers_dir
     kmers_dir = os.path.join(output_dir, "kmers")
     if not os.path.exists(kmers_dir):
 
@@ -151,67 +162,6 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
         # Change dir
         os.chdir(cwd)
 
-    # If MEME directory does not exis...
-    meme_dir = os.path.join(output_dir, "meme")
-    if not os.path.exists(meme_dir):
-
-        # Create TFs dir
-        os.makedirs(meme_dir)
-
-        # Change dir
-        os.chdir(os.path.dirname(os.path.realpath(__file__)))
-
-        # For each k-mers pickle file...
-        for pickle_file in os.listdir(kmers_dir):
-
-            # If valid file...
-            m = re.search("^(M\d{4}_1.02).pickle$", pickle_file)
-            if m:
-
-                # Reformat PWM to MEME
-                pwm_file = os.path.join(cisbp_dir, "pwms", "%s.txt" % m.group(1))
-                meme_file = os.path.join(meme_dir, "%s.meme" % m.group(1))
-                cmd = "python reformat2meme.py -i %s -m %s -o %s" % (pwm_file,
-                    m.group(1), meme_file)
-                process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL)
-
-        # Change dir
-        os.chdir(cwd)
-
-    # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.DBDs.json")
-    if not os.path.exists(groups_json_file):
-
-        # Get TF motifs
-        motifs = _get_motifs(cisbp_dir)
-
-        # Get TF families
-        families = _get_families(cisbp_dir)
-
-        print(motifs)
-        print(families)
-        exit(0)
-
-        # For each line...
-        for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.tfs.sql")):
-
-            # If valid line...
-            m = re.search("\('(.+)', '(.+)', '.+', '.+', '.+', '.+', '\w'\),*", line)
-            if m:
-
-                if m.group(1) in motifs:
-
-                    tf_obj = TF(m.group(1), m.group(3), re.sub("_", " ", m.group(4)), families[m.group(2)], tf_motifs, tf_sources, tf_sequences)
-                    # Skip if TF file already exists #
-                    tf_file = os.path.join(os.path.abspath(options.output_dir), "tfs", "%s.txt" % m.group(1))
-                    if not os.path.exists(tf_file):
-                        tf_obj.write(tf_file)
-
-
-        # Change dir
-        os.chdir(cwd)
-
 def _get_escores(cisbp_dir):
 
     # Initialize
@@ -243,6 +193,39 @@ def _get_escores(cisbp_dir):
                     escores[-1].append(None)
 
     return(escores)
+
+def _reformat_to_meme(cisbp_dir, output_dir="./"):
+
+    # Initialize
+    kmers_dir = os.path.join(output_dir, "kmers")
+
+    # If MEME directory does not exis...
+    meme_dir = os.path.join(output_dir, "meme")
+    if not os.path.exists(meme_dir):
+
+        # Create TFs dir
+        os.makedirs(meme_dir)
+
+        # Change dir
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
+        # For each k-mers pickle file...
+        for pickle_file in os.listdir(kmers_dir):
+
+            # If valid file...
+            m = re.search("^(M\d{4}_1.02).pickle$", pickle_file)
+            if m:
+
+                # Reformat PWM to MEME
+                pwm_file = os.path.join(cisbp_dir, "pwms", "%s.txt" % m.group(1))
+                meme_file = os.path.join(meme_dir, "%s.meme" % m.group(1))
+                cmd = "python reformat2meme.py -i %s -m %s -o %s" % (pwm_file,
+                    m.group(1), meme_file)
+                process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL)
+
+        # Change dir
+        os.chdir(cwd)
 
 def _get_motifs(cisbp_dir):
 
@@ -279,6 +262,41 @@ def _get_families(cisbp_dir):
             families.setdefault(m.group(1), set(m.group(2).split(",")))
 
     return(families)
+
+def _group_by_TF_family(cisbp_dir, output_dir="./"):
+
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(out_dir, "groups.families.json")
+    if not os.path.exists(groups_json_file):
+
+        # Get TF motifs
+        motifs = _get_motifs(cisbp_dir)
+
+        # Get TF families
+        families = _get_families(cisbp_dir)
+
+        print(motifs)
+        print(families)
+        exit(0)
+
+        # For each line...
+        for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.tfs.sql")):
+
+            # If valid line...
+            m = re.search("\('(.+)', '(.+)', '.+', '.+', '.+', '.+', '\w'\),*", line)
+            if m:
+
+                if m.group(1) in motifs:
+
+                    tf_obj = TF(m.group(1), m.group(3), re.sub("_", " ", m.group(4)), families[m.group(2)], tf_motifs, tf_sources, tf_sequences)
+                    # Skip if TF file already exists #
+                    tf_file = os.path.join(os.path.abspath(options.output_dir), "tfs", "%s.txt" % m.group(1))
+                    if not os.path.exists(tf_file):
+                        tf_obj.write(tf_file)
+
+
+        # Change dir
+        os.chdir(cwd)
 
 # ###############################
 # # 2. Get associated PBM files #
