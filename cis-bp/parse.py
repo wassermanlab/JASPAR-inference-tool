@@ -269,7 +269,7 @@ def _group_by_Tomtom(output_dir=out_dir, threads=1):
         tomtom = {}
 
         # Get all JASPAR profiles
-        profiles = [str(p) for p in Path(output_dir).glob("*/*.meme"))]
+        profiles = [str(p) for p in Path(output_dir).glob("*/*.meme")]
         print(profiles)
         exit(0)
 
