@@ -5,6 +5,7 @@ import json
 import numpy
 import operator
 import os
+from pathlib import Path
 import pickle
 import re
 import shutil
@@ -34,7 +35,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", help="cis-bp directory (from downloads.py)", metavar="DIR")
-    parser.add_argument("-o", default="./", help="output directory (default = ./)", metavar="DIR")
+    parser.add_argument("-o", default=out_dir, metavar="DIR",
+        help="output directory (default = ./)")
+    parser.add_argument("--threads", default=1, type=int, metavar="INT",
+        help="threads to use (default = 1)")
 
     return(parser.parse_args())
 
@@ -43,9 +47,9 @@ def main():
     # Parse arguments
     args = parse_args()
 
-    parse_cisbp(os.path.abspath(args.c), os.path.abspath(args.o))
+    parse_cisbp(os.path.abspath(args.c), os.path.abspath(args.o), args.threads)
 
-def parse_cisbp(cisbp_dir, output_dir="./"):
+def parse_cisbp(cisbp_dir, output_dir=out_dir, threads=1):
 
     # Initialize
     global cwd
@@ -60,7 +64,10 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
     # Group TFs by TF family
     _group_by_TF_family(cisbp_dir, output_dir)
 
-def _get_kmers(cisbp_dir, output_dir="./"):
+    # Group matrices by Tomtom similarity
+    _group_by_Tomtom(output_dir, threads)
+
+def _get_kmers(cisbp_dir, output_dir=out_dir):
 
     # If k-mers directory does not exist...
     kmers_dir = os.path.join(output_dir, "kmers")
@@ -140,7 +147,7 @@ def _get_escores(cisbp_dir):
 
     return(escores)
 
-def _reformat_to_meme(cisbp_dir, output_dir="./"):
+def _reformat_to_meme(cisbp_dir, output_dir=out_dir):
 
     # Initialize
     kmers_dir = os.path.join(output_dir, "kmers")
@@ -173,10 +180,10 @@ def _reformat_to_meme(cisbp_dir, output_dir="./"):
         # Change dir
         os.chdir(cwd)
 
-def _group_by_TF_family(cisbp_dir, output_dir="./"):
+def _group_by_TF_family(cisbp_dir, output_dir=out_dir):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.families.json")
+    groups_json_file = os.path.join(output_dir, "groups.families.json")
     if not os.path.exists(groups_json_file):
 
         # Initialize
@@ -210,7 +217,7 @@ def _group_by_TF_family(cisbp_dir, output_dir="./"):
         # Change dir
         os.chdir(cwd)
 
-def _get_motifs(cisbp_dir, output_dir="./"):
+def _get_motifs(cisbp_dir, output_dir=out_dir):
 
     # Initialize
     motifs = {}
@@ -250,6 +257,145 @@ def _get_families(cisbp_dir):
             families.setdefault(m.group(1), family)
 
     return(families)
+
+def _group_by_Tomtom(output_dir=out_dir, threads=1):
+
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(output_dir, "groups.tomtom.json")
+    if not os.path.exists(groups_json_file):
+
+        # Initialize
+        tomtom = {}
+
+        # Get all JASPAR profiles
+        jaspar_profiles = _get_profiles_from_latest_version(Path(output_dir).glob("*/*.meme"))
+
+        # Skip if JASPAR MEME database already exists
+        database = os.path.join(output_dir, "jaspar.meme")
+        if not os.path.exists(database):
+
+            # For each JASPAR profile...
+            for jaspar_profile in jaspar_profiles:
+
+                # Cat to database
+                os.system("cat %s >> %s" % (jaspar_profile, database))
+
+        # Parallelize
+        pool = Pool(threads)
+        parallelized = partial(Tomtom, database=database, output_dir=output_dir)
+        for _ in tqdm(
+            pool.imap(parallelized, jaspar_profiles), desc="Tomtom", total=len(jaspar_profiles)
+        ):
+            pass
+        pool.close()
+        pool.join()
+
+        # Move to output directory
+        os.chdir(output_dir)
+
+        # For each JASPAR profile...
+        for jaspar_profile in jaspar_profiles:
+
+            # Initialize
+            m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
+            tomtom_dir = ".%s" % m.group(1)
+
+            # Get hits
+            tomtom.setdefault(m.group(1), _get_Tomtom_hits(tomtom_dir))
+
+            # Remove Tomtom directory
+            shutil.rmtree(tomtom_dir)
+
+        # Write
+        Jglobals.write(
+            groups_json_file,
+            json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
+        )
+
+        # For each taxon...
+        for taxon in Jglobals.taxons:
+
+            # Remove taxon directory
+            if os.path.isdir(taxon):
+                shutil.rmtree(taxon)
+
+        # Change dir
+        os.chdir(cwd)
+
+def Tomtom(meme_file, database, output_dir=out_dir):
+    """
+    From http://meme-suite.org/doc/tomtom.html;
+    In order to compute the scores, Tomtom needs to know the frequencies of
+    the letters of the sequence alphabet in the database being searched (the
+    "background" letter frequencies). By default, the background letter fre-
+    quencies included in the query motif file are used. The scores of columns
+    that overlap for a given offset are summed. This summed score is then con-
+    verted to a p-value. The reported p-value is the minimal p-value over all
+    possible offsets. To compensate for multiple testing, each reported p-value
+    is converted to an E-value by multiplying it by twice the number of target
+    motifs. As a second type of multiple-testing correction, q-values for each
+    match arecomputed from the set of p-values and reported.
+    """
+
+    # Skip if output directory already exists
+    m = re.search("(MA\d{4}.\d).meme$", meme_file)
+    output_dir = os.path.join(output_dir, ".%s" % m.group(1))
+    if not os.path.isdir(output_dir):
+
+        # Run Tomtom
+        cmd = "tomtom -o %s %s %s" % (output_dir, meme_file, database)
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+def _get_profiles_from_latest_version(jaspar_profiles):
+
+    # Initialize
+    done = set()
+    latest_version_profiles = []
+
+    # For each profile...
+    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
+
+        # Initialize
+        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
+        matrix_id = m.group(1)
+
+        # Skip if done
+        if matrix_id in done:
+            continue
+
+        # i.e. a profile from the latest version
+        latest_version_profiles.append(str(jaspar_profile))
+
+        # Done
+        done.add(matrix_id)
+
+    return(latest_version_profiles)
+
+def _get_Tomtom_hits(tomtom_dir):
+
+    # Intialize
+    hits = []
+
+    # For each line...
+    for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
+
+        # Skip comments
+        if line[0].startswith("#"):
+            continue
+
+        # Skip header
+        if line[0] == "Query_ID":
+            continue
+
+        # Skip self
+        if line[0] == line[1]:
+            continue
+
+        # Add to hits
+        hits.append([line[1], float(line[4])])
+
+    return(hits)
 
 #-------------#
 # Main        #
