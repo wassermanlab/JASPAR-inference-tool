@@ -227,10 +227,46 @@ def _reformat_to_meme(cisbp_dir, output_dir="./"):
         # Change dir
         os.chdir(cwd)
 
-def _get_motifs(cisbp_dir):
+def _group_by_TF_family(cisbp_dir, output_dir="./"):
+
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(out_dir, "groups.families.json")
+    if not os.path.exists(groups_json_file):
+
+        # Get TF motifs
+        motifs = _get_motifs(cisbp_dir, output_dir)
+
+        # Get TF families
+        families = _get_families(cisbp_dir)
+
+        print(motifs)
+        print(families)
+        exit(0)
+
+        # For each line...
+        for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.tfs.sql")):
+
+            # If valid line...
+            m = re.search("\('(.+)', '(.+)', '.+', '.+', '.+', '.+', '\w'\),*", line)
+            if m:
+
+                if m.group(1) in motifs:
+
+                    tf_obj = TF(m.group(1), m.group(3), re.sub("_", " ", m.group(4)), families[m.group(2)], tf_motifs, tf_sources, tf_sequences)
+                    # Skip if TF file already exists #
+                    tf_file = os.path.join(os.path.abspath(options.output_dir), "tfs", "%s.txt" % m.group(1))
+                    if not os.path.exists(tf_file):
+                        tf_obj.write(tf_file)
+
+
+        # Change dir
+        os.chdir(cwd)
+
+def _get_motifs(cisbp_dir, output_dir="./"):
 
     # Initialize
     motifs = {}
+    kmers_dir = os.path.join(output_dir, "kmers")
 
     # For each line...
     for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.motifs.sql")):
@@ -262,41 +298,6 @@ def _get_families(cisbp_dir):
             families.setdefault(m.group(1), set(m.group(2).split(",")))
 
     return(families)
-
-def _group_by_TF_family(cisbp_dir, output_dir="./"):
-
-    # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.families.json")
-    if not os.path.exists(groups_json_file):
-
-        # Get TF motifs
-        motifs = _get_motifs(cisbp_dir)
-
-        # Get TF families
-        families = _get_families(cisbp_dir)
-
-        print(motifs)
-        print(families)
-        exit(0)
-
-        # For each line...
-        for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.tfs.sql")):
-
-            # If valid line...
-            m = re.search("\('(.+)', '(.+)', '.+', '.+', '.+', '.+', '\w'\),*", line)
-            if m:
-
-                if m.group(1) in motifs:
-
-                    tf_obj = TF(m.group(1), m.group(3), re.sub("_", " ", m.group(4)), families[m.group(2)], tf_motifs, tf_sources, tf_sequences)
-                    # Skip if TF file already exists #
-                    tf_file = os.path.join(os.path.abspath(options.output_dir), "tfs", "%s.txt" % m.group(1))
-                    if not os.path.exists(tf_file):
-                        tf_obj.write(tf_file)
-
-
-        # Change dir
-        os.chdir(cwd)
 
 # ###############################
 # # 2. Get associated PBM files #
