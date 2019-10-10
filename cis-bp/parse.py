@@ -178,23 +178,20 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
 
         # Change dir
         os.chdir(cwd)
-    exit(0)
 
-    # If TFs directory does not exist...
-    tfs_dir = os.path.join(output_dir, "tfs")
-    if not os.path.exists(tfs_dir):
-
-        # Create TFs dir
-        os.makedirs(tfs_dir)
-
-        # Change dir
-        os.chdir(tfs_dir)
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(out_dir, "groups.DBDs.json")
+    if not os.path.exists(groups_json_file):
 
         # Get TF motifs
         motifs = _get_motifs(cisbp_dir)
 
         # Get TF families
         families = _get_families(cisbp_dir)
+
+        print(motifs)
+        print(families)
+        exit(0)
 
         # For each line...
         for line in Jglobals.parse_file(os.path.join(cisbp_dir, "cisbp_1.02.tfs.sql")):
