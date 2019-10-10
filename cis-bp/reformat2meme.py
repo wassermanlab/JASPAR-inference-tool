@@ -104,7 +104,7 @@ def _read_matrix(matrix_file):
             continue
     
         # Get data
-        data = re.findall(r'[-+]?\d*\.\d+|\d+', line)
+        data = re.findall(r'[+\-]?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)?', line)
 
         # If data...
         if len(data) != 0:
