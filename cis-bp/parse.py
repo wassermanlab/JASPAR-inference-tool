@@ -199,7 +199,7 @@ def _group_by_TF_family(cisbp_dir, output_dir="./"):
 
                     # Add member
                     groups.setdefault(families[m.group(2)], [])
-                    groups["+".join(sort(families[m.group(2)]))].append([motifs[m.group(1)], m.group(1)])
+                    groups[families[m.group(2)]].append([motifs[m.group(1)], m.group(1)])
 
         # Write
         Jglobals.write(
@@ -243,7 +243,7 @@ def _get_families(cisbp_dir):
         # If valid line...
         m = re.search("\('(.+)', '(.+)', '.+', \d+, .+\),*", line)
         if m:
-            families.setdefault(m.group(1), set(m.group(2).split(",")))
+            families.setdefault(m.group(1), "+".join(list(sorted(m.group(2).split(",")))))
 
     return(families)
 
