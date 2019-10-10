@@ -22,6 +22,7 @@ sys.path.append(root_dir)
 
 # Import JASPAR-profile-inference functions
 from __init__ import Jglobals
+from files.get_files import Tomtom, _get_Tomtom_hits
 
 #-------------#
 # Functions   #
@@ -268,7 +269,9 @@ def _group_by_Tomtom(output_dir=out_dir, threads=1):
         tomtom = {}
 
         # Get all JASPAR profiles
-        jaspar_profiles = _get_profiles_from_latest_version(Path(output_dir).glob("*/*.meme"))
+        profiles = [str(p) for p in Path(output_dir.glob("*/*.meme"))]
+        print(profiles)
+        exit(0)
 
         # Skip if JASPAR MEME database already exists
         database = os.path.join(output_dir, "jaspar.meme")
@@ -321,81 +324,6 @@ def _group_by_Tomtom(output_dir=out_dir, threads=1):
 
         # Change dir
         os.chdir(cwd)
-
-def Tomtom(meme_file, database, output_dir=out_dir):
-    """
-    From http://meme-suite.org/doc/tomtom.html;
-    In order to compute the scores, Tomtom needs to know the frequencies of
-    the letters of the sequence alphabet in the database being searched (the
-    "background" letter frequencies). By default, the background letter fre-
-    quencies included in the query motif file are used. The scores of columns
-    that overlap for a given offset are summed. This summed score is then con-
-    verted to a p-value. The reported p-value is the minimal p-value over all
-    possible offsets. To compensate for multiple testing, each reported p-value
-    is converted to an E-value by multiplying it by twice the number of target
-    motifs. As a second type of multiple-testing correction, q-values for each
-    match arecomputed from the set of p-values and reported.
-    """
-
-    # Skip if output directory already exists
-    m = re.search("(MA\d{4}.\d).meme$", meme_file)
-    output_dir = os.path.join(output_dir, ".%s" % m.group(1))
-    if not os.path.isdir(output_dir):
-
-        # Run Tomtom
-        cmd = "tomtom -o %s %s %s" % (output_dir, meme_file, database)
-        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL)
-
-def _get_profiles_from_latest_version(jaspar_profiles):
-
-    # Initialize
-    done = set()
-    latest_version_profiles = []
-
-    # For each profile...
-    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
-
-        # Initialize
-        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
-        matrix_id = m.group(1)
-
-        # Skip if done
-        if matrix_id in done:
-            continue
-
-        # i.e. a profile from the latest version
-        latest_version_profiles.append(str(jaspar_profile))
-
-        # Done
-        done.add(matrix_id)
-
-    return(latest_version_profiles)
-
-def _get_Tomtom_hits(tomtom_dir):
-
-    # Intialize
-    hits = []
-
-    # For each line...
-    for line in Jglobals.parse_tsv_file(os.path.join(tomtom_dir, "tomtom.tsv")):
-
-        # Skip comments
-        if line[0].startswith("#"):
-            continue
-
-        # Skip header
-        if line[0] == "Query_ID":
-            continue
-
-        # Skip self
-        if line[0] == line[1]:
-            continue
-
-        # Add to hits
-        hits.append([line[1], float(line[4])])
-
-    return(hits)
 
 #-------------#
 # Main        #
