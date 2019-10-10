@@ -199,7 +199,7 @@ def _group_by_TF_family(cisbp_dir, output_dir="./"):
 
                     # Add member
                     groups.setdefault(families[m.group(2)], [])
-                    groups[families[m.group(2)]].append([motifs[m.group(1)], m.group(1)])
+                    groups["+".join(sort(families[m.group(2)]))].append([motifs[m.group(1)], m.group(1)])
 
         # Write
         Jglobals.write(
