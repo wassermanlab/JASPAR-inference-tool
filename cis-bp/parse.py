@@ -168,12 +168,10 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
             m = re.search("^(M\d{4}_1.02).pickle$", pickle_file)
             if m:
 
-                print("here")
-
                 # Reformat PWM to MEME
                 pwm_file = os.path.join(cisbp_dir, "pwms", "%s.txt" % m.group(1))
                 meme_file = os.path.join(meme_dir, "%s.meme" % m.group(1))
-                cmd = "python reformat2meme.py -i %s -m $m -o %s" % (pwm_file,
+                cmd = "python reformat2meme.py -i %s -m %s -o %s" % (pwm_file,
                     m.group(1), meme_file)
                 process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL)
