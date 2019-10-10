@@ -84,12 +84,13 @@ def pwm_to_meme(input_file, output_file, motif_id):
     Jglobals.write(output_file, "A 0.25 C 0.25 G 0.25 T 0.25")
     Jglobals.write(output_file, "")
     Jglobals.write(output_file, "MOTIF %s" % motif_id)
-
     Jglobals.write(output_file, "letter-probability matrix: alength= 4 w= %s nsites= %s E= 0" % (len(matrix), nsites))
 
     # For each row...
     for row in matrix:
         Jglobals.write(output_file, "%s" % " ".join(["{:9.6f}".format(c) for c in row]))
+
+    Jglobals.write(output_file, "")
 
 def _read_matrix(matrix_file):
 
