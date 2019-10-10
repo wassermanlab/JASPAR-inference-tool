@@ -286,7 +286,7 @@ def _group_by_Tomtom(output_dir=out_dir, threads=1):
 
         # Parallelize
         pool = Pool(threads)
-        parallelized = partial(Tomtom, database=database, output_dir=output_dir)
+        parallelized = partial(Tomtom, database=database, out_dir=output_dir)
         for _ in tqdm(
             pool.imap(parallelized, profiles), desc="Tomtom", total=len(profiles)
         ):
