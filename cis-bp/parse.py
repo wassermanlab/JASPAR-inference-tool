@@ -111,8 +111,8 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
     # # Cis-BP to MEME format
     # _reformat_to_meme(cisbp_dir, output_dir)
 
-    # Group TFs by DBD composition
-    _group_by_DBD_composition(cisbp_dir, output_dir)
+    # Group TFs by TF family
+    _group_by_TF_family(cisbp_dir, output_dir)
 
 def _get_kmers(cisbp_dir, output_dir="./"):
 
