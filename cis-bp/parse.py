@@ -243,7 +243,11 @@ def _get_families(cisbp_dir):
         # If valid line...
         m = re.search("\('(.+)', '(.+)', '.+', \d+, .+\),*", line)
         if m:
-            families.setdefault(m.group(1), "+".join(list(sorted(m.group(2).split(",")))))
+            family = "+".join(list(sorted(m.group(2).split(","))))
+            # Fix AP-2
+            if family == "AP-2":
+                family = "AP2"
+            families.setdefault(m.group(1), family)
 
     return(families)
 
