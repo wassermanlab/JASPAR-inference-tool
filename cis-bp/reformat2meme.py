@@ -52,6 +52,9 @@ def pwm_to_meme(input_file, output_file, motif_id):
     motif_id {STR} what to place in the "MOTIF" field
     """
 
+    # Initialize
+    content = []
+
     # Read matrix
     matrix = _read_matrix(input_file)
 
@@ -73,24 +76,24 @@ def pwm_to_meme(input_file, output_file, motif_id):
     if nsites == 1:
         nsites = 100
 
-    # Write
-    Jglobals.write(output_file, "MEME version 4")
-    Jglobals.write(output_file, "")
-    Jglobals.write(output_file, "ALPHABET= ACGT")
-    Jglobals.write(output_file, "")
-    Jglobals.write(output_file, "strands: + -")
-    Jglobals.write(output_file, "")
-    Jglobals.write(output_file, "Background letter frequencies")
-    Jglobals.write(output_file, "A 0.25 C 0.25 G 0.25 T 0.25")
-    Jglobals.write(output_file, "")
-    Jglobals.write(output_file, "MOTIF %s" % motif_id)
-    Jglobals.write(output_file, "letter-probability matrix: alength= 4 w= %s nsites= %s E= 0" % (len(matrix), nsites))
-
-    # For each row...
+    # File content
+    content.append("MEME version 4")
+    content.append("")
+    content.append("ALPHABET= ACGT")
+    content.append("")
+    content.append("strands: + -")
+    content.append("")
+    content.append("Background letter frequencies")
+    content.append("A 0.25 C 0.25 G 0.25 T 0.25")
+    content.append("")
+    content.append("MOTIF %s" % motif_id)
+    content.append("letter-probability matrix: alength= 4 w= %s nsites= %s E= 0" % (len(matrix), nsites))
     for row in matrix:
-        Jglobals.write(output_file, "%s" % " ".join(["{:9.6f}".format(c) for c in row]))
+        content.append(" ".join(["{:9.6f}".format(c) for c in row]))
+    content.append("")
 
-    Jglobals.write(output_file, "")
+    # Write
+    Jglobals.write(output_file, "\n".join(content))
 
 def _read_matrix(matrix_file):
 
