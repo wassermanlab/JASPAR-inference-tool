@@ -14,6 +14,7 @@ import shutil
 import socket
 import subprocess
 import sys
+from tqdm import tqdm
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
