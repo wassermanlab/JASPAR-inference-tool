@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
+from functools import partial
 import json
+from multiprocessing import Pool
 import numpy
 import operator
 import os
@@ -268,26 +270,24 @@ def _group_by_Tomtom(output_dir=out_dir, threads=1):
         # Initialize
         tomtom = {}
 
-        # Get all JASPAR profiles
+        # Get all profiles
         profiles = [str(p) for p in Path(output_dir).glob("*/*.meme")]
-        print(profiles)
-        exit(0)
 
-        # Skip if JASPAR MEME database already exists
-        database = os.path.join(output_dir, "jaspar.meme")
+        # Skip if MEME database already exists
+        database = os.path.join(output_dir, "cisbp.meme")
         if not os.path.exists(database):
 
-            # For each JASPAR profile...
-            for jaspar_profile in jaspar_profiles:
+            # For each profile...
+            for profile in profiles:
 
                 # Cat to database
-                os.system("cat %s >> %s" % (jaspar_profile, database))
+                os.system("cat %s >> %s" % (profile, database))
 
         # Parallelize
         pool = Pool(threads)
         parallelized = partial(Tomtom, database=database, output_dir=output_dir)
         for _ in tqdm(
-            pool.imap(parallelized, jaspar_profiles), desc="Tomtom", total=len(jaspar_profiles)
+            pool.imap(parallelized, profiles), desc="Tomtom", total=len(profiles)
         ):
             pass
         pool.close()
@@ -296,11 +296,11 @@ def _group_by_Tomtom(output_dir=out_dir, threads=1):
         # Move to output directory
         os.chdir(output_dir)
 
-        # For each JASPAR profile...
-        for jaspar_profile in jaspar_profiles:
+        # For each profile...
+        for profile in profiles:
 
             # Initialize
-            m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
+            m = re.search("(M\d{4}_1.02).meme$", profile)
             tomtom_dir = ".%s" % m.group(1)
 
             # Get hits

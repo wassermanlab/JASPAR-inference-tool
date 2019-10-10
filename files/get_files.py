@@ -759,7 +759,7 @@ def Tomtom(meme_file, database, out_dir=out_dir):
     """
 
     # Skip if output directory already exists
-    m = re.search("(MA\d{4}.\d).meme$", meme_file)
+    m = re.search("(MA\d{4}.\d|M\d{4}_1.02).meme$", meme_file)
     output_dir = os.path.join(out_dir, ".%s" % m.group(1))
     if not os.path.isdir(output_dir):
 
