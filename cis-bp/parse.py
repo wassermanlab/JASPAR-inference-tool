@@ -165,7 +165,7 @@ def parse_cisbp(cisbp_dir, output_dir="./"):
         for pickle_file in os.listdir(kmers_dir):
 
             # If valid file...
-            m = re.search("^(M\d{4}_1.02).pickle$")
+            m = re.search("^(M\d{4}_1.02).pickle$", pickle_file)
             if m:
 
                 # Reformat PWM to MEME
