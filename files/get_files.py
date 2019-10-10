@@ -666,7 +666,7 @@ def _group_by_DBD_composition(out_dir=out_dir):
                 if domains == "":
                     continue
 
-                # Add alignments
+                # Add member
                 groups.setdefault(domains, [])
                 groups[domains].append([uniaccs[uniacc][0], alignments, uniacc])
 
