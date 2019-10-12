@@ -5,12 +5,13 @@
 # building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
 
 import argparse
-from glmnet import ElasticNet, LogitNet
+# from glmnet import ElasticNet, LogitNet
+from glmnet import ElasticNet
 import numpy as np
 from operator import itemgetter 
 import os
 import pickle
-from sklearn.linear_model import LogisticRegressionCV, RidgeCV
+# from sklearn.linear_model import LogisticRegressionCV, RidgeCV
 # from sklearn.metrics import precision_recall_curve
 # from sklearn.multiclass import OneVsRestClassifier
 # from sklearn.preprocessing import MultiLabelBinarizer
@@ -91,7 +92,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
-            if domains != "Homeodomain":
+            if domains != "Sox":
                 continue
 
             # Initialize
@@ -156,19 +157,14 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     # regModel = RidgeCV(alphas=alphas, cv=myCViterator)
                     m = ElasticNet()
 
-                # # ... Else...
-                # else:
+                # # If logistic regression...
+                # elif regression == "logistic":
                 #     # regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
                 #     m = LogitNet()
                 
-                # m.CV = myCViterator
-
                 # For each sequence similarity representation...
                 # for similarity in ["identity", "blosum62", "%ID"]:
                 for similarity in ["identity", "blosum62"]:
-
-                    # # For use BLAST+ Xs...
-                    # for use_blast_Xs in [False, True]:
 
                     # Initialize
                     predictions = []
@@ -190,11 +186,6 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                         y_train = np.asarray(itemgetter(*myCViterator[i][0])(Ys))
                         x_test = np.asarray(itemgetter(*myCViterator[i][1])(myXs))
                         y_test = np.asarray(itemgetter(*myCViterator[i][1])(Ys))
-                        if (len(set(y_test >= evalue_threshold)) == 1):
-                            continue
-                        print(y_train)
-                        for i in y_train:
-                            print(i)
 
                         # if regression == "logistic":
                         #     y_train = y_train >= evalue_threshold
@@ -205,8 +196,9 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                         m_cv = m.fit(x_train, y_train)
 
                         # Predict
+                        if regression == "linear":
                         p = m_cv.predict(x_test)
-                        # if regression == "logistic":
+                        # elif regression == "logistic":
                         #     p = m_cv.predict_proba(x_test)[:,1]
 
                         # print(x_test)
