@@ -71,6 +71,9 @@ def parse_cisbp(cisbp_dir, output_dir=out_dir, threads=1):
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(output_dir, threads)
 
+    # Group matrices by k-mer overlap
+    _group_by_kmer_overlap(output_dir)
+
 def _get_kmers(cisbp_dir, output_dir=out_dir):
 
     # If k-mers directory does not exist...
@@ -325,6 +328,53 @@ def _group_by_Tomtom(output_dir=out_dir, threads=1):
 
         # Change dir
         os.chdir(cwd)
+
+def _group_by_kmer_overlap(output_dir=out_dir):
+
+    # Initialize
+    kmers_dir = os.path.join(output_dir, "kmers")
+
+    # Skip if groups JSON file already exists
+    groups_json_file = os.path.join(output_dir, "groups.overlap.json")
+    if not os.path.exists(groups_json_file):
+
+        # Initialize
+        kmers = {}
+        overlaps = {}
+
+        # Load JSON file
+        tomtom_json_file = os.path.join(output_dir, "groups.tomtom.json")
+        with open(tomtom_json_file) as f:
+            tomtom = json.load(f)
+
+        # For each k-mers pickle file...
+        for pickle_file in os.listdir(kmers_dir):
+
+            # If valid file...
+            m = re.search("^(M\d{4}_1.02).pickle$", pickle_file)
+            if m:
+
+                # Load pickle file
+                with open(os.path.join(kmers_dir, pickle_file), "rb") as f:
+                    kmers.setdefault(m.group(1), pickle.load(f))
+
+        # For each matrix ID...
+        for matrix in tomtom:
+
+            overlaps.setdefault(matrix, [])
+
+            # For each matrix ID...
+            for next_matrix, evalue in tomtom[matrix]:
+                
+                intersection = len(kmers[matrix].intersection(kmers[next_matrix]))
+                union = len(kmers[matrix].union(kmers[next_matrix]))
+                overlaps[matrix].append([next_matrix, float(intersection)/union])
+
+        # Write
+        Jglobals.write(
+            groups_json_file,
+            json.dumps(overlaps, sort_keys=True, indent=4, separators=(",", ": "))
+        )
 
 #-------------#
 # Main        #

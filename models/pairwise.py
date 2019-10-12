@@ -300,9 +300,10 @@ def _fetchY(maIDlist1, maIDlist2):
                 joint_evalue = math.sqrt(tomtom[maID1][maID2] * tomtom[maID2][maID1])
                 log_evalue = log(joint_evalue)
 
-                return(max(min(1.0, 0 - log_evalue / 10), 0.0))
+                # return(max(min(1.0, 0 - log_evalue / 10), 0.0))
+                return(0 - log_evalue)
 
-    return(0.0)
+    return(-2)
 
 #-------------#
 # Main        #

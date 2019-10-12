@@ -10,7 +10,7 @@ import numpy as np
 from operator import itemgetter 
 import os
 import pickle
-# from sklearn.linear_model import LogisticRegressionCV, RidgeCV
+from sklearn.linear_model import LogisticRegressionCV, RidgeCV
 # from sklearn.metrics import precision_recall_curve
 # from sklearn.multiclass import OneVsRestClassifier
 # from sklearn.preprocessing import MultiLabelBinarizer
@@ -64,6 +64,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
     if not os.path.exists(models_file):
 
         # Initialize
+        evalue_threshold = 8.0 # from cisbp.ipynb
         models = {
             "Keys": "DBD composition",
             "Values": {
@@ -90,7 +91,7 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
-            if domains != "AP2":
+            if domains != "Homeodomain":
                 continue
 
             # Initialize
@@ -155,11 +156,10 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     # regModel = RidgeCV(alphas=alphas, cv=myCViterator)
                     m = ElasticNet()
 
-                # ... Else...
-                else:
-                    continue
-                    # regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
-                    m = LogitNet()
+                # # ... Else...
+                # else:
+                #     # regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
+                #     m = LogitNet()
                 
                 # m.CV = myCViterator
 
@@ -186,23 +186,41 @@ def train_models(pairwise_file, out_dir=out_dir, verbose=False):
                     for i in range(len(myCViterator)):
 
                         # Initialize
-                        x = itemgetter(*myCViterator[i][0])(myXs)
-                        y = itemgetter(*myCViterator[i][0])(Ys)
-                        x_test = itemgetter(*myCViterator[i][1])(myXs)
-                        y_test = itemgetter(*myCViterator[i][1])(Ys)
+                        x_train = np.asarray(itemgetter(*myCViterator[i][0])(myXs))
+                        y_train = np.asarray(itemgetter(*myCViterator[i][0])(Ys))
+                        x_test = np.asarray(itemgetter(*myCViterator[i][1])(myXs))
+                        y_test = np.asarray(itemgetter(*myCViterator[i][1])(Ys))
+                        if (len(set(y_test >= evalue_threshold)) == 1):
+                            continue
+                        print(y_train)
+                        for i in y_train:
+                            print(i)
+
+                        # if regression == "logistic":
+                        #     y_train = y_train >= evalue_threshold
+                        #     y_test = y_test >= evalue_threshold
 
                         # Fit model...
                         # fitRegModel = OneVsRestClassifier(regModel).fit(myXs, Ys_transform)
-                        m_cv = m.fit(x, y)
+                        m_cv = m.fit(x_train, y_train)
 
                         # Predict
                         p = m_cv.predict(x_test)
+                        # if regression == "logistic":
+                        #     p = m_cv.predict_proba(x_test)[:,1]
+
+                        # print(x_test)
+                        # print(y_test)
+                        # print(p)
+                        # for i in range(len(y_test)):
+                        #     print(y_test[i], p[i])
+                        print(m_cv.predict([[0 for i in range(57)]]))
+                        print(m_cv.predict([[1 for i in range(57)]]))
+                        exit(0)
 
                         # Add CV predictions
                         predictions.append((p, y_test))
 
-
-                    print(predictions)
                     exit(0)
 
                     # # Predict
