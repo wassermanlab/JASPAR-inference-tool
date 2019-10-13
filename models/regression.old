@@ -5,16 +5,12 @@
 # building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
 
 import argparse
-from functools import partial
-import glmnet_python
-from glmnet import glmnet
-from multiprocessing import Pool
+from glmnet import ElasticNet
 import numpy as np
 from operator import itemgetter 
 import os
 import pickle
 import sys
-from tqdm import tqdm
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
@@ -42,8 +38,6 @@ def parse_args():
         help="output directory (default = ./)")
     parser.add_argument("-p", metavar="PICKLE",
         help="pickle file from pairwise.py")
-    parser.add_argument("--threads", type=int, default=1, metavar="INT",
-        help="threads to use (default = 1)")
     parser.add_argument("-v", "--verbose", action="store_true",
         help="verbose mode (default = False)")
 
@@ -55,14 +49,15 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    train_models(os.path.abspath(args.p), os.path.abspath(args.o), args.threads, args.verbose)
+    train_models(os.path.abspath(args.p), os.path.abspath(args.o), args.verbose)
 
-def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
+def train_models(pairwise_file, out_dir=out_dir, verbose=False):
 
     # Skip if pickle file already exists
     models_file = os.path.join(out_dir, "models.pickle")
-    results_file = os.path.join(out_dir, "results.pickle")
-    if not os.path.exists(models_file) or not os.path.exists(results_file):
+    # results_file = os.path.join(out_dir, "results.pickle")
+    # if not os.path.exists(models_file) or not os.path.exists(results_file):
+    if not os.path.exists(models_file):
 
         # Initialize
         evalue_threshold = 8.0 # from cisbp.ipynb
@@ -72,18 +67,18 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                 (
                     "regression approach",
                     "similarity representation"
-                ) : "model"
+                ) : (["precisions"], ["recalls"], ["Ys"], ["TF recalls"], "recall at 75% precision", "Y at 75% precision", "TF recall at 75% precision", "model")
             }
         }
-        results = {
-            "Keys": "DBD composition",
-            "Values": {
-                (
-                    "regression approach",
-                    "similarity representation"
-                ) : ("Ys", "predictions")
-            }
-        }
+        # results = {
+        #     "Keys": "DBD composition",
+        #     "Values": {
+        #         (
+        #             "regression approach",
+        #             "similarity representation"
+        #         ) : (["precisions"], ["recalls"], ["Ys"], ["weights"])
+        #     }
+        # }
 
         # Load pickle file
         with open(pairwise_file, "rb") as f:
@@ -92,15 +87,22 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
         # For each DBD composition...
         for domains, values in pairwise.items():
 
-            if domains != "WRKY":
+            if domains != "Sox":
                 continue
 
             # Initialize
             Xs = {}
-            BLASTXs = {}
+            # BLASTXs = {}
             models.setdefault(domains, {})
-            results.setdefault(domains, {})
+            # results.setdefault(domains, {})
+            # Ys = np.array(values[1])
             Ys = np.array(values[2])
+            # print(Ys[:10])
+            # Ys_transform = MultiLabelBinarizer().fit_transform(Ys)
+            # print(Ys_transform[:10])
+            # exit(0)
+            # Ys_int = Ys * 1
+            # tfPairs = values[2]
             tfPairs = values[3]
 
             # Verbose mode
@@ -127,14 +129,14 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
 
                 # Add Xs
                 Xs.setdefault(similarity, np.asarray(values[0][similarity]))
-                BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
+                # BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
 
                 # Verbose mode
                 if verbose:
                     a, b = Xs[similarity].shape
                     Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
-                    a, b = BLASTXs[similarity].shape
-                    Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
+                    # a, b = BLASTXs[similarity].shape
+                    # Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
 
             # Verbose mode
             if verbose:
@@ -144,24 +146,32 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
             # For each regression approach...
             for regression in ["linear", "logistic"]:
 
-                if regression == "logistic":
-                    pass
+                # If linear regression...
+                if regression == "linear":
+                    # alphas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0] # i.e. reg. coeff. from Andrew Ng
+                    # regModel = RidgeCV(alphas=alphas, cv=myCViterator)
+                    m = ElasticNet()
 
+                # # If logistic regression...
+                # elif regression == "logistic":
+                #     # regModel = LogisticRegressionCV(Cs=10, cv=myCViterator, max_iter=50000)
+                #     m = LogitNet()
+                
                 # For each sequence similarity representation...
+                # for similarity in ["identity", "blosum62", "%ID"]:
                 for similarity in ["identity", "blosum62"]:
 
                     # Initialize
+                    predictions = []
                     myXs = Xs[similarity]
-                    myBLASTXs = BLASTXs[similarity]
-
-                    fit = glmnet(x=myXs, y=Ys, family="gaussian", alpha=0, standardize=False)
-                    exit(0)
-
-
-                    # fit = glmnet(x = x.copy(), y = y.copy(), family = 'gaussian', \
-                    # weights = wts, \
-                    # alpha = 0.2, nlambda = 20
-                    # )
+                    # if similarity == "%ID":
+                    #     if regression == "logistic":
+                    #         continue
+                    #     # if use_blast_Xs:
+                    #     #     continue
+                    #     myXs = np.array([float(sum(p)) / len(p) for p in Xs["identity"]])
+                    # # elif use_blast_Xs:
+                    # #     myXs = np.concatenate((myXs, BLASTXs[similarity]), axis=1)
 
                     # For each cross-validation...
                     for i in range(len(myCViterator)):
@@ -181,7 +191,8 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                         m_cv = m.fit(x_train, y_train)
 
                         # Predict
-                        # if regression == "linear":
+                        if regression == "linear":
+                        p = m_cv.predict(x_test)
                         # elif regression == "logistic":
                         #     p = m_cv.predict_proba(x_test)[:,1]
 

@@ -2,7 +2,6 @@
 
 import argparse
 from Bio.SubsMat.MatrixInfo import blosum62
-from collections import Counter
 import json
 import math
 from numpy import log10 as log
@@ -34,8 +33,6 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument("-e", default=0.05, type=float, metavar="FLOAT",
-    #     help="e-value threshold (default = 0.05)")
     parser.add_argument("-f", default=files_dir, metavar="DIR",
         help="files directory (from get_files.py; default=../files/)")
     parser.add_argument("-o", default=out_dir, metavar="DIR",
@@ -49,7 +46,6 @@ def main():
     args = parse_args()
 
     # Pairwise
-    # pairwise(args.e, os.path.abspath(args.f), os.path.abspath(args.o))
     pairwise(os.path.abspath(args.f), os.path.abspath(args.o))
 
 # def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
@@ -86,10 +82,6 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
             BLASTXss = {}
             Ys = []
             uniaccs = []
-
-            # # Skip if not enough TFs
-            # if len(values) < 3:
-            #     continue
 
             # For each TF...
             for i in range(len(values) - 1):
@@ -128,12 +120,7 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
                     Ys.append(y)
                     uniaccs.append((values[i][2], values[j][2]))
 
-            # # Skip if not enough classes in the data
-            # if len(set([tuple(y) for y in Ys])) < 3:
-            #     continue
-
             # Add to pairwise
-            # pairwise.setdefault(key, [Xss, Ys, uniaccs])
             pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
 
         # Write pickle file
@@ -162,16 +149,8 @@ def _get_Tomtom_groups(files_dir=files_dir):
 
     for matrix_id in tomtom_unfiltered:
 
-        # # Initialize
-        # matrix_ids = set()
-
         for m, e in tomtom_unfiltered[matrix_id]:
 
-        #     if e <= evalue:
-        #         matrix_ids.add(m)
-
-        # if len(matrix_ids) > 0:
-        #     tomtom_filtered.setdefault(matrix_id, matrix_ids)
             tomtom_filtered.setdefault(matrix_id, {})
             tomtom_filtered[matrix_id].setdefault(m, e)
 
@@ -206,7 +185,6 @@ def _get_BLAST_groups(files_dir=files_dir):
             jc = jc / 100.0
 
             blast_filtered.setdefault(uniacc, {})
-            # blast_filtered[uniacc].setdefault(t, [s, pid, psim, jc])
             blast_filtered[uniacc].setdefault(t, [pid, psim, jc])
 
     return(blast_filtered)
@@ -278,7 +256,7 @@ def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
 
 def _fetchY(maIDlist1, maIDlist2):
     """
-    get the list of maID from 1 and 2 to see if any of them is correlated.
+    Returns "0 - log10(Tomtom e-value)" as the dependent value (i.e. Y).
     """
 
     # Iterate through profiles...
