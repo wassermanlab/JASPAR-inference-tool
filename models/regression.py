@@ -6,8 +6,7 @@
 
 import argparse
 from functools import partial
-import glmnet_python
-from glmnet import glmnet
+from glmnet import ElasticNet
 from multiprocessing import Pool
 import numpy as np
 from operator import itemgetter 
@@ -107,20 +106,8 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
             if verbose:
                 Jglobals.write(None, "\nRegressing %s..." % domains)
 
-            # Leave one TF out:
-            # 1. Get the TF names into a dict
-            # 2. For each TF, figure out which index to include
-            tfIdxs = {}
-            for tfPair in tfPairs:
-                for tf in tfPair:
-                    tfIdxs.setdefault(tf, [])
-            for tf, idxs in tfIdxs.items():
-                for i in range(len(tfPairs)):
-                    if tf in tfPairs[i]:
-                        idxs.append(i)
-
-            # Get iterator for cross validation
-            myCViterator = _leaveOneTFOut(tfIdxs, len(tfPairs))
+            # Get CV iterator
+            myCViterator = _get_CV_iterator(tfPairs)
 
             # For each sequence similarity representation...
             for similarity in ["identity", "blosum62"]:
@@ -144,8 +131,11 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
             # For each regression approach...
             for regression in ["linear", "logistic"]:
 
-                if regression == "logistic":
-                    pass
+                if regression == "linear":
+                    m = ElasticNet()
+
+                elif regression == "logistic":
+                    continue
 
                 # For each sequence similarity representation...
                 for similarity in ["identity", "blosum62"]:
@@ -153,15 +143,6 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                     # Initialize
                     myXs = Xs[similarity]
                     myBLASTXs = BLASTXs[similarity]
-
-                    fit = glmnet(x=myXs, y=Ys, family="gaussian", alpha=0, standardize=False)
-                    exit(0)
-
-
-                    # fit = glmnet(x = x.copy(), y = y.copy(), family = 'gaussian', \
-                    # weights = wts, \
-                    # alpha = 0.2, nlambda = 20
-                    # )
 
                     # For each cross-validation...
                     for i in range(len(myCViterator)):
@@ -172,13 +153,18 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                         x_test = np.asarray(itemgetter(*myCViterator[i][1])(myXs))
                         y_test = np.asarray(itemgetter(*myCViterator[i][1])(Ys))
 
+                        m = m.fit(x=x_train, y=y_train, alpha=0, lower_limits=0, standardize=False)
+                        print(glmnetPrint(fit))
+                        print(glmnetCoef(fit))
+                        exit(0)
+
                         # if regression == "logistic":
                         #     y_train = y_train >= evalue_threshold
                         #     y_test = y_test >= evalue_threshold
 
                         # Fit model...
                         # fitRegModel = OneVsRestClassifier(regModel).fit(myXs, Ys_transform)
-                        m_cv = m.fit(x_train, y_train)
+                        #m_cv = m.fit(x_train, y_train)
 
                         # Predict
                         # if regression == "linear":
@@ -190,26 +176,26 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                         # print(p)
                         # for i in range(len(y_test)):
                         #     print(y_test[i], p[i])
-                        print(m_cv.predict([[0 for i in range(57)]]))
-                        print(m_cv.predict([[1 for i in range(57)]]))
-                        exit(0)
+                    #     print(m_cv.predict([[0 for i in range(57)]]))
+                    #     print(m_cv.predict([[1 for i in range(57)]]))
+                    #     exit(0)
 
-                        # Add CV predictions
-                        predictions.append((p, y_test))
+                    #     # Add CV predictions
+                    #     predictions.append((p, y_test))
 
-                    exit(0)
+                    # exit(0)
 
-                    # # Predict
-                    # if regression == "linear":
-                    #     predictions = fitRegModel.predict(myXs)
+                    # # # Predict
+                    # # if regression == "linear":
+                    # #     predictions = fitRegModel.predict(myXs)
 
-                    # # ... Else...
-                    # else:
-                    #     predictions = fitRegModel.predict_proba(myXs)
+                    # # # ... Else...
+                    # # else:
+                    # #     predictions = fitRegModel.predict_proba(myXs)
 
-                    for i in range(100):
-                        print(Ys[i], predictions[i], abs(Ys[i] - predictions[i]))
-                    exit(0)
+                    # for i in range(100):
+                    #     print(Ys[i], predictions[i], abs(Ys[i] - predictions[i]))
+                    # exit(0)
 
                     # # Get precision-recall curve
                     # Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
@@ -234,14 +220,28 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
         with open(models_file, "wb") as f:
             pickle.dump(models, f)
 
-def _leaveOneTFOut(tfIdxs, l):
+def _get_CV_iterator(tfPairs):
+    """
+    Leave one TF out.
+    """
 
+    # Initialize
     myCViterator = []
 
-    # For each TF...
+    # 1. Get the TF names into a dict
+    tfIdxs = {}
+    for tfPair in tfPairs:
+        for tf in tfPair:
+            tfIdxs.setdefault(tf, [])
+    for tf, idxs in tfIdxs.items():
+        for i in range(len(tfPairs)):
+            if tf in tfPairs[i]:
+                idxs.append(i)
+
+    # 2. For each TF, figure out which index to include
     for tf, idxs in tfIdxs.items():
 
-        s = [i for i in range(l)]
+        s = [i for i in range(len(tfPairs))]
         testIdx = idxs
         trainIdx = list(set(s) - set(testIdx))
 

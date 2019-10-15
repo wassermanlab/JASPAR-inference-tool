@@ -9,6 +9,7 @@ dependencies:
   - blast=2.9.0
   - curl
   - git=2.20.1
+  - glmnet=2.1.1
   - ipython=7.8.0
   - jupyter=1.0.0
   - hmmer=3.2.1
@@ -26,5 +27,3 @@ dependencies:
   - seaborn=0.9.0
   - setuptools=41.0.1
   - tqdm=4.35.0
-  - pip:
-    - glmnet_py
