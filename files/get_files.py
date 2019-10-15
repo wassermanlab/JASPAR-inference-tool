@@ -26,8 +26,9 @@ root_dir = os.path.join(out_dir, os.pardir)
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
+sys.path.pop(0)
 
-# Import JASPAR-profile-inference functions
+# Import globals
 from __init__ import Jglobals
 from infer_profile import _SeqRecord_BLAST_search
 

@@ -64,7 +64,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
     if not os.path.exists(models_file) or not os.path.exists(results_file):
 
         # Initialize
-        evalue_threshold = 8.0 # from cisbp.ipynb
+        evalue_threshold = 7.0 # from cisbp.ipynb: 6.7027 and 6.3462
         models = {
             "Keys": "DBD composition",
             "Values": {
@@ -128,21 +128,22 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                 Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
                 Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
 
-            # For each regression approach...
-            for regression in ["linear", "logistic"]:
+            # For each sequence similarity representation...
+            for similarity in ["identity", "blosum62"]:
 
-                if regression == "linear":
-                    m = ElasticNet()
+                # Initialize
+                myXs = Xs[similarity]
+                myBLASTXs = BLASTXs[similarity]
+                lower_limits = np.zeros(len(myXs[0]))
 
-                elif regression == "logistic":
-                    continue
+                # For each regression approach...
+                for regression in ["linear", "logistic"]:
 
-                # For each sequence similarity representation...
-                for similarity in ["identity", "blosum62"]:
+                    if regression == "linear":
+                        m = ElasticNet(alpha=0, lower_limits=lower_limits, standardize=False)
 
-                    # Initialize
-                    myXs = Xs[similarity]
-                    myBLASTXs = BLASTXs[similarity]
+                    elif regression == "logistic":
+                        continue
 
                     # For each cross-validation...
                     for i in range(len(myCViterator)):
@@ -153,10 +154,9 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                         x_test = np.asarray(itemgetter(*myCViterator[i][1])(myXs))
                         y_test = np.asarray(itemgetter(*myCViterator[i][1])(Ys))
 
-                        m = m.fit(x=x_train, y=y_train, alpha=0, lower_limits=0, standardize=False)
-                        print(glmnetPrint(fit))
-                        print(glmnetCoef(fit))
-                        exit(0)
+                        m = m.fit(x_train, y_train)
+                        p = m.predict(x_test)
+                        print(p)
 
                         # if regression == "logistic":
                         #     y_train = y_train >= evalue_threshold
