@@ -365,10 +365,11 @@ def _group_by_kmer_overlap(output_dir=out_dir):
 
             # For each matrix ID...
             for next_matrix, evalue in tomtom[matrix]:
-                
+
                 intersection = len(kmers[matrix].intersection(kmers[next_matrix]))
                 union = len(kmers[matrix].union(kmers[next_matrix]))
-                overlaps[matrix].append([next_matrix, float(intersection)/union])
+                print(intersection, union)
+                overlaps[matrix].append([next_matrix, float(intersection) / union])
 
         # Write
         Jglobals.write(
