@@ -764,7 +764,7 @@ def Tomtom(meme_file, database, out_dir=out_dir):
     if not os.path.isdir(output_dir):
 
         # Run Tomtom
-        cmd = "tomtom -o %s %s %s" % (output_dir, meme_file, database)
+        cmd = "tomtom -o %s -thresh 10000 -evalue %s %s" % (output_dir, meme_file, database)
         process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL)
 
