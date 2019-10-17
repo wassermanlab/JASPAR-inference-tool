@@ -5,6 +5,7 @@
 # building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
 
 import argparse
+from collections import Counter
 from functools import partial
 from glmnet import ElasticNet
 from multiprocessing import Pool
@@ -12,6 +13,7 @@ import numpy as np
 from operator import itemgetter 
 import os
 import pickle
+from sklearn.metrics import mean_squared_error, precision_recall_curve
 import sys
 from tqdm import tqdm
 
@@ -64,7 +66,6 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
     if not os.path.exists(models_file) or not os.path.exists(results_file):
 
         # Initialize
-        evalue_threshold = 7.0 # from cisbp.ipynb: 6.7027 and 6.3462
         models = {
             "Keys": "DBD composition",
             "Values": {
@@ -85,169 +86,334 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
         }
 
         # Load pickle file
+        global pairwise
         with open(pairwise_file, "rb") as f:
             pairwise = pickle.load(f)
 
         # For each DBD composition...
         for domains, values in pairwise.items():
 
-            if domains != "WRKY":
+            if domains != "AP2":
                 continue
 
-            # Initialize
-            Xs = {}
-            BLASTXs = {}
-            models.setdefault(domains, {})
-            results.setdefault(domains, {})
-            Ys = np.array(values[2])
-            tfPairs = values[3]
+            # Train models
+            # _train_SR_models(domains, values, threads, verbose)
+            _train_BLAST_models(domains, values, threads, verbose)
 
-            # Verbose mode
-            if verbose:
-                Jglobals.write(None, "\nRegressing %s..." % domains)
+    # # Write pickle file
+    # with open(models_file, "wb") as f:
+    #     pickle.dump(models, f)
 
-            # Get CV iterator
-            myCViterator = _get_CV_iterator(tfPairs)
+def _train_SR_models(domains, values, threads=1, verbose=False):
 
-            # For each sequence similarity representation...
-            for similarity in ["identity", "blosum62"]:
+    # Initialize
+    Xs = values[0]
+    Ys = np.array(values[2])
+    # Ys = np.array(_transform_Ys(Ys))
+    TFpairs = values[3]
 
-                # Add Xs
-                Xs.setdefault(similarity, np.asarray(values[0][similarity]))
-                BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
+    # E-value thresholds from cisbp.ipynb:
+    # For (+) 6.702705320605285 and 6.34620565834759
+    # For (-) 0.9352972238139634 and -0.6065759798508961
+    threshPos = 7.0
+    threshNeg = 1.0
 
-                # Verbose mode
-                if verbose:
-                    a, b = Xs[similarity].shape
-                    Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
-                    a, b = BLASTXs[similarity].shape
-                    Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
+    # Verbose mode
+    if verbose:
+        Jglobals.write(None, "\nRegressing %s..." % domains)
 
-            # Verbose mode
-            if verbose:
-                Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
-                Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
+    # Get weights
+    weights = _get_weights(Ys, threshPos)
 
-            # For each sequence similarity representation...
-            for similarity in ["identity", "blosum62"]:
+    # # For each sequence similarity representation...
+    # for similarity in ["identity", "blosum62"]:
 
-                # Initialize
-                myXs = Xs[similarity]
-                myBLASTXs = BLASTXs[similarity]
-                lower_limits = np.zeros(len(myXs[0]))
+    #     # Add Xs
+    #     Xs.setdefault(similarity, np.asarray(values[0][similarity]))
+    #     BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
 
-                # For each regression approach...
-                for regression in ["linear", "logistic"]:
+    #     # Verbose mode
+    #     if verbose:
+    #         a, b = Xs[similarity].shape
+    #         Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
+    #         a, b = BLASTXs[similarity].shape
+    #         Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
 
-                    if regression == "linear":
-                        m = ElasticNet(alpha=0, lower_limits=lower_limits, standardize=False)
+    # # Verbose mode
+    # if verbose:
+    #     Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
+    #     Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
 
-                    elif regression == "logistic":
-                        continue
+    # For each sequence similarity representation...
+    for similarity in ["identity", "blosum62"]:
 
-                    # For each cross-validation...
-                    for i in range(len(myCViterator)):
+        if similarity == "blosum62":
+            continue
 
-                        # Initialize
-                        x_train = np.asarray(itemgetter(*myCViterator[i][0])(myXs))
-                        y_train = np.asarray(itemgetter(*myCViterator[i][0])(Ys))
-                        x_test = np.asarray(itemgetter(*myCViterator[i][1])(myXs))
-                        y_test = np.asarray(itemgetter(*myCViterator[i][1])(Ys))
+        # Initialize
+        Xss = np.asarray(Xs[similarity])
+        limits = np.zeros(len(Xss[0]))
 
-                        m = m.fit(x_train, y_train)
-                        p = m.predict(x_test)
-                        print(p)
+        # Get lambdas for cross-validation
+        model = ElasticNet(alpha=0, lower_limits=limits, standardize=False)
+        modelFit = model.fit(Xss, Ys, sample_weight=weights)
+        lambdas = modelFit.lambda_path_
 
-                        # if regression == "logistic":
-                        #     y_train = y_train >= evalue_threshold
-                        #     y_test = y_test >= evalue_threshold
+        # Initialize cross-validation model 
+        modelCV = ElasticNet(alpha=0, lambda_path=lambdas, lower_limits=limits,
+            standardize=False)
 
-                        # Fit model...
-                        # fitRegModel = OneVsRestClassifier(regModel).fit(myXs, Ys_transform)
-                        #m_cv = m.fit(x_train, y_train)
+        # Get cross-validations
+        CVs = _get_cross_validations(Xss, Ys, weights, modelCV, TFpairs)
 
-                        # Predict
-                        # if regression == "linear":
-                        # elif regression == "logistic":
-                        #     p = m_cv.predict_proba(x_test)[:,1]
+        # Get best lambda
+        idx, lambdabest, mse = _get_best_lambda(CVs, lambdas)
 
-                        # print(x_test)
-                        # print(y_test)
-                        # print(p)
-                        # for i in range(len(y_test)):
-                        #     print(y_test[i], p[i])
-                    #     print(m_cv.predict([[0 for i in range(57)]]))
-                    #     print(m_cv.predict([[1 for i in range(57)]]))
-                    #     exit(0)
+        # Get Precision, Recall, thresholds
+        prec, rec, threshs = _get_prc(CVs, idx, threshPos, npv=False)
+        # nprec, nrec, nthreshs = _get_prc(CVs, idx, threshNeg, npv=True)
 
-                    #     # Add CV predictions
-                    #     predictions.append((p, y_test))
+        # For each profile...
+        for i in range(len(prec)):
+            print(prec[i], rec[i], threshs[i])
+        exit(0)
 
-                    # exit(0)
 
-                    # # # Predict
-                    # # if regression == "linear":
-                    # #     predictions = fitRegModel.predict(myXs)
+        # # Verbose mode
+        # if verbose:
+        #     # Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {} + BLAST+ = {}): {}".format(regression, similarity, use_blast_Xs, recall))
+        #     Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
+        #     Jglobals.write(None, "\t*** Recalled TFs at 75% Precision threshold ({} + {}): {}".format(regression, similarity, tf_recall))
 
-                    # # # ... Else...
-                    # # else:
-                    # #     predictions = fitRegModel.predict_proba(myXs)
+        # # Add fitRegModel
+        # # models[domains].setdefault((regression, similarity), (recall, tf_recall, y, fitRegModel))
+        # # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, fitRegModel.coef_.tolist()[0]))
+        # models[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, recall, y, tf_recall, fitRegModel))
 
-                    # for i in range(100):
-                    #     print(Ys[i], predictions[i], abs(Ys[i] - predictions[i]))
-                    # exit(0)
+def _train_BLAST_models(domains, values, threads=1, verbose=False):
 
-                    # # Get precision-recall curve
-                    # Prec, Rec, Ys = precision_recall_curve(Ys_int, predictions)
-                    
-                    # tfRec = _get_tf_recall_curve(tfPairs, Ys_int, predictions, Ys)
-                    # recall = _get_value_at_precision_threshold(Prec, Rec, threshold=0.75)
-                    # y = _get_value_at_precision_threshold(Prec, Ys, threshold=0.75)
-                    # tf_recall = _get_value_at_precision_threshold(Prec, tfRec, threshold=0.75)
+    # Initialize
+    Xs = values[1]
+    Ys = np.array(values[2])
+    # Ys = np.array(_transform_Ys(Ys))
+    TFpairs = values[3]
 
-                    # Verbose mode
-                    if verbose:
-                        # Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {} + BLAST+ = {}): {}".format(regression, similarity, use_blast_Xs, recall))
-                        Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
-                        Jglobals.write(None, "\t*** Recalled TFs at 75% Precision threshold ({} + {}): {}".format(regression, similarity, tf_recall))
+    # E-value thresholds from cisbp.ipynb:
+    # For (+) 6.702705320605285 and 6.34620565834759
+    # For (-) 0.9352972238139634 and -0.6065759798508961
+    threshPos = 6.0
+    threshNeg = 1.0
 
-                    # Add fitRegModel
-                    # models[domains].setdefault((regression, similarity), (recall, tf_recall, y, fitRegModel))
-                    # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, fitRegModel.coef_.tolist()[0]))
-                    models[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, recall, y, tf_recall, fitRegModel))
+    # Verbose mode
+    if verbose:
+        Jglobals.write(None, "\nRegressing %s..." % domains)
 
-        # Write pickle file
-        with open(models_file, "wb") as f:
-            pickle.dump(models, f)
+    # Get weights
+    weights = _get_weights(Ys, threshPos)
 
-def _get_CV_iterator(tfPairs):
+    # # For each sequence similarity representation...
+    # for similarity in ["identity", "blosum62"]:
+
+    #     # Add Xs
+    #     Xs.setdefault(similarity, np.asarray(values[0][similarity]))
+    #     BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
+
+    #     # Verbose mode
+    #     if verbose:
+    #         a, b = Xs[similarity].shape
+    #         Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
+    #         a, b = BLASTXs[similarity].shape
+    #         Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
+
+    # # Verbose mode
+    # if verbose:
+    #     Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
+    #     Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
+
+    # For each sequence similarity representation...
+    for similarity in ["identity", "blosum62"]:
+
+        if similarity == "identity":
+            continue
+
+        # Initialize
+        Xss = np.asarray(Xs[similarity])
+        limits = np.zeros(len(Xss[0]))
+
+        # Get lambdas for cross-validation
+        model = ElasticNet(alpha=0, lower_limits=limits, standardize=False)
+        modelFit = model.fit(Xss, Ys, sample_weight=weights)
+        lambdas = modelFit.lambda_path_
+
+        # Initialize cross-validation model 
+        modelCV = ElasticNet(alpha=0, lambda_path=lambdas, lower_limits=limits,
+            standardize=False)
+
+        # Get cross-validations
+        CVs = _get_cross_validations(Xss, Ys, weights, modelCV, TFpairs)
+
+        # Get best lambda
+        idx, lambdabest, mse = _get_best_lambda(CVs, lambdas)
+
+        # Get Precision, Recall, thresholds
+        prec, rec, threshs = _get_prc(CVs, idx, threshPos, npv=False)
+        # nprec, nrec, nthreshs = _get_prc(CVs, idx, threshNeg, npv=True)
+
+        # For each profile...
+        for i in range(len(prec)):
+            print(prec[i], rec[i], threshs[i])
+        exit(0)
+
+
+        # # Verbose mode
+        # if verbose:
+        #     # Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {} + BLAST+ = {}): {}".format(regression, similarity, use_blast_Xs, recall))
+        #     Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
+        #     Jglobals.write(None, "\t*** Recalled TFs at 75% Precision threshold ({} + {}): {}".format(regression, similarity, tf_recall))
+
+        # # Add fitRegModel
+        # # models[domains].setdefault((regression, similarity), (recall, tf_recall, y, fitRegModel))
+        # # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, fitRegModel.coef_.tolist()[0]))
+        # models[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, recall, y, tf_recall, fitRegModel))
+
+def _transform_Ys(Ys):
+
+    # Initialize
+    Ys_transformed = []
+
+    for y in Ys:
+        if y < 0:
+            y = 0
+        elif y >= 10:
+            y = 10
+        Ys_transformed.append(y)
+
+    return(Ys_transformed)
+
+def _get_weights(Ys, threshold=6.0):
+    """
+    Weight positive samples 1/freq (or 10x whichever is higher) higher 
+    than negatives because they are usually at a much lower frequency.
+    """
+
+    labels = Ys >= threshold
+    c = Counter(labels)
+    w = {}
+    for l in c:
+        w.setdefault(l, 1/(float(c[l])/len(labels)))
+    if w[True] < 10:
+        w[True] = 10.
+    w[False] = 1.
+
+    return[w[l] for l in labels]
+
+def _get_cross_validations(x, y, w, m, pairs):
+
+    # Initialize
+    CVs = []
+
+    # Get CV iterator
+    CViterator = _get_CV_iterator(pairs)
+
+    # For each cross-validation...
+    for cv in range(len(CViterator)):
+
+        # Get train/test Xs/Ys
+        xTrain = np.asarray(itemgetter(*CViterator[cv][0])(x))
+        yTrain = np.asarray(itemgetter(*CViterator[cv][0])(y))
+        wTrain = np.asarray(itemgetter(*CViterator[cv][0])(w))
+        xTest = np.asarray(itemgetter(*CViterator[cv][1])(x))
+        yTest = np.asarray(itemgetter(*CViterator[cv][1])(y))
+        wTest = np.asarray(itemgetter(*CViterator[cv][1])(w))
+
+        # Fit cross-validation model
+        mFit = m.fit(xTrain, yTrain, sample_weight=wTrain)
+
+        # Predict
+        CVs.append((xTrain, yTrain, wTrain, xTest, yTest, wTest, mFit, mFit.predict(xTest, lamb=mFit.lambda_path_)))
+
+    return(CVs)
+
+def _get_CV_iterator(TFpairs):
     """
     Leave one TF out.
     """
 
     # Initialize
-    myCViterator = []
+    CViterator = []
 
     # 1. Get the TF names into a dict
-    tfIdxs = {}
-    for tfPair in tfPairs:
+    TFidxs = {}
+    for tfPair in TFpairs:
         for tf in tfPair:
-            tfIdxs.setdefault(tf, [])
-    for tf, idxs in tfIdxs.items():
-        for i in range(len(tfPairs)):
-            if tf in tfPairs[i]:
+            TFidxs.setdefault(tf, [])
+    for tf, idxs in TFidxs.items():
+        for i in range(len(TFpairs)):
+            if tf in TFpairs[i]:
                 idxs.append(i)
 
     # 2. For each TF, figure out which index to include
-    for tf, idxs in tfIdxs.items():
+    for tf, idxs in TFidxs.items():
+        s = [i for i in range(len(TFpairs))]
+        idxTest = idxs
+        idxTrain = list(set(s) - set(idxTest))
+        CViterator.append((idxTrain, idxTest))
 
-        s = [i for i in range(len(tfPairs))]
-        testIdx = idxs
-        trainIdx = list(set(s) - set(testIdx))
+    return(CViterator)
 
-        myCViterator.append((trainIdx, testIdx))
+def _get_best_lambda(CVs, lambdas):
 
-    return(myCViterator)
+    # Initialize
+    regStrength = []
+
+    # Get Ys
+    yTrue, yPred = _get_Ys_CV(CVs)
+
+    # For each lambda...
+    for l in range(len(lambdas)):
+        regStrength.append((l, lambdas[l], mean_squared_error(yTrue, yPred[l])))
+
+    # Sort by mean squared error
+    regStrength.sort(key=lambda x: x[-1])
+
+    return(regStrength[0])
+
+def _get_prc(CVs, idx, threshold, npv=False):
+
+    # Get Ys
+    yTrue, yPred = _get_Ys_CV(CVs)
+
+    if not npv:
+        labels = (np.array(yTrue) >= threshold) * 1
+    else:
+        labels = (np.array(yTrue) < threshold) * 1
+
+    return(precision_recall_curve(labels, yPred[idx]))
+
+def _get_Ys_CV(CVs):
+
+    # Initialize
+    yTrue = []
+    yPred = []
+
+    # For each cross-validation...
+    for cv in range(len(CVs)):
+
+        # 0: xTrain
+        # 1: yTrain
+        # 2: wTrain
+        # 3: xTest
+        # 4: yTest
+        # 5: wTest
+        # 6: mFit
+        # 7: mFit.predict(xTest, lamb=mFit.lambda_path_)))
+        yTrue += list(CVs[cv][4])
+        yPred += list(CVs[cv][7])
+
+    # Transpose
+    yPred = list(map(list, zip(*yPred)))
+
+    return(yTrue, yPred)
 
 def _get_tf_recall_curve(tfPairs, labels, predictions, Ys):
     """

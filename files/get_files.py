@@ -26,7 +26,7 @@ root_dir = os.path.join(out_dir, os.pardir)
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
-sys.path.pop(0)
+sys.path.pop(0) # i.e. import the correct __init__.py
 
 # Import globals
 from __init__ import Jglobals
