@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_fungi_m2_MA0266_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m2_MA0266_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m2_MA0266_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m2_MA0266_1_logo.png",
+ "name" : "ABF2",
+ "ic" : "7.39",
+ "size" : 7,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "TCTAGAS"
+}
+]
+}

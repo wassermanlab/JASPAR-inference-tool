@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_vertebrates_m733_MA1594_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m733_MA1594_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m733_MA1594_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m733_MA1594_1_logo.png",
+ "name" : "ZNF382",
+ "ic" : "18.17",
+ "size" : 24,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "GTRGGRTCKGTRGTRATRTCYCCT"
+}
+]
+}

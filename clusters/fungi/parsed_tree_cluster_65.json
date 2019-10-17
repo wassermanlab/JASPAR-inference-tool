@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_fungi_m151_MA0407_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m151_MA0407_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m151_MA0407_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m151_MA0407_1_logo.png",
+ "name" : "THI2",
+ "ic" : "14.99",
+ "size" : 15,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "GYTCTWWSRGTTKCC"
+}
+]
+}

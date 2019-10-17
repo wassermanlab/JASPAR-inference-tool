@@ -1,0 +1,316 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "aaaaarGTTAGGTadr",
+ "branch" : 12,
+ "id" : "cluster_16_node_12",
+ "ic" : "7.70",
+ "size" : 16,
+ "name" : "cluster_16",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "sGrrGTTAGGTada",
+ "branch" : 11,
+ "id" : "cluster_16_node_11",
+ "ic" : "7.58",
+ "size" : 16,
+ "name" : "cluster_16_node_11_10motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_11_10motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_11_10motifs_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "rrGTTAGGTada",
+ "branch" : 10,
+ "id" : "cluster_16_node_10",
+ "ic" : "6.96",
+ "size" : 16,
+ "name" : "cluster_16_node_10_8motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_10_8motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_10_8motifs_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "rGTTAGGTada",
+ "branch" : 9,
+ "id" : "cluster_16_node_9",
+ "ic" : "6.98",
+ "size" : 16,
+ "name" : "cluster_16_node_9_7motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_9_7motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_9_7motifs_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "CGkTAGGTr",
+ "branch" : 8,
+ "id" : "cluster_16_node_8",
+ "ic" : "7.57",
+ "size" : 16,
+ "name" : "cluster_16_node_8_5motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_8_5motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_8_5motifs_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "GkTAGGTr",
+ "branch" : 4,
+ "id" : "cluster_16_node_4",
+ "ic" : "6.87",
+ "size" : 16,
+ "name" : "cluster_16_node_4_4motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_4_4motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_4_4motifs_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "GkTAGGTr",
+ "branch" : 2,
+ "id" : "cluster_16_node_2",
+ "ic" : "7.24",
+ "size" : 16,
+ "name" : "cluster_16_node_2_3motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_2_3motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_2_3motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_plants_m331_MA1039_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m331_MA1039_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m331_MA1039_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m331_MA1039_1_logo.png",
+ "name" : "MYB4",
+ "ic" : "6.84",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "YACCWACY"
+},
+{
+ "consensus" : "GkTAGGTr",
+ "branch" : 1,
+ "id" : "cluster_16_node_1",
+ "ic" : "7.67",
+ "size" : 16,
+ "name" : "cluster_16_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_plants_m318_MA1036_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m318_MA1036_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m318_MA1036_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m318_MA1036_1_logo.png",
+ "name" : "MYB111",
+ "ic" : "7.57",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "YACCTAMC"
+},
+{
+ "label": "JASPAR_2020_plants_m332_MA1040_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m332_MA1040_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m332_MA1040_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m332_MA1040_1_logo.png",
+ "name" : "MYB46",
+ "ic" : "7.93",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "YACCTAMC"
+} 
+] 
+} 
+] 
+},
+{
+ "label": "JASPAR_2020_plants_m337_MA1042_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m337_MA1042_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m337_MA1042_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m337_MA1042_1_logo.png",
+ "name" : "MYB59",
+ "ic" : "6.99",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "KACCTAAY"
+} 
+] 
+},
+{
+ "label": "JASPAR_2020_plants_m334_MA1041_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m334_MA1041_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m334_MA1041_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m334_MA1041_1_logo.png",
+ "name" : "MYB55",
+ "ic" : "8.15",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "CGKTAGGT"
+} 
+] 
+},
+{
+ "consensus" : "rGTTAGGTada",
+ "branch" : 7,
+ "id" : "cluster_16_node_7",
+ "ic" : "7.02",
+ "size" : 16,
+ "name" : "cluster_16_node_7_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_7_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_7_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_plants_m326_MA1038_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m326_MA1038_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m326_MA1038_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m326_MA1038_1_logo.png",
+ "name" : "MYB3",
+ "ic" : "8.57",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "TYTACCTACCH"
+},
+{
+ "label": "JASPAR_2020_plants_m253_MA1408_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m253_MA1408_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m253_MA1408_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m253_MA1408_1_logo.png",
+ "name" : "FaEOBII",
+ "ic" : "7.02",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "WTACCTAACY"
+} 
+] 
+} 
+] 
+},
+{
+ "label": "JASPAR_2020_plants_m324_MA1037_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m324_MA1037_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m324_MA1037_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m324_MA1037_1_logo.png",
+ "name" : "MYB24",
+ "ic" : "4.65",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "RCCTAMYTY"
+} 
+] 
+},
+{
+ "consensus" : "sGrsGGTAGGTGG",
+ "branch" : 5,
+ "id" : "cluster_16_node_5",
+ "ic" : "11.73",
+ "size" : 16,
+ "name" : "cluster_16_node_5_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_5_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_5_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_plants_m413_MA0576_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m413_MA0576_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m413_MA0576_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m413_MA0576_1_logo.png",
+ "name" : "RAX3",
+ "ic" : "12.69",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "SCACCTACCCCCC"
+},
+{
+ "label": "JASPAR_2020_plants_m323_MA0574_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m323_MA0574_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m323_MA0574_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m323_MA0574_1_logo.png",
+ "name" : "MYB15",
+ "ic" : "12.57",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "CCACCTACCGTYG"
+} 
+] 
+} 
+] 
+},
+{
+ "consensus" : "aaaaaArTTAGGTAar",
+ "branch" : 6,
+ "id" : "cluster_16_node_6",
+ "ic" : "10.87",
+ "size" : 16,
+ "name" : "cluster_16_node_6_3motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_6_3motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_6_3motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_plants_m338_MA1294_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m338_MA1294_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m338_MA1294_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m338_MA1294_1_logo.png",
+ "name" : "MYB62",
+ "ic" : "8.94",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "HTRCCTAAYTWTWTT"
+},
+{
+ "consensus" : "aaaAArTTAGGTAar",
+ "branch" : 3,
+ "id" : "cluster_16_node_3",
+ "ic" : "11.86",
+ "size" : 16,
+ "name" : "cluster_16_node_3_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_3_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/cluster_16_node_3_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_plants_m336_MA1293_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m336_MA1293_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m336_MA1293_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m336_MA1293_1_logo.png",
+ "name" : "MYB57",
+ "ic" : "11.58",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "WAAAGTTAGGTARR"
+},
+{
+ "label": "JASPAR_2020_plants_m325_MA1292_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m325_MA1292_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m325_MA1292_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m325_MA1292_1_logo.png",
+ "name" : "MYB27",
+ "ic" : "12.72",
+ "size" : 16,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "TWTACCTAAYTTTTT"
+} 
+] 
+} 
+] 
+} 
+] 
+} 
+]}

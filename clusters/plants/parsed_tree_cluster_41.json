@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_plants_m176_MA0579_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m176_MA0579_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m176_MA0579_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_plants_aligned_logos/JASPAR_2020_plants_m176_MA0579_1_logo.png",
+ "name" : "CDC5",
+ "ic" : "8.21",
+ "size" : 11,
+ "title" : "JASPAR_2020_plants",
+ "consensus_rc" : "CSCGCTGAGSY"
+}
+]
+}

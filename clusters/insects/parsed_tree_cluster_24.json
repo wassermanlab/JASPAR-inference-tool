@@ -1,0 +1,66 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "ccgmyAGrTGGCGCyRvcRsms",
+ "branch" : 2,
+ "id" : "cluster_24_node_2",
+ "ic" : "12.12",
+ "size" : 22,
+ "name" : "cluster_24",
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_24_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_24_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "ccgmyAGrTGGCGCy",
+ "branch" : 1,
+ "id" : "cluster_24_node_1",
+ "ic" : "9.73",
+ "size" : 22,
+ "name" : "cluster_24_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_24_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_24_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_insects_m40_MA0531_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m40_MA0531_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m40_MA0531_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m40_MA0531_1_logo.png",
+ "name" : "CTCF",
+ "ic" : "9.75",
+ "size" : 22,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "RGCGCCAYCTRKCGG"
+},
+{
+ "label": "JASPAR_2020_insects_m19_MA0213_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m19_MA0213_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m19_MA0213_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m19_MA0213_1_logo.png",
+ "name" : "brk",
+ "ic" : "7.57",
+ "size" : 22,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "RGCGCCRS"
+} 
+] 
+},
+{
+ "label": "JASPAR_2020_insects_m88_MA0535_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m88_MA0535_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m88_MA0535_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m88_MA0535_1_logo.png",
+ "name" : "Mad",
+ "ic" : "8.77",
+ "size" : 22,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "SKSYGBYSGCGYCDS"
+} 
+] 
+} 
+]}

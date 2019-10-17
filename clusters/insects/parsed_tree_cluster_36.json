@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_insects_m100_MA0237_2",
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m100_MA0237_2_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m100_MA0237_2_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m100_MA0237_2_logo.png",
+ "name" : "pan",
+ "ic" : "10.23",
+ "size" : 14,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "WYCAAARRMRSCGM"
+}
+]
+}

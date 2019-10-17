@@ -1,0 +1,41 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "sTGcyCTAkwTT",
+ "branch" : 1,
+ "id" : "cluster_23_node_1",
+ "ic" : "8.41",
+ "size" : 12,
+ "name" : "cluster_23",
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_23_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_23_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_insects_m16_MA0011_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m16_MA0011_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m16_MA0011_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m16_MA0011_1_logo.png",
+ "name" : "br_var_2_",
+ "ic" : "5.35",
+ "size" : 12,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "AAATAGWW"
+},
+{
+ "label": "JASPAR_2020_insects_m79_MA0451_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m79_MA0451_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m79_MA0451_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m79_MA0451_1_logo.png",
+ "name" : "kni",
+ "ic" : "9.46",
+ "size" : 12,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "STGCYCTAGWTT"
+} 
+] 
+} 
+]}

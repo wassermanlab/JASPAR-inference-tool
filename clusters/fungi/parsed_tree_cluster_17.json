@@ -1,0 +1,66 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "vhytwgywaTATATAwwrdwrh",
+ "branch" : 2,
+ "id" : "cluster_17_node_2",
+ "ic" : "6.62",
+ "size" : 22,
+ "name" : "cluster_17",
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_17_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_17_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_fungi_m129_MA0386_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m129_MA0386_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m129_MA0386_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m129_MA0386_1_logo.png",
+ "name" : "SPT15",
+ "ic" : "10.20",
+ "size" : 22,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "MWYSWATATATATWYCTADWB"
+},
+{
+ "consensus" : "yttwyywaTATATwawawwrh",
+ "branch" : 1,
+ "id" : "cluster_17_node_1",
+ "ic" : "5.88",
+ "size" : 22,
+ "name" : "cluster_17_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_17_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_17_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_fungi_m87_MA0345_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m87_MA0345_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m87_MA0345_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m87_MA0345_1_logo.png",
+ "name" : "NHP6A",
+ "ic" : "7.10",
+ "size" : 22,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "DYWWWWTTATATAKWRDWMAK"
+},
+{
+ "label": "JASPAR_2020_fungi_m88_MA0346_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m88_MA0346_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m88_MA0346_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m88_MA0346_1_logo.png",
+ "name" : "NHP6B",
+ "ic" : "5.62",
+ "size" : 22,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "BHMYWWWWTATAWWRRWAAR"
+} 
+] 
+} 
+] 
+} 
+]}

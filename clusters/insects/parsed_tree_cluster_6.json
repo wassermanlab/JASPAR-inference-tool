@@ -1,0 +1,66 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "sCACTyGArw",
+ "branch" : 2,
+ "id" : "cluster_6_node_2",
+ "ic" : "8.80",
+ "size" : 10,
+ "name" : "cluster_6",
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_6_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_6_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "sCACTyGAvw",
+ "branch" : 1,
+ "id" : "cluster_6_node_1",
+ "ic" : "8.91",
+ "size" : 10,
+ "name" : "cluster_6_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_6_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_6_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_insects_m137_MA0253_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m137_MA0253_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m137_MA0253_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m137_MA0253_1_logo.png",
+ "name" : "vnd",
+ "ic" : "8.94",
+ "size" : 10,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "YACTTGARA"
+},
+{
+ "label": "JASPAR_2020_insects_m125_MA0247_2", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m125_MA0247_2_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m125_MA0247_2_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m125_MA0247_2_logo.png",
+ "name" : "tin",
+ "ic" : "9.01",
+ "size" : 10,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "SCACTYGAVW"
+} 
+] 
+},
+{
+ "label": "JASPAR_2020_insects_m39_MA0218_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m39_MA0218_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m39_MA0218_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m39_MA0218_1_logo.png",
+ "name" : "ct",
+ "ic" : "5.78",
+ "size" : 10,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "GTTYAR"
+} 
+] 
+} 
+]}

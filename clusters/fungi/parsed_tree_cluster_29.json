@@ -1,0 +1,66 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "tdTGACwCh",
+ "branch" : 2,
+ "id" : "cluster_29_node_2",
+ "ic" : "6.48",
+ "size" : 9,
+ "name" : "cluster_29",
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_29_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_29_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_fungi_m153_MA0408_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m153_MA0408_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m153_MA0408_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m153_MA0408_1_logo.png",
+ "name" : "TOS8",
+ "ic" : "7.13",
+ "size" : 9,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "TTTGACAK"
+},
+{
+ "consensus" : "rWGACtCh",
+ "branch" : 1,
+ "id" : "cluster_29_node_1",
+ "ic" : "6.82",
+ "size" : 9,
+ "name" : "cluster_29_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_29_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/cluster_29_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_fungi_m7_MA0271_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m7_MA0271_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m7_MA0271_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m7_MA0271_1_logo.png",
+ "name" : "ARG80",
+ "ic" : "6.30",
+ "size" : 9,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "GMGTCW"
+},
+{
+ "label": "JASPAR_2020_fungi_m8_MA0272_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m8_MA0272_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m8_MA0272_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m8_MA0272_1_logo.png",
+ "name" : "ARG81",
+ "ic" : "8.08",
+ "size" : 9,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "DGAGTCAY"
+} 
+] 
+} 
+] 
+} 
+]}

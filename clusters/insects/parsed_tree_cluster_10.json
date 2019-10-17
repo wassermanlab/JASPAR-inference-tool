@@ -1,0 +1,66 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "GwrmrAGAGAGAgr",
+ "branch" : 2,
+ "id" : "cluster_10_node_2",
+ "ic" : "8.80",
+ "size" : 14,
+ "name" : "cluster_10",
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_10_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_10_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_insects_m141_MA0255_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m141_MA0255_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m141_MA0255_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m141_MA0255_1_logo.png",
+ "name" : "z",
+ "ic" : "6.05",
+ "size" : 14,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "WMYCACTCAW"
+},
+{
+ "consensus" : "GwrmrAGAGAGAgr",
+ "branch" : 1,
+ "id" : "cluster_10_node_1",
+ "ic" : "8.85",
+ "size" : 14,
+ "name" : "cluster_10_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_10_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/cluster_10_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_insects_m127_MA0205_2", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m127_MA0205_2_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m127_MA0205_2_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m127_MA0205_2_logo.png",
+ "name" : "Trl",
+ "ic" : "8.92",
+ "size" : 14,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "YYTCTCTCTYYY"
+},
+{
+ "label": "JASPAR_2020_insects_m37_MA1700_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m37_MA1700_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m37_MA1700_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m37_MA1700_1_logo.png",
+ "name" : "Clamp",
+ "ic" : "10.16",
+ "size" : 14,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "YCTCTCGCTCKCWC"
+} 
+] 
+} 
+] 
+} 
+]}

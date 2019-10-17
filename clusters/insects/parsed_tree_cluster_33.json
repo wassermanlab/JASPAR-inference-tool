@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_insects_m122_MA0085_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m122_MA0085_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m122_MA0085_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m122_MA0085_1_logo.png",
+ "name" : "Su_H_",
+ "ic" : "11.56",
+ "size" : 16,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "AKYTMGKTTCYCACRV"
+}
+]
+}

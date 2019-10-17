@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_insects_m87_MA1459_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m87_MA1459_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m87_MA1459_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_insects_aligned_logos/JASPAR_2020_insects_m87_MA1459_1_logo.png",
+ "name" : "M1BP",
+ "ic" : "10.99",
+ "size" : 18,
+ "title" : "JASPAR_2020_insects",
+ "consensus_rc" : "KRKCAGTGTGACCRTABB"
+}
+]
+}

@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_vertebrates_m7_MA0151_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m7_MA0151_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m7_MA0151_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m7_MA0151_1_logo.png",
+ "name" : "Arid3a",
+ "ic" : "6.86",
+ "size" : 6,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "TTTRAT"
+}
+]
+}

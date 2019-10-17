@@ -1,0 +1,66 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "grGwACAywrTGTwCyc",
+ "branch" : 2,
+ "id" : "cluster_19_node_2",
+ "ic" : "13.13",
+ "size" : 17,
+ "name" : "cluster_19",
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_19_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_19_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "grGwACAywrTGTwCyc",
+ "branch" : 1,
+ "id" : "cluster_19_node_1",
+ "ic" : "13.17",
+ "size" : 17,
+ "name" : "cluster_19_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_19_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_19_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_vertebrates_m446_MA0727_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m446_MA0727_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m446_MA0727_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m446_MA0727_1_logo.png",
+ "name" : "NR3C2",
+ "ic" : "13.16",
+ "size" : 17,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "GRGWACAYWRTGTWCYM"
+},
+{
+ "label": "JASPAR_2020_vertebrates_m445_MA0113_3", 
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m445_MA0113_3_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m445_MA0113_3_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m445_MA0113_3_logo.png",
+ "name" : "NR3C1",
+ "ic" : "13.30",
+ "size" : 17,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "KRGWACAYWRTGTWCYY"
+} 
+] 
+},
+{
+ "label": "JASPAR_2020_vertebrates_m5_MA0007_3", 
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m5_MA0007_3_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m5_MA0007_3_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m5_MA0007_3_logo.png",
+ "name" : "Ar",
+ "ic" : "12.94",
+ "size" : 17,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "RRGWACAYCRTGTWCYY"
+} 
+] 
+} 
+]}

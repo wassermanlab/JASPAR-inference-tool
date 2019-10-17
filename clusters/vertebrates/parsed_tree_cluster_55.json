@@ -1,0 +1,66 @@
+{
+"name": "",
+"children":[
+ {
+ "consensus" : "WgarGGTCAscstGaCCyks",
+ "branch" : 2,
+ "id" : "cluster_55_node_2",
+ "ic" : "10.50",
+ "size" : 20,
+ "name" : "cluster_55",
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_55_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_55_logo_rc.png",
+
+ "children": [
+ {
+ "consensus" : "arGGTCAscstGaCCyk",
+ "branch" : 1,
+ "id" : "cluster_55_node_1",
+ "ic" : "9.62",
+ "size" : 20,
+ "name" : "cluster_55_node_1_2motifs",
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_55_node_1_2motifs_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/cluster_55_node_1_2motifs_logo_rc.png",
+
+ "children": [
+ {
+ "label": "JASPAR_2020_vertebrates_m121_MA0258_2", 
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m121_MA0258_2_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m121_MA0258_2_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m121_MA0258_2_logo.png",
+ "name" : "ESR2",
+ "ic" : "9.09",
+ "size" : 20,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "RGGTCASKSTGACCY"
+},
+{
+ "label": "JASPAR_2020_vertebrates_m120_MA0112_3", 
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m120_MA0112_3_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m120_MA0112_3_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m120_MA0112_3_logo.png",
+ "name" : "ESR1",
+ "ic" : "15.62",
+ "size" : 20,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "MAGGTCAYSGTGACCYT"
+} 
+] 
+},
+{
+ "label": "JASPAR_2020_vertebrates_m509_MA0066_1", 
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m509_MA0066_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m509_MA0066_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m509_MA0066_1_logo.png",
+ "name" : "PPARG",
+ "ic" : "14.12",
+ "size" : 20,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "WGTRGGTCACSGTGACCYAS"
+} 
+] 
+} 
+]}

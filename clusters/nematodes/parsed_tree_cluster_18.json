@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_nematodes_m22_MA1448_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_nematodes_aligned_logos/JASPAR_2020_nematodes_m22_MA1448_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_nematodes_aligned_logos/JASPAR_2020_nematodes_m22_MA1448_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_nematodes_aligned_logos/JASPAR_2020_nematodes_m22_MA1448_1_logo.png",
+ "name" : "fos-1",
+ "ic" : "9.16",
+ "size" : 7,
+ "title" : "JASPAR_2020_nematodes",
+ "consensus_rc" : "TGAGTCA"
+}
+]
+}

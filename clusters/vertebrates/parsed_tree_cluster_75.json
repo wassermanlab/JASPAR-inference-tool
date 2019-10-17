@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_vertebrates_m515_MA0794_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m515_MA0794_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m515_MA0794_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m515_MA0794_1_logo.png",
+ "name" : "PROX1",
+ "ic" : "11.74",
+ "size" : 12,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "TAAGRCGTCTTR"
+}
+]
+}

@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_fungi_m108_MA0365_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m108_MA0365_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m108_MA0365_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_fungi_aligned_logos/JASPAR_2020_fungi_m108_MA0365_1_logo.png",
+ "name" : "RFX1",
+ "ic" : "7.82",
+ "size" : 8,
+ "title" : "JASPAR_2020_fungi",
+ "consensus_rc" : "TRGYAACS"
+}
+]
+}

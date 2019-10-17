@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_nematodes_m19_MA0543_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_nematodes_aligned_logos/JASPAR_2020_nematodes_m19_MA0543_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_nematodes_aligned_logos/JASPAR_2020_nematodes_m19_MA0543_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_nematodes_aligned_logos/JASPAR_2020_nematodes_m19_MA0543_1_logo.png",
+ "name" : "eor-1",
+ "ic" : "10.14",
+ "size" : 15,
+ "title" : "JASPAR_2020_nematodes",
+ "consensus_rc" : "TSTCTSYSTCTCTYY"
+}
+]
+}

@@ -1,0 +1,17 @@
+{
+"name": "",
+"children":[
+{
+ "label": "JASPAR_2020_vertebrates_m689_MA1578_1",
+
+ "image" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m689_MA1578_1_logo.png",
+ "image_rc" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m689_MA1578_1_logo_rc.png",
+ "url" : "JASPAR_2020_matrix_clustering_vertebrates_aligned_logos/JASPAR_2020_vertebrates_m689_MA1578_1_logo.png",
+ "name" : "VEZF1",
+ "ic" : "8.06",
+ "size" : 10,
+ "title" : "JASPAR_2020_vertebrates",
+ "consensus_rc" : "WARKGGGGGG"
+}
+]
+}
