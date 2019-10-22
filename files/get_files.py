@@ -690,7 +690,8 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
         tomtom = {}
 
         # Get all JASPAR profiles
-        jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
+        # jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
+        jaspar_profiles = [str(f) for f in Path(out_dir).glob("*/*.meme")]
 
         # Skip if JASPAR MEME database already exists
         database = os.path.join(out_dir, "jaspar.meme")
@@ -769,30 +770,30 @@ def Tomtom(meme_file, database, out_dir=out_dir):
         process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL)
 
-def _get_profiles_from_latest_version(jaspar_profiles):
+# def _get_profiles_from_latest_version(jaspar_profiles):
 
-    # Initialize
-    done = set()
-    latest_version_profiles = []
+#     # Initialize
+#     done = set()
+#     latest_version_profiles = []
 
-    # For each profile...
-    for jaspar_profile in sorted(jaspar_profiles, reverse=True):
+#     # For each profile...
+#     for jaspar_profile in sorted(jaspar_profiles, reverse=True):
 
-        # Initialize
-        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
-        matrix_id = m.group(1)
+#         # Initialize
+#         m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
+#         matrix_id = m.group(1)
 
-        # Skip if done
-        if matrix_id in done:
-            continue
+#         # Skip if done
+#         if matrix_id in done:
+#             continue
 
-        # i.e. a profile from the latest version
-        latest_version_profiles.append(str(jaspar_profile))
+#         # i.e. a profile from the latest version
+#         latest_version_profiles.append(str(jaspar_profile))
 
-        # Done
-        done.add(matrix_id)
+#         # Done
+#         done.add(matrix_id)
 
-    return(latest_version_profiles)
+#     return(latest_version_profiles)
 
 def _get_Tomtom_hits(tomtom_dir):
 
