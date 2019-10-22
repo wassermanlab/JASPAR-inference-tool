@@ -256,7 +256,7 @@ def _download_JASPAR_profiles(taxon, out_dir=out_dir):
         os.chdir(taxon_dir)
 
         # Initialize
-        jaspar_file = "JASPAR2018_CORE_%s_redundant_pfms_meme.zip" % taxon
+        jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
         if "hfaistos.uio.no:8002" in jaspar_url:
             jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
 
