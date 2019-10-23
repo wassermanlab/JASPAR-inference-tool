@@ -636,8 +636,10 @@ def _readPSIBLASToutformat(psiblast_alignment):
 def _group_by_DBD_composition(out_dir=out_dir):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.DBDs.json.gz")
-    if not os.path.exists(groups_json_file):
+    gzip_file = os.path.join(out_dir, "groups.DBDs.json.gz")
+    print(gzip_file[:-4])
+    exit(0)
+    if not os.path.exists(gzip_file):
 
         # Initialize
         groups = {}
@@ -674,7 +676,7 @@ def _group_by_DBD_composition(out_dir=out_dir):
         # Write
         Jglobals.write(
             groups_json_file,
-            map(bin, bytearray(json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))))
+            json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
         # Change dir
@@ -683,8 +685,8 @@ def _group_by_DBD_composition(out_dir=out_dir):
 def _group_by_Tomtom(out_dir=out_dir, threads=1):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.tomtom.json.gz")
-    if not os.path.exists(groups_json_file):
+    gzip_file = os.path.join(out_dir, "groups.tomtom.json.gz")
+    if not os.path.exists(gzip_file):
 
         # Initialize
         tomtom = {}
@@ -731,8 +733,8 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
 
         # Write
         Jglobals.write(
-            groups_json_file,
-            map(bin, bytearray(json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))))
+            gzip_file,
+            json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
         # For each taxon...
@@ -823,8 +825,8 @@ def _get_Tomtom_hits(tomtom_dir):
 def _group_by_BLAST(out_dir=out_dir, threads=1):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.blast.json.gz")
-    if not os.path.exists(groups_json_file):
+    gzip_file = os.path.join(out_dir, "groups.blast.json.gz")
+    if not os.path.exists(gzip_file):
 
         # Initialize
         blast = {}
@@ -854,8 +856,8 @@ def _group_by_BLAST(out_dir=out_dir, threads=1):
 
         # Write
         Jglobals.write(
-            groups_json_file,
-            map(bin, bytearray(json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))))
+            gzip_file,
+            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
         )
 
 #-------------#
