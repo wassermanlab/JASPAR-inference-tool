@@ -637,8 +637,6 @@ def _group_by_DBD_composition(out_dir=out_dir):
 
     # Skip if groups JSON file already exists
     gzip_file = os.path.join(out_dir, "groups.DBDs.json.gz")
-    print(gzip_file[:-4])
-    exit(0)
     if not os.path.exists(gzip_file):
 
         # Initialize
@@ -675,9 +673,15 @@ def _group_by_DBD_composition(out_dir=out_dir):
 
         # Write
         Jglobals.write(
-            groups_json_file,
+            gzip_file[:-3],
             json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))
         )
+        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+        fo = Jglobals._get_file_handle(gzip_file, "wb")
+        shutil.copyfileobj(fi, fo)
+        fi.close()
+        fo.close()
+        os.remove(gzip_file[:-3])
 
         # Change dir
         os.chdir(cwd)
@@ -733,9 +737,15 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
 
         # Write
         Jglobals.write(
-            gzip_file,
+            gzip_file[:-3],
             json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
         )
+        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+        fo = Jglobals._get_file_handle(gzip_file, "wb")
+        shutil.copyfileobj(fi, fo)
+        fi.close()
+        fo.close()
+        os.remove(gzip_file[:-3])
 
         # For each taxon...
         for taxon in Jglobals.taxons:
@@ -856,9 +866,15 @@ def _group_by_BLAST(out_dir=out_dir, threads=1):
 
         # Write
         Jglobals.write(
-            gzip_file,
+            gzip_file[:-3],
             json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
         )
+        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+        fo = Jglobals._get_file_handle(gzip_file, "wb")
+        shutil.copyfileobj(fi, fo)
+        fi.close()
+        fo.close()
+        os.remove(gzip_file[:-3])
 
 #-------------#
 # Main        #
