@@ -636,7 +636,7 @@ def _readPSIBLASToutformat(psiblast_alignment):
 def _group_by_DBD_composition(out_dir=out_dir):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.DBDs.json")
+    groups_json_file = os.path.join(out_dir, "groups.DBDs.json.gz")
     if not os.path.exists(groups_json_file):
 
         # Initialize
@@ -683,7 +683,7 @@ def _group_by_DBD_composition(out_dir=out_dir):
 def _group_by_Tomtom(out_dir=out_dir, threads=1):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.tomtom.json")
+    groups_json_file = os.path.join(out_dir, "groups.tomtom.json.gz")
     if not os.path.exists(groups_json_file):
 
         # Initialize
@@ -812,7 +812,7 @@ def _get_Tomtom_hits(tomtom_dir):
             continue
 
         # Skip self
-        if line[0] == line[1]:
+        if line[0][:6] == line[1][:6]:
             continue
 
         # Add to hits
@@ -823,7 +823,7 @@ def _get_Tomtom_hits(tomtom_dir):
 def _group_by_BLAST(out_dir=out_dir, threads=1):
 
     # Skip if groups JSON file already exists
-    groups_json_file = os.path.join(out_dir, "groups.blast.json")
+    groups_json_file = os.path.join(out_dir, "groups.blast.json.gz")
     if not os.path.exists(groups_json_file):
 
         # Initialize
