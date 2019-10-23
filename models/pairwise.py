@@ -6,7 +6,7 @@ import json
 import math
 from numpy import log10 as log
 import os
-import pickle
+import shutil
 import string
 import sys
 
@@ -20,6 +20,10 @@ sys.path.append(root_dir)
 
 # Import globals
 from __init__ import Jglobals
+from infer_profile import (
+    _is_alignment_over_Rost_seq_id_curve,
+    _is_alignment_over_Rost_seq_sim_curve
+)
 
 #-------------#
 # Functions   #
@@ -48,12 +52,11 @@ def main():
     # Pairwise
     pairwise(os.path.abspath(args.f), os.path.abspath(args.o))
 
-# def pairwise(evalue=0.05, files_dir=files_dir, out_dir=out_dir):
 def pairwise(files_dir=files_dir, out_dir=out_dir):
 
-    # Skip if pickle file already exists
-    pickle_file = os.path.join(out_dir, "pairwise.pickle")
-    if not os.path.exists(pickle_file):
+    # Skip if pairwise JSON file already exists
+    gzip_file = os.path.join(out_dir, "pairwise.json.gz")
+    if not os.path.exists(gzip_file):
 
         # Initialize
         pairwise = {}
@@ -67,7 +70,6 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
 
         # Get Tomtom groups
         global tomtom
-        # tomtom = _get_Tomtom_groups(evalue, files_dir)
         tomtom = _get_Tomtom_groups(files_dir)
 
         # Get BLAST+ groups
@@ -123,29 +125,38 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
             # Add to pairwise
             pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
 
-        # Write pickle file
-        with open(pickle_file, "wb") as f:
-            pickle.dump(pairwise, f)
+        # Write
+        Jglobals.write(
+            gzip_file[:-3],
+            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
+        )
+        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+        fo = Jglobals._get_file_handle(gzip_file, "wb")
+        shutil.copyfileobj(fi, fo)
+        fi.close()
+        fo.close()
+        os.remove(gzip_file[:-3])
 
 def _get_DBD_groups(files_dir=files_dir):
 
     # Load JSON file
-    groups_json_file = os.path.join(files_dir, "groups.DBDs.json")
-    with open(groups_json_file) as f:
-        groups = json.load(f)
+    json_file = os.path.join(files_dir, "groups.DBDs.json.gz")
+    handle = Jglobals._get_file_handle(json_file)
+    groups = json.load(handle)
+    handle.close()
 
     return(groups)
 
-# def _get_Tomtom_groups(evalue=0.05, files_dir=files_dir):
 def _get_Tomtom_groups(files_dir=files_dir):
 
     # Initialize
     tomtom_filtered = {}
 
     # Load JSON file
-    groups_json_file = os.path.join(files_dir, "groups.tomtom.json")
-    with open(groups_json_file) as f:
-        tomtom_unfiltered = json.load(f)
+    json_file = os.path.join(files_dir, "groups.tomtom.json.gz")
+    handle = Jglobals._get_file_handle(json_file)
+    tomtom_unfiltered = json.load(handle)
+    handle.close()
 
     for matrix_id in tomtom_unfiltered:
 
@@ -162,9 +173,10 @@ def _get_BLAST_groups(files_dir=files_dir):
     blast_filtered = {}
 
     # Load JSON file
-    groups_json_file = os.path.join(files_dir, "groups.blast.json")
-    with open(groups_json_file) as f:
-        blast_unfiltered = json.load(f)
+    json_file = os.path.join(files_dir, "groups.blast.json.gz")
+    handle = Jglobals._get_file_handle(json_file)
+    blast_unfiltered = json.load(handle)
+    handle.close()
 
     for uniacc in blast_unfiltered:
 
@@ -184,8 +196,12 @@ def _get_BLAST_groups(files_dir=files_dir):
             psim = psim / 100.0
             jc = jc / 100.0
 
+            # Get Rost's verdict
+            rost_seq_id = _is_alignment_over_Rost_seq_id_curve(pid, al)
+            rost_seq_sim = _is_alignment_over_Rost_seq_sim_curve(psim, al)
+
             blast_filtered.setdefault(uniacc, {})
-            blast_filtered[uniacc].setdefault(t, [pid, psim, jc])
+            blast_filtered[uniacc].setdefault(t, [[pid, rost_seq_id], [psim, rost_seq_sim], [jc]])
 
     return(blast_filtered)
 
@@ -241,16 +257,14 @@ def _BLOSUMscoring(aa1, aa2):
 def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
 
     # Initialize
-    BLASTXs = [0.0, 0.0]
+    BLASTXs = [0.0, False, 0.0]
 
     if uacc1 in blast:
         if uacc2 in blast[uacc1]:
             if similarity == "identity":
-                BLASTXs[0] = blast[uacc1][uacc2][0]
-                BLASTXs[1] = blast[uacc1][uacc2][2]
+                BLASTXs = blast[uacc1][uacc2][0] + blast[uacc1][uacc2][2]
             elif similarity == "blosum62":
-                BLASTXs[0] = blast[uacc1][uacc2][1]
-                BLASTXs[1] = blast[uacc1][uacc2][2]
+                BLASTXs = blast[uacc1][uacc2][1] + blast[uacc1][uacc2][2]
 
     return(BLASTXs)
 

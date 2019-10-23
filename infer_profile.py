@@ -223,30 +223,44 @@ def _filter_results_below_the_Rost_seq_id_curve(blast_results, n=5):
     for result in blast_results:
 
         # Initialize
-        percent_identities = result[6]
+        percent_identity = result[6]
         alignment_length = result[7]
 
         # If homologs...
-        if _is_alignment_over_Rost_seq_id_curve(percent_identities, alignment_length, n):
+        if _is_alignment_over_Rost_seq_id_curve(percent_identity, alignment_length, n):
 
             # Add homolog
             blast_homologs.append(result)
 
     return(blast_homologs)
 
-def _is_alignment_over_Rost_seq_id_curve(percent_identities, L, n=5):
+def _is_alignment_over_Rost_seq_id_curve(percent_identity, L, n=5):
     """
-    This function returns whether an alignment is over the Rost's pairwise sequence
-    identity curve or not.
+    This function returns whether an alignment is over the Rost's pairwise
+    sequence identity curve or not.
     """
-    return percent_identities >= _get_Rost_cutoff_percent_identities(L, n)
+    return(percent_identity >= _get_Rost_cutoff_percent_identity(L, n))
 
-def _get_Rost_cutoff_percent_identities(L, n=5):
+def _get_Rost_cutoff_percent_identity(L, n=5):
     """
-    This function returns the Rost's cut-off percentage of identical residues for an
-    alignment of length "L".
+    This function returns the Rost's cut-off percentage of identical residues
+    for an alignment of length "L".
     """
-    return n + (480 * pow(L, -0.32 * (1 + pow(math.e, float(-L) / 1000))))
+    return(n + (480 * pow(L, -0.32 * (1 + pow(math.e, float(-L) / 1000)))))
+
+def _is_alignment_over_Rost_seq_sim_curve(percent_similarity, L, n=12):
+    """
+    This function returns whether an alignment is over the Rost's pairwise
+    sequence similarity curve or not.
+    """
+    return(percent_similarity >= _get_Rost_cutoff_percent_similarity(L, n))
+
+def _get_Rost_cutoff_percent_similarity(L, n=12):
+    """
+    This function returns the Rost's cut-off percentage of "similar" residues
+    for an alignment of length "L".
+    """
+    return(n + (420 * pow(L, -0.335 * (1 + pow(math.e, float(-L) / 2000)))))
 
 # def _SeqRecord_profile_inference(seq_record, uniacc, files_dir):
 
