@@ -674,7 +674,9 @@ def _group_by_DBD_composition(out_dir=out_dir):
         # Write
         Jglobals.write(
             groups_json_file,
-            json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))
+            json.dumps(
+                groups, sort_keys=True, indent=4, separators=(",", ": ")
+            ).encode("zlib")
         )
 
         # Change dir
@@ -732,7 +734,9 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
         # Write
         Jglobals.write(
             groups_json_file,
-            json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
+            json.dumps(
+                tomtom, sort_keys=True, indent=4, separators=(",", ": ")
+            ).encode("zlib")
         )
 
         # For each taxon...
@@ -855,7 +859,9 @@ def _group_by_BLAST(out_dir=out_dir, threads=1):
         # Write
         Jglobals.write(
             groups_json_file,
-            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
+            json.dumps(
+                blast, sort_keys=True, indent=4, separators=(",", ": ")
+            ).encode("zlib")
         )
 
 #-------------#
