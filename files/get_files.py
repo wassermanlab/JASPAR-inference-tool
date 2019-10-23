@@ -19,7 +19,6 @@ import shutil
 import subprocess
 import sys
 from tqdm import tqdm
-from zlib import compress
 
 # Defaults
 out_dir = os.path.dirname(os.path.realpath(__file__))
@@ -675,9 +674,7 @@ def _group_by_DBD_composition(out_dir=out_dir):
         # Write
         Jglobals.write(
             groups_json_file,
-            compress(
-                json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))
-            )
+            map(bin, bytearray(json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))))
         )
 
         # Change dir
@@ -735,9 +732,7 @@ def _group_by_Tomtom(out_dir=out_dir, threads=1):
         # Write
         Jglobals.write(
             groups_json_file,
-            compress(
-                json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
-            )
+            map(bin, bytearray(json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))))
         )
 
         # For each taxon...
@@ -860,9 +855,7 @@ def _group_by_BLAST(out_dir=out_dir, threads=1):
         # Write
         Jglobals.write(
             groups_json_file,
-            compress(
-                json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
-            )
+            map(bin, bytearray(json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))))
         )
 
 #-------------#
