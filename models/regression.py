@@ -8,6 +8,8 @@ import argparse
 from collections import Counter
 from functools import partial
 from glmnet import ElasticNet
+from sklearn.linear_model import Ridge
+import json
 from multiprocessing import Pool
 import numpy as np
 from operator import itemgetter 
@@ -41,8 +43,8 @@ def parse_args():
 
     parser.add_argument("-o", default=out_dir, metavar="DIR",
         help="output directory (default = ./)")
-    parser.add_argument("-p", metavar="PICKLE",
-        help="pickle file from pairwise.py")
+    parser.add_argument("-p", metavar="JSON",
+        help="compressed JSON file from pairwise.py")
     parser.add_argument("--threads", type=int, default=1, metavar="INT",
         help="threads to use (default = 1)")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -62,7 +64,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
 
     # Skip if pickle file already exists
     models_file = os.path.join(out_dir, "models.pickle")
-    results_file = os.path.join(out_dir, "results.pickle")
+    results_file = os.path.join(out_dir, "results.json")
     if not os.path.exists(models_file) or not os.path.exists(results_file):
 
         # Initialize
@@ -85,20 +87,34 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
             }
         }
 
-        # Load pickle file
+        # Load JSON file
         global pairwise
-        with open(pairwise_file, "rb") as f:
-            pairwise = pickle.load(f)
+        handle = Jglobals._get_file_handle(pairwise_file)
+        pairwise = json.load(handle)
+        handle.close()
+
+        # E-value thresholds from cisbp.ipynb:
+        # For (+) 6.702705320605285 and 6.34620565834759
+        global threshPos
+        threshPos = 6.
+        # For (-) 0.9352972238139634 and -0.6065759798508961
+        global threshNeg
+        threshNeg = 1.
 
         # For each DBD composition...
         for domains, values in pairwise.items():
-
-            if domains != "GATA":
+            # Zn_clus
+            # PAX
+            # Forkhead
+            # HMG_box
+            # zf-C2H2+zf-C2H2+zf-C2H2
+            # zf-C4
+            if domains != "Homeodomain":
                 continue
 
             # Train models
             _train_SR_models(domains, values, threads, verbose)
-            _train_BLAST_models(domains, values, threads, verbose)
+            #_train_BLAST_models(domains, values, threads, verbose)
 
     # # Write pickle file
     # with open(models_file, "wb") as f:
@@ -111,12 +127,6 @@ def _train_SR_models(domains, values, threads=1, verbose=False):
     Ys = np.array(values[2])
     # Ys = np.array(_transform_Ys(Ys))
     TFpairs = values[3]
-
-    # E-value thresholds from cisbp.ipynb:
-    # For (+) 6.702705320605285 and 6.34620565834759
-    # For (-) 0.9352972238139634 and -0.6065759798508961
-    threshPos = 6.0
-    threshNeg = 1.0
 
     # Verbose mode
     if verbose:
@@ -167,14 +177,12 @@ def _train_SR_models(domains, values, threads=1, verbose=False):
         idx, lambdabest, mse = _get_best_lambda(CVs, lambdas)
 
         # Get Precision, Recall, thresholds
-        prec, rec, threshs = _get_prc(CVs, idx, threshPos, npv=False)
+        prec, rec, threshs = _get_prc(CVs, idx, npv=False)
         # nprec, nrec, nthreshs = _get_prc(CVs, idx, threshNeg, npv=True)
 
         # For each profile...
         for i in range(len(prec)):
-            print(prec[i], rec[i], threshs[i])
-        continue
-
+            print(similarity, prec[i], rec[i], threshs[i])
 
         # # Verbose mode
         # if verbose:
@@ -190,16 +198,14 @@ def _train_SR_models(domains, values, threads=1, verbose=False):
 def _train_BLAST_models(domains, values, threads=1, verbose=False):
 
     # Initialize
-    Xs = values[0]
+    Xs = values[1]
     Ys = np.array(values[2])
     # Ys = np.array(_transform_Ys(Ys))
     TFpairs = values[3]
 
-    # E-value thresholds from cisbp.ipynb:
-    # For (+) 6.702705320605285 and 6.34620565834759
-    # For (-) 0.9352972238139634 and -0.6065759798508961
-    threshPos = 6.0
-    threshNeg = 1.0
+    # for x in range(len(Xs["identity"])):
+    #     print(Xs["identity"][x], Ys[x], TFpairs[x])
+    # exit(0)
 
     # Verbose mode
     if verbose:
@@ -234,14 +240,8 @@ def _train_BLAST_models(domains, values, threads=1, verbose=False):
             continue
 
         # Initialize
-        Xss = []
-        limits = np.zeros(1)
-
-        # For each X...
-        for X in Xs[similarity]:
-            Xss.append(sum(X)/float(len(X)))
-        Xss = np.asarray(Xss)
-        Xss = Xss.reshape(-1, 1)
+        Xss = np.asarray(Xs[similarity])
+        limits = np.zeros(len(Xss[0]))
 
         # Get lambdas for cross-validation
         model = ElasticNet(alpha=0, lower_limits=limits, standardize=False)
@@ -259,11 +259,13 @@ def _train_BLAST_models(domains, values, threads=1, verbose=False):
         idx, lambdabest, mse = _get_best_lambda(CVs, lambdas)
 
         # Get Precision, Recall, thresholds
-        prec, rec, threshs = _get_prc(CVs, idx, threshPos, npv=False)
+        prec, rec, threshs = _get_prc(CVs, idx, npv=False)
         # nprec, nrec, nthreshs = _get_prc(CVs, idx, threshNeg, npv=True)
 
         # For each profile...
         for i in range(len(prec)):
+            if prec[i] < 0.75:
+                continue
             print(prec[i], rec[i], threshs[i])
         exit(0)
 
@@ -293,7 +295,7 @@ def _transform_Ys(Ys):
 
     return(Ys_transformed)
 
-def _get_weights(Ys, threshold=6.0):
+def _get_weights(Ys, threshold=4.0):
     """
     Weight positive samples 1/freq (or 10x whichever is higher) higher 
     than negatives because they are usually at a much lower frequency.
@@ -381,15 +383,15 @@ def _get_best_lambda(CVs, lambdas):
 
     return(regStrength[0])
 
-def _get_prc(CVs, idx, threshold, npv=False):
+def _get_prc(CVs, idx, npv=False):
 
     # Get Ys
     yTrue, yPred = _get_Ys_CV(CVs)
 
-    if not npv:
-        labels = (np.array(yTrue) >= threshold) * 1
+    if npv:
+        labels = (np.array(yTrue) < threshNeg) * 1
     else:
-        labels = (np.array(yTrue) < threshold) * 1
+        labels = (np.array(yTrue) >= threshPos) * 1
 
     prec, rec, threshs = precision_recall_curve(labels, yPred[idx])
     threshs = np.append(np.array([min(yPred[idx])]), threshs)

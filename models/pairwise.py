@@ -128,7 +128,7 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
         # Write
         Jglobals.write(
             gzip_file[:-3],
-            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
+            json.dumps(pairwise, sort_keys=True, indent=4, separators=(",", ": "))
         )
         fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
         fo = Jglobals._get_file_handle(gzip_file, "wb")
@@ -192,13 +192,15 @@ def _get_BLAST_groups(files_dir=files_dir):
             # (jc) joint coverage (i.e. square root of the coverage
             # on the query and the target).
             # s = s / al # transformation of bit score
-            pid = pid / 100.0
-            psim = psim / 100.0
-            jc = jc / 100.0
 
             # Get Rost's verdict
             rost_seq_id = _is_alignment_over_Rost_seq_id_curve(pid, al)
             rost_seq_sim = _is_alignment_over_Rost_seq_sim_curve(psim, al)
+
+            # Reformat percentages & coverage
+            pid = pid / 100.0
+            psim = psim / 100.0
+            jc = jc / 100.0
 
             blast_filtered.setdefault(uniacc, {})
             blast_filtered[uniacc].setdefault(t, [[pid, rost_seq_id], [psim, rost_seq_sim], [jc]])
@@ -273,6 +275,9 @@ def _fetchY(maIDlist1, maIDlist2):
     Returns "0 - log10(Tomtom e-value)" as the dependent value (i.e. Y).
     """
 
+    # Initialize
+    y = 0 - log(1963.0)
+
     # Iterate through profiles...
     for maID1 in maIDlist1:
 
@@ -293,9 +298,11 @@ def _fetchY(maIDlist1, maIDlist2):
                 log_evalue = log(joint_evalue)
 
                 # return(max(min(1.0, 0 - log_evalue / 10), 0.0))
-                return(0 - log_evalue)
 
-    return(-2)
+                if 0 - log_evalue > y:
+                    y = 0 - log_evalue
+
+    return(y)
 
 #-------------#
 # Main        #
