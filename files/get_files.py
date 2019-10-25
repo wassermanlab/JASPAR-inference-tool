@@ -678,8 +678,11 @@ def _group_by_DBD_composition(out_dir=out_dir):
                     groups.setdefault(domain, [])
 
                     for i in range(len(domains)):
+
                         if domains[i] == domain:
                             domain_alignments.append(alignments[i])
+                        else:
+                            domain_alignments.append(None)
 
                     groups[domain].append(
                         [uniaccs[uniacc][0], domain_alignments, uniacc]
