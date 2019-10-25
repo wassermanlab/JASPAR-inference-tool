@@ -660,7 +660,8 @@ def _group_by_DBD_composition(out_dir=out_dir):
             for uniacc, values in pfams.items():
 
                 # Unwind
-                domains = "+".join([v[0] for v in values])
+                # domains = "+".join([v[0] for v in values])
+                domains = [v[0] for v in values]
                 alignments = [v[1] for v in values]
 
                 # Skip if no DBD
@@ -668,8 +669,21 @@ def _group_by_DBD_composition(out_dir=out_dir):
                     continue
 
                 # Add member
-                groups.setdefault(domains, [])
-                groups[domains].append([uniaccs[uniacc][0], alignments, uniacc])
+                # groups.setdefault(domains, [])
+                # groups[domains].append([uniaccs[uniacc][0], alignments, uniacc])
+                for domain in sorted(set(domains)):
+
+                    # Initialize
+                    domain_alignments = []
+                    groups.setdefault(domain, [])
+
+                    for i in range(len(domains)):
+                        if domains[i] == domain:
+                            domain_alignments.append(alignments[i])
+
+                    groups[domain].append(
+                        [uniaccs[uniacc][0], domain_alignments, uniacc]
+                    )
 
         # Write
         Jglobals.write(
