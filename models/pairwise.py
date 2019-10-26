@@ -80,14 +80,14 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
         # For each key, values...
         for key, values in groups.items():
 
-            if key != "zf-C2H2":
+            if key != "Pou":
                 continue
 
             # Initialize
             Xss = {}
-            BLASTXss = {}
+            # BLASTXs = {}
             Ys = []
-            uniaccs = []
+            TFpairs = []
 
             # For each TF...
             for i in range(len(values) - 1):
@@ -95,46 +95,49 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
                 # For each next TF...
                 for j in range(i + 1, len(values)):
 
-                    if values[j][2] != "P49711":
+                    # # Initialize
+                    # Xs = []
+
+                    # # Inner most loop for examining EACH different component...
+                    # for k in range(len(values[i][1])):
+
+                    #     # Get Xs
+                    #     seq1 = _removeLowercase(values[i][1][k])
+                    #     seq2 = _removeLowercase(values[j][1][k])
+                    #     Xs.extend(_fetchXs(seq1, seq2, similarity))
+
+                    # Get Xs
+                    identityXs, blosum62Xs = _fetchXs(values[i][1], values[j][1])
+                    if identityXs is not None and blosum62Xs is not None:
+                        Xss.setdefault("identity", [])
+                        Xss["identity"].append(identityXs)
+                        Xss.setdefault("blosum62", [])
+                        Xss["blosum62"].append(blosum62Xs)
+                    else:
+                        # Skip this pair!
                         continue
 
-                    # For each sequence similarity representation...
-                    for similarity in ["identity", "blosum62"]:
+                    # # Get BLAST+ Xs
+                    # identity, blosum62 = _fetchBLASTXs(values[i][2], values[j][2])
 
-                        # # Initialize
-                        # Xs = []
-
-                        # # Inner most loop for examining EACH different component...
-                        # for k in range(len(values[i][1])):
-
-                        #     # Get Xs
-                        #     seq1 = _removeLowercase(values[i][1][k])
-                        #     seq2 = _removeLowercase(values[j][1][k])
-                        #     Xs.extend(_fetchXs(seq1, seq2, similarity))
-
-                        # Get Xs
-                        Xs = _fetchXs(values[i][1], values[j][1], similarity)
-
-                        # Get BLAST+ Xs
-                        BLASTXs = _fetchBLASTXs(values[i][2], values[j][2], similarity)
-
-                        # Append Xs
-                        Xss.setdefault(similarity, [])
-                        Xss[similarity].append(Xs)
-                        BLASTXss.setdefault(similarity, [])
-                        BLASTXss[similarity].append(BLASTXs)
+                    # # Append Xs
+                    # Xss.setdefault(similarity, [])
+                    # Xss[similarity].append(Xs)
+                    # BLASTXss.setdefault(similarity, [])
+                    # BLASTXss[similarity].append(BLASTXs)
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
-
-                    # Append, y, uniaccs
                     Ys.append(y)
-                    uniaccs.append((values[i][2], values[j][2]))
+
+                    # Get TF pair
+                    TFpairs.append((values[i][2], values[j][2]))
+
+            print(key, len(TFpairs))
 
             # Add to pairwise
-            pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
-
-        exit(0)
+            # pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
+            pairwise.setdefault(key, [Xss, Ys, TFpairs])
 
         # Write
         Jglobals.write(
@@ -222,7 +225,7 @@ def _removeLowercase(s):
 
     return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
 
-def _fetchXs(seqs1, seqs2, similarity="identity"):
+def _fetchXs(seqs1, seqs2):
 
     # Initialize
     means = []
@@ -234,66 +237,62 @@ def _fetchXs(seqs1, seqs2, similarity="identity"):
         A = seqs2
         B = seqs1
 
-    for a in range(len(A) - len(B) + 1):
+    # For each sequence similarity representation...
+    for similarity in ["identity", "blosum62"]:
 
         scores.append([])
 
-        for b in range(len(B)):
+        # Avoid overhangs
+        for a in range(len(A) - len(B) + 1):
 
-            seqA = _removeLowercase(A[a+b])
-            seqB = _removeLowercase(B[b])
+            scores[-1].append([])
 
-            if similarity == "identity":
-                scores[-1].append([0] * len(seqA))
-            elif similarity == "blosum62":
-                scores[-1].append([-4] * len(seqA))
+            for b in range(len(B)):
 
-            for n in range(len(seqA)):
+                # i.e. gap; skip
+                if A[a+b] is None or B[b] is None:
+                    scores[-1].pop(-1)
+                    break
+
+                seqA = _removeLowercase(A[a+b])
+                seqB = _removeLowercase(B[b])
 
                 if similarity == "identity":
-                    scores[-1][-1][n] = _IDscoring(seqA[n], seqB[n])
-                elif similarity == "blosum62":
-                    scores[-1][-1][n] = _BLOSUMscoring(seqA[n], seqB[n])
+                    scores[-1][-1].append([0] * len(seqA))
+                else:
+                    scores[-1][-1].append([-4] * len(seqA))
+
+                for n in range(len(seqA)):
+
+                    if similarity == "identity":
+                        scores[-1][-1][-1][n] = _IDscoring(seqA[n], seqB[n])
+                    else:
+                        scores[-1][-1][-1][n] = _BLOSUMscoring(seqA[n], seqB[n])
 
     # From Lambert et al.
-    # For a multi-DBD alignment, the feature vector is generated by the
-    # average score (identity or similarity) in each position of the DBD
-    # alignment from all DBD arrays, normalizing by the DBD length of the
-    # longest protein (Supplementary Fig. 2b).
-    for s in scores:
-        means.append([float(sum(z))/len(A) for z in zip(*s)])
+    # For TF families that have DBDs present in arrays [...] the best ungapped
+    # and overlapping pairwise alignment of DBD arrays is found by selecting
+    # the alignment offset with the maximum amino acid identity.
+    ix = None
+    max_identities = 0
+    for s in range(len(scores[0])):
+        if sum([sum(a) for a in scores[0][s]]) > max_identities:
+            ix = s
+            max_identities = sum([sum(a) for a in scores[0][s]])
 
-    # Sort 
-    for m in sorted(means, key=lambda x: sum(x), reverse=True):
-        print(m, sum(m))
-        # for seq2 in seqs2:
+    if ix is not None:
 
-        #     seq2 = _removeLowercase(seq2)
+        # From Lambert et al.
+        # For a multi-DBD alignment, the feature vector is generated by the
+        # average score (identity or similarity) in each position of the DBD
+        # alignment from all DBD arrays, normalizing by the DBD length of the
+        # longest protein.
+        identityXs = [float(sum(z))/len(A) for z in zip(*scores[0][ix])]
+        blosum62Xs = [float(sum(z))/len(A) for z in zip(*scores[1][ix])]
+        
+        return(identityXs, blosum62Xs)
 
-        #     # Strings should have same length
-        #     if len(seq1) == len(seq2):
-
-        #         scores = [0] * len(seq1)
-
-        #         for s in range(len(scores)):
-
-        #             if similarity == "identity":
-        #                 scores[s] = _IDscoring(seq1[s], seq2[s])
-
-        #             elif similarity == "blosum62":
-        #                 scores[s] = _BLOSUMscoring(seq1[s], seq2[s])
-
-        #         pairs.append((scores, sum([seq1.count("-"), seq2.count("-")])))
-    exit(0)
-
-    # # Inner most loop for examining EACH different component...
-    # for k in range(len(values[i][1])):
-
-    #     # Get Xs
-    #     seq1 = _removeLowercase(values[i][1][k])
-    #     seq2 = _removeLowercase(values[j][1][k])
-    #     Xs.extend(_fetchXs(seq1, seq2, similarity))
-    pass
+    return(None, None)
 
 # def _fetchXs(seq1 , seq2, similarity="identity"):
 #     """
