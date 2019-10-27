@@ -80,12 +80,9 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
         # For each key, values...
         for key, values in groups.items():
 
-            if key != "Pou":
-                continue
-
             # Initialize
             Xss = {}
-            # BLASTXs = {}
+            BLASTXss = {}
             Ys = []
             TFpairs = []
 
@@ -108,17 +105,21 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
 
                     # Get Xs
                     identityXs, blosum62Xs = _fetchXs(values[i][1], values[j][1])
+                    Xss.setdefault("identity", [])
+                    Xss.setdefault("blosum62", [])
                     if identityXs is not None and blosum62Xs is not None:
-                        Xss.setdefault("identity", [])
                         Xss["identity"].append(identityXs)
-                        Xss.setdefault("blosum62", [])
                         Xss["blosum62"].append(blosum62Xs)
                     else:
                         # Skip this pair!
                         continue
 
-                    # # Get BLAST+ Xs
-                    # identity, blosum62 = _fetchBLASTXs(values[i][2], values[j][2])
+                    # Get BLAST+ Xs
+                    identityBLASTXs, blosum62BLASTXs = _fetchBLASTXs(values[i][2], values[j][2])
+                    BLASTXss.setdefault("identity", [])
+                    BLASTXss.setdefault("blosum62", [])
+                    BLASTXss["identity"].append(identityBLASTXs)
+                    BLASTXss["blosum62"].append(blosum62BLASTXs)
 
                     # # Append Xs
                     # Xss.setdefault(similarity, [])
@@ -133,11 +134,8 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
                     # Get TF pair
                     TFpairs.append((values[i][2], values[j][2]))
 
-            print(key, len(TFpairs))
-
             # Add to pairwise
-            # pairwise.setdefault(key, [Xss, BLASTXss, Ys, uniaccs])
-            pairwise.setdefault(key, [Xss, Ys, TFpairs])
+            pairwise.setdefault(key, [Xss, BLASTXss, Ys, TFpairs])
 
         # Write
         Jglobals.write(
@@ -228,14 +226,29 @@ def _removeLowercase(s):
 def _fetchXs(seqs1, seqs2):
 
     # Initialize
-    means = []
+    permA = []
+    permB = []
     scores = []
-    A = seqs1
-    B = seqs2
 
-    if len(A) < len(B):
+    # Find the max. consecutive domains (i.e. not None)
+    max1 = _get_max_consecutive_not_Nones(seqs1)
+    max2 = _get_max_consecutive_not_Nones(seqs2)
+
+    if max1 < max2:
         A = seqs2
         B = seqs1
+        step = max1
+    else:
+        A = seqs1
+        B = seqs2
+        step = max2
+
+    # Avoid overhangs
+    for a in range(len(A) - step + 1):
+        permA.append(list(range(a, a+step)))
+    for b in range(len(B) - step + 1):
+        permB.append(list(range(b, b+step)))
+
 
     # For each sequence similarity representation...
     for similarity in ["identity", "blosum62"]:
@@ -243,31 +256,33 @@ def _fetchXs(seqs1, seqs2):
         scores.append([])
 
         # Avoid overhangs
-        for a in range(len(A) - len(B) + 1):
+        for a in permA:
 
-            scores[-1].append([])
-
-            for b in range(len(B)):
+            for b in permB:
 
                 # i.e. gap; skip
-                if A[a+b] is None or B[b] is None:
-                    scores[-1].pop(-1)
-                    break
+                if None in A[a[0]:a[-1]+1] or None in B[b[0]:b[-1]+1]:
+                    continue
 
-                seqA = _removeLowercase(A[a+b])
-                seqB = _removeLowercase(B[b])
+                scores[-1].append([])
 
-                if similarity == "identity":
-                    scores[-1][-1].append([0] * len(seqA))
-                else:
-                    scores[-1][-1].append([-4] * len(seqA))
+                # For each DBD...
+                for d in range(len(a)):
 
-                for n in range(len(seqA)):
+                    seqA = _removeLowercase(A[a[d]])
+                    seqB = _removeLowercase(B[b[d]])
 
                     if similarity == "identity":
-                        scores[-1][-1][-1][n] = _IDscoring(seqA[n], seqB[n])
+                        scores[-1][-1].append([0] * len(seqA))
                     else:
-                        scores[-1][-1][-1][n] = _BLOSUMscoring(seqA[n], seqB[n])
+                        scores[-1][-1].append([-4] * len(seqA))
+
+                    for n in range(len(seqA)):
+
+                        if similarity == "identity":
+                            scores[-1][-1][-1][n] = _IDscoring(seqA[n], seqB[n])
+                        else:
+                            scores[-1][-1][-1][n] = _BLOSUMscoring(seqA[n], seqB[n])
 
     # From Lambert et al.
     # For TF families that have DBDs present in arrays [...] the best ungapped
@@ -293,6 +308,20 @@ def _fetchXs(seqs1, seqs2):
         return(identityXs, blosum62Xs)
 
     return(None, None)
+
+def _get_max_consecutive_not_Nones(seq):
+
+    # Intialize
+    notNones = [0]    
+
+    # For each domain...
+    for d in seq:
+        if d is None:
+            notNones.append(0)
+        else:
+            notNones[-1] += 1
+
+    return(max(notNones))
 
 # def _fetchXs(seq1 , seq2, similarity="identity"):
 #     """
@@ -339,19 +368,13 @@ def _BLOSUMscoring(aa1, aa2):
         else:
             return(blosum62[(aa2, aa1)])
 
-def _fetchBLASTXs(uacc1, uacc2, similarity="identity"):
-
-    # Initialize
-    BLASTXs = [0.0, False, 0.0]
+def _fetchBLASTXs(uacc1, uacc2):
 
     if uacc1 in blast:
         if uacc2 in blast[uacc1]:
-            if similarity == "identity":
-                BLASTXs = blast[uacc1][uacc2][0] + blast[uacc1][uacc2][2]
-            elif similarity == "blosum62":
-                BLASTXs = blast[uacc1][uacc2][1] + blast[uacc1][uacc2][2]
+            return(blast[uacc1][uacc2][0] + blast[uacc1][uacc2][2], blast[uacc1][uacc2][1] + blast[uacc1][uacc2][2])
 
-    return(BLASTXs)
+    return([0.0, False, 0.0], [0.0, False, 0.0])
 
 def _fetchY(maIDlist1, maIDlist2):
     """
