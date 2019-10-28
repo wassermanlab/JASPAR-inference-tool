@@ -112,7 +112,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1.,
             # HMG_box
             # zf-C2H2+zf-C2H2+zf-C2H2
             # zf-C4
-            if domains != "zf-C4":
+            if domains != "PAX":
                 continue
 
             # Verbose mode
@@ -202,7 +202,7 @@ def _train_LogReg_models(domains, values, threads=1, verbose=False):
         CVs = _get_cross_validations(Xss, Ys >= threshPos, weights, modelCV, TFpairs)
 
         # Get best lambda
-        lambdabest, mse = _get_best_lambda(CVs, lambdas)
+        lambdabest, mse = _get_best_lambda(CVs, lambdas, logistic=True)
 
         # Get Precision, Recall, thresholds
         precision, recall, thresholds = _get_prc(CVs, lambdabest, npv=False)
@@ -313,7 +313,7 @@ def _get_CV_iterator(TFpairs):
 
     return(CViterator)
 
-def _get_best_lambda(CVs, lambdas):
+def _get_best_lambda(CVs, lambdas, logistic=False):
 
     # Initialize
     MSEs = []
@@ -333,13 +333,25 @@ def _get_best_lambda(CVs, lambdas):
         # 5: wTest
         # 6: mFit
         xTest = CVs[cv][3]
-        yTrue = list(CVs[cv][4])
+        if logistic:
+            yTrue = list((CVs[cv][4] >= threshPos) * 1)
+        else:
+            yTrue = list(CVs[cv][4])
         mFit = CVs[cv][6]
         yPred = mFit.predict(xTest, lamb=mFit.lambda_path_)
-        yPred = list(map(list, zip(*yPred)))
+        if logistic:
+            print(yPred)
+            yPred = list(map(list, zip(*yPred)))
+            exit(0)
+        else:
+            yPred = list(map(list, zip(*yPred)))
 
         for l in range(len(lambdas)):
-            MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
+
+            if logistic:
+                MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
+            else:
+                MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
 
     # Transpose
     MSEs = list(map(list, zip(*MSEs)))
