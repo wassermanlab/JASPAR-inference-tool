@@ -309,3 +309,89 @@ def _get_value_at_precision_threshold(Prec, values, threshold=0.75):
 if __name__ == "__main__":
 
     main()
+
+    def _train_BLAST_models(domains, values, threads=1, verbose=False):
+
+#     # Initialize
+#     Xs = values[1]
+#     Ys = np.array(values[2])
+#     # Ys = np.array(_transform_Ys(Ys))
+#     TFpairs = values[3]
+
+#     # for x in range(len(Xs["identity"])):
+#     #     print(Xs["identity"][x], Ys[x], TFpairs[x])
+#     # exit(0)
+
+#     # Verbose mode
+#     if verbose:
+#         Jglobals.write(None, "\nRegressing %s..." % domains)
+
+#     # Get weights
+#     weights = _get_weights(Ys, threshPos)
+
+#     # # For each sequence similarity representation...
+#     # for similarity in ["identity", "blosum62"]:
+
+#     #     # Add Xs
+#     #     Xs.setdefault(similarity, np.asarray(values[0][similarity]))
+#     #     BLASTXs.setdefault(similarity, np.array(values[1][similarity]))
+
+#     #     # Verbose mode
+#     #     if verbose:
+#     #         a, b = Xs[similarity].shape
+#     #         Jglobals.write(None, "\t*** Xs (%s): %s / %s" % (similarity, a, b))
+#     #         a, b = BLASTXs[similarity].shape
+#     #         Jglobals.write(None, "\t*** Xs (BLAST+): %s / %s" % (a, b))
+
+#     # # Verbose mode
+#     # if verbose:
+#     #     Jglobals.write(None, "\t*** Ys: %s" % Ys.shape)
+#     #     Jglobals.write(None, "\t*** TF pairs: %s" % len(tfPairs))
+
+#     # For each sequence similarity representation...
+#     for similarity in ["identity", "blosum62"]:
+
+#         if similarity == "blosum62":
+#             continue
+
+#         # Initialize
+#         Xss = np.asarray(Xs[similarity])
+#         limits = np.zeros(len(Xss[0]))
+
+#         # Get lambdas for cross-validation
+#         model = ElasticNet(alpha=0, lower_limits=limits, standardize=False)
+#         modelFit = model.fit(Xss, Ys, sample_weight=weights)
+#         lambdas = modelFit.lambda_path_
+
+#         # Initialize cross-validation model 
+#         modelCV = ElasticNet(alpha=0, lambda_path=lambdas, lower_limits=limits,
+#             standardize=False)
+
+#         # Get cross-validations
+#         CVs = _get_cross_validations(Xss, Ys, weights, modelCV, TFpairs)
+
+#         # Get best lambda
+#         idx, lambdabest, mse = _get_best_lambda(CVs, lambdas)
+
+#         # Get Precision, Recall, thresholds
+#         prec, rec, threshs = _get_prc(CVs, idx, npv=False)
+#         # nprec, nrec, nthreshs = _get_prc(CVs, idx, threshNeg, npv=True)
+
+#         # For each profile...
+#         for i in range(len(prec)):
+#             if prec[i] < 0.75:
+#                 continue
+#             print(prec[i], rec[i], threshs[i])
+#         exit(0)
+
+
+#         # # Verbose mode
+#         # if verbose:
+#         #     # Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {} + BLAST+ = {}): {}".format(regression, similarity, use_blast_Xs, recall))
+#         #     Jglobals.write(None, "\t*** Recall at 75% Precision threshold ({} + {}): {}".format(regression, similarity, recall))
+#         #     Jglobals.write(None, "\t*** Recalled TFs at 75% Precision threshold ({} + {}): {}".format(regression, similarity, tf_recall))
+
+#         # # Add fitRegModel
+#         # # models[domains].setdefault((regression, similarity), (recall, tf_recall, y, fitRegModel))
+#         # # results[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, fitRegModel.coef_.tolist()[0]))
+#         # models[domains].setdefault((regression, similarity), (Prec, Rec, Ys, tfRec, recall, y, tf_recall, fitRegModel))
