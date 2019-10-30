@@ -117,11 +117,8 @@ def get_files(devel=False, dummy_dir="/tmp/", out_dir=out_dir, threads=1):
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(out_dir, threads)
 
-    # # Group matrices by gapped k-mer similarity
-    # _group_by_gkmer(dummy_dir, out_dir, threads)
-
-    # Group UniProt Accessions by BLAST
-    _group_by_BLAST(out_dir, threads)
+    # # Group UniProt Accessions by BLAST
+    # _group_by_BLAST(out_dir, threads)
 
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -856,6 +853,65 @@ def _get_Tomtom_hits(tomtom_dir):
 
     return(hits)
 
+# def _group_by_BLAST(out_dir=out_dir, threads=1):
+
+#     # Skip if groups JSON file already exists
+#     gzip_file = os.path.join(out_dir, "groups.blast.json.gz")
+#     if not os.path.exists(gzip_file):
+
+#         # Initialize
+#         blast = {}
+#         seq_records = []
+
+#         # For each taxon...
+#         for taxon in Jglobals.taxons:
+
+#             # Intialize
+#             fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
+
+#             # For each SeqRecord...
+#             for seq_record in Jglobals.parse_fasta_file(fasta_file):
+#                 seq_records.append(seq_record)
+
+#         # Parallelize
+#         pool = Pool(threads)
+#         parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
+#         for blast_results in tqdm(
+#             pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)
+#         ):
+#             blast_results = list(zip(*blast_results))
+#             uniacc = blast_results.pop(0)
+#             blast.setdefault(uniacc[0], list(zip(*blast_results)))
+#         pool.close()
+#         pool.join()
+
+#         # Write
+#         Jglobals.write(
+#             gzip_file[:-3],
+#             json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
+#         )
+#         fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+#         fo = Jglobals._get_file_handle(gzip_file, "wb")
+#         shutil.copyfileobj(fi, fo)
+#         fi.close()
+#         fo.close()
+#         os.remove(gzip_file[:-3])
+
+#-------------#
+# Main        #
+#-------------#
+
+if __name__ == "__main__":
+
+    main()
+
+#-------------#
+# Not tested  #
+#-------------#
+
+# # Group matrices by gapped k-mer similarity
+# _group_by_gkmer(dummy_dir, out_dir, threads)
+
 # def _group_by_gkmer(dummy_dir="/tmp/", out_dir=out_dir, threads=1):
 
 #     # Initialize
@@ -958,55 +1014,3 @@ def _get_Tomtom_hits(tomtom_dir):
 #                 file_content.append(">%s\n%s" % (line[0], line[0]))
 
 #         Jglobals.write(fasta_file, "\n".join(file_content))
-
-def _group_by_BLAST(out_dir=out_dir, threads=1):
-
-    # Skip if groups JSON file already exists
-    gzip_file = os.path.join(out_dir, "groups.blast.json.gz")
-    if not os.path.exists(gzip_file):
-
-        # Initialize
-        blast = {}
-        seq_records = []
-
-        # For each taxon...
-        for taxon in Jglobals.taxons:
-
-            # Intialize
-            fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
-
-            # For each SeqRecord...
-            for seq_record in Jglobals.parse_fasta_file(fasta_file):
-                seq_records.append(seq_record)
-
-        # Parallelize
-        pool = Pool(threads)
-        parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
-        for blast_results in tqdm(
-            pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)
-        ):
-            blast_results = list(zip(*blast_results))
-            uniacc = blast_results.pop(0)
-            blast.setdefault(uniacc[0], list(zip(*blast_results)))
-        pool.close()
-        pool.join()
-
-        # Write
-        Jglobals.write(
-            gzip_file[:-3],
-            json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
-        )
-        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
-        fo = Jglobals._get_file_handle(gzip_file, "wb")
-        shutil.copyfileobj(fi, fo)
-        fi.close()
-        fo.close()
-        os.remove(gzip_file[:-3])
-
-#-------------#
-# Main        #
-#-------------#
-
-if __name__ == "__main__":
-
-    main()

@@ -73,16 +73,16 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
         global tomtom
         tomtom = _get_Tomtom_groups(files_dir)
 
-        # Get BLAST+ groups
-        global blast
-        blast = _get_BLAST_groups(files_dir)
+        # # Get BLAST+ groups
+        # global blast
+        # blast = _get_BLAST_groups(files_dir)
 
         # For each key, values...
         for key, values in groups.items():
 
             # Initialize
             Xss = {}
-            BLASTXss = {}
+            # BLASTXss = {}
             Ys = []
             TFpairs = []
 
@@ -91,17 +91,6 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
 
                 # For each next TF...
                 for j in range(i + 1, len(values)):
-
-                    # # Initialize
-                    # Xs = []
-
-                    # # Inner most loop for examining EACH different component...
-                    # for k in range(len(values[i][1])):
-
-                    #     # Get Xs
-                    #     seq1 = _removeLowercase(values[i][1][k])
-                    #     seq2 = _removeLowercase(values[j][1][k])
-                    #     Xs.extend(_fetchXs(seq1, seq2, similarity))
 
                     # Get Xs
                     identityXs, blosum62Xs = _fetchXs(values[i][1], values[j][1])
@@ -114,18 +103,12 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
                         # Skip this pair!
                         continue
 
-                    # Get BLAST+ Xs
-                    identityBLASTXs, blosum62BLASTXs = _fetchBLASTXs(values[i][2], values[j][2])
-                    BLASTXss.setdefault("identity", [])
-                    BLASTXss.setdefault("blosum62", [])
-                    BLASTXss["identity"].append(identityBLASTXs)
-                    BLASTXss["blosum62"].append(blosum62BLASTXs)
-
-                    # # Append Xs
-                    # Xss.setdefault(similarity, [])
-                    # Xss[similarity].append(Xs)
-                    # BLASTXss.setdefault(similarity, [])
-                    # BLASTXss[similarity].append(BLASTXs)
+                    # # Get BLAST+ Xs
+                    # identityBLASTXs, blosum62BLASTXs = _fetchBLASTXs(values[i][2], values[j][2])
+                    # BLASTXss.setdefault("identity", [])
+                    # BLASTXss.setdefault("blosum62", [])
+                    # BLASTXss["identity"].append(identityBLASTXs)
+                    # BLASTXss["blosum62"].append(blosum62BLASTXs)
 
                     # Get Y
                     y = _fetchY(values[i][0], values[j][0])
@@ -135,7 +118,8 @@ def pairwise(files_dir=files_dir, out_dir=out_dir):
                     TFpairs.append((values[i][2], values[j][2]))
 
             # Add to pairwise
-            pairwise.setdefault(key, [Xss, BLASTXss, Ys, TFpairs])
+            # pairwise.setdefault(key, [Xss, BLASTXss, Ys, TFpairs])
+            pairwise.setdefault(key, [Xss, Ys, TFpairs])
 
         # Write
         Jglobals.write(
@@ -179,49 +163,45 @@ def _get_Tomtom_groups(files_dir=files_dir):
 
     return(tomtom_filtered)
 
-def _get_BLAST_groups(files_dir=files_dir):
+# def _get_BLAST_groups(files_dir=files_dir):
 
-    # Initialize
-    blast_filtered = {}
+#     # Initialize
+#     blast_filtered = {}
 
-    # Load JSON file
-    json_file = os.path.join(files_dir, "groups.blast.json.gz")
-    handle = Jglobals._get_file_handle(json_file)
-    blast_unfiltered = json.load(handle)
-    handle.close()
+#     # Load JSON file
+#     json_file = os.path.join(files_dir, "groups.blast.json.gz")
+#     handle = Jglobals._get_file_handle(json_file)
+#     blast_unfiltered = json.load(handle)
+#     handle.close()
 
-    for uniacc in blast_unfiltered:
+#     for uniacc in blast_unfiltered:
 
-        for t, qse, tse, e, s, pid, al, psim, jc in blast_unfiltered[uniacc]:
+#         for t, qse, tse, e, s, pid, al, psim, jc in blast_unfiltered[uniacc]:
 
-            # (t) identifier of target sequence;
-            # (qse, tse) start and end-position in query and in target;
-            # (e) E-value;
-            # (s) bit score;
-            # (pid) percentage of identical matches;
-            # (al) alignment length;
-            # (psim) percentage of positive-scoring matches; and
-            # (jc) joint coverage (i.e. square root of the coverage
-            # on the query and the target).
-            # s = s / al # transformation of bit score
+#             # (t) identifier of target sequence;
+#             # (qse, tse) start and end-position in query and in target;
+#             # (e) E-value;
+#             # (s) bit score;
+#             # (pid) percentage of identical matches;
+#             # (al) alignment length;
+#             # (psim) percentage of positive-scoring matches; and
+#             # (jc) joint coverage (i.e. square root of the coverage
+#             # on the query and the target).
+#             # s = s / al # transformation of bit score
 
-            # Get Rost's verdict
-            rost_seq_id = _is_alignment_over_Rost_seq_id_curve(pid, al)
-            rost_seq_sim = _is_alignment_over_Rost_seq_sim_curve(psim, al)
+#             # Get Rost's verdict
+#             rost_seq_id = _is_alignment_over_Rost_seq_id_curve(pid, al)
+#             rost_seq_sim = _is_alignment_over_Rost_seq_sim_curve(psim, al)
 
-            # Reformat percentages & coverage
-            pid = pid / 100.0
-            psim = psim / 100.0
-            jc = jc / 100.0
+#             # Reformat percentages & coverage
+#             pid = pid / 100.0
+#             psim = psim / 100.0
+#             jc = jc / 100.0
 
-            blast_filtered.setdefault(uniacc, {})
-            blast_filtered[uniacc].setdefault(t, [[pid, rost_seq_id], [psim, rost_seq_sim], [jc]])
+#             blast_filtered.setdefault(uniacc, {})
+#             blast_filtered[uniacc].setdefault(t, [[pid, rost_seq_id], [psim, rost_seq_sim], [jc]])
 
-    return(blast_filtered)
-
-def _removeLowercase(s):
-
-    return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
+#     return(blast_filtered)
 
 def _fetchXs(seqs1, seqs2):
 
@@ -323,31 +303,9 @@ def _get_max_consecutive_not_Nones(seq):
 
     return(max(notNones))
 
-# def _fetchXs(seq1 , seq2, similarity="identity"):
-#     """
-#     Called for each comparison to compare the strings.
-#     """
+def _removeLowercase(s):
 
-#     # Fill Xs with zeroes
-#     scores = [0] * len(seq1)
-
-#     # Strings should have same length
-#     if len(seq1) == len(seq2):
-
-#         for n in range(len(seq1)):
-
-#             if similarity == "identity":
-#                 scores[n] = _IDscoring(seq1[n], seq2[n])
-
-#             elif similarity == "blosum62":
-#                 scores[n] = _BLOSUMscoring(seq1[n], seq2[n])
-
-#     else:
-#         # there is something wrong
-#         print("Strings have different length!\n\tA: %s\n\tB: %s" % (seq1, seq2))
-#         exit(0)
-
-#     return(scores)
+    return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
 
 def _IDscoring(aa1, aa2):
 
@@ -368,13 +326,13 @@ def _BLOSUMscoring(aa1, aa2):
         else:
             return(blosum62[(aa2, aa1)])
 
-def _fetchBLASTXs(uacc1, uacc2):
+# def _fetchBLASTXs(uacc1, uacc2):
 
-    if uacc1 in blast:
-        if uacc2 in blast[uacc1]:
-            return(blast[uacc1][uacc2][0] + blast[uacc1][uacc2][2], blast[uacc1][uacc2][1] + blast[uacc1][uacc2][2])
+#     if uacc1 in blast:
+#         if uacc2 in blast[uacc1]:
+#             return(blast[uacc1][uacc2][0] + blast[uacc1][uacc2][2], blast[uacc1][uacc2][1] + blast[uacc1][uacc2][2])
 
-    return([0.0, False, 0.0], [0.0, False, 0.0])
+#     return([0.0, False, 0.0], [0.0, False, 0.0])
 
 def _fetchY(maIDlist1, maIDlist2):
     """
@@ -382,7 +340,7 @@ def _fetchY(maIDlist1, maIDlist2):
     """
 
     # Initialize
-    y = 0 - log(1963.0)
+    y = 0 - log(1645.0)
 
     # Iterate through profiles...
     for maID1 in maIDlist1:

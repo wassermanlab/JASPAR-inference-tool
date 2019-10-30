@@ -13,7 +13,7 @@ from numpy import log10 as log
 from operator import itemgetter 
 import os
 import pickle
-from sklearn.metrics import mean_squared_error, precision_recall_curve
+from sklearn.metrics import precision_recall_curve
 import sys
 
 # Defaults
@@ -145,8 +145,8 @@ def train_models(pairwise_file, dbd=None, out_dir=out_dir, threads=1, thresh_neg
                 Jglobals.write(None, "\nRegressing %s..." % domain)
 
             # Train models
-            # _train_LinReg_models(values, threads, verbose)
-            # _train_LogReg_models(values, threads, verbose)
+            _train_LinReg_models(values, threads, verbose)
+            _train_LogReg_models(values, threads, verbose)
 
             # Get DBD %ID cutoff at 75% precision
             _get_DBD_PID_cutoff(values, threads, verbose)
@@ -169,8 +169,8 @@ def _train_LinReg_models(values, threads=1, verbose=False):
     # Initialize
     global TFpairs
     Xs = values[0]
-    Ys = np.array(values[2])
-    TFpairs = values[3]
+    Ys = np.array(values[1])
+    TFpairs = values[2]
 
     # Get weights
     weights = _get_weights(Ys)
@@ -195,7 +195,7 @@ def _train_LinReg_models(values, threads=1, verbose=False):
         # Initialize
         Xss = np.asarray(Xs[similarity])
         m = ElasticNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
-            lower_limits=np.zeros(len(Xss[0])))
+            lower_limits=np.zeros(len(Xss[0])), n_jobs=threads)
 
         # Set custom cross-validation
         m.CV = LeaveOneTfOut
@@ -220,8 +220,8 @@ def _train_LogReg_models(values, threads=1, verbose=False):
     # Initialize
     global TFpairs
     Xs = values[0]
-    Ys = np.array(values[2])
-    TFpairs = values[3]
+    Ys = np.array(values[1])
+    TFpairs = values[2]
 
     # Get weights
     weights = _get_weights(Ys)
@@ -246,7 +246,7 @@ def _train_LogReg_models(values, threads=1, verbose=False):
         # Initialize
         Xss = np.asarray(Xs[similarity])
         m = LogitNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
-            lower_limits=np.zeros(len(Xss[0])))
+            lower_limits=np.zeros(len(Xss[0])), n_jobs=threads))
 
         # Set custom cross-validation
         m.CV = LeaveOneTfOut
@@ -313,7 +313,7 @@ def _get_DBD_PID_cutoff(values, threads=1, verbose=False):
     # Initialize
     global TFpairs
     Xs = values[0]["identity"]
-    Ys = np.array(values[2])
+    Ys = np.array(values[1])
 
     # Get PIDs
     pids = np.array([sum(x)/len(x) for x in Xs])
@@ -324,6 +324,7 @@ def _get_DBD_PID_cutoff(values, threads=1, verbose=False):
         # if prec[x] >= 0.75:
         print(prec[x], rec[x], thresh[x])
     exit(0)
+
 # def _get_best_lambda(CVs, logistic=False):
 
 #     # Initialize
@@ -361,62 +362,18 @@ def _get_DBD_PID_cutoff(values, threads=1, verbose=False):
 #             else:
 #                 MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
 
-    # Transpose
-    MSEs = list(map(list, zip(*MSEs)))
+#     # Transpose
+#     MSEs = list(map(list, zip(*MSEs)))
 
-    for l in range(len(lambdas)):
+#     for l in range(len(lambdas)):
 
-        MSEavg = np.mean(MSEs[l])
+#         MSEavg = np.mean(MSEs[l])
 
-        if MSEbest is None or MSEavg < MSEbest:
-            lambdabest = lambdas[l]
-            MSEbest = np.mean(MSEs[l])
+#         if MSEbest is None or MSEavg < MSEbest:
+#             lambdabest = lambdas[l]
+#             MSEbest = np.mean(MSEs[l])
 
-    return(lambdabest, MSEbest)
-
-def _get_prc(CVs, lambdabest, logistic=False, npv=False):
-    """
-    From sklearn.metrics.precision_recall_curve
-
-    The last precision and recall values are "1." and "0." respectively and do
-    not have a corresponding threshold. This ensures that the graph starts on
-    the y axis.
-    """
-
-    # Initialize
-    yTrue = []
-    yPred = []
-
-    # For each cross-validation...
-    for cv in range(len(CVs)):
-
-        # 0: xTrain
-        # 1: yTrain
-        # 2: wTrain
-        # 3: xTest
-        # 4: yTest
-        # 5: wTest
-        # 6: mFit
-        xTest = CVs[cv][3]
-        yTrue += list(CVs[cv][4])
-        mFit = CVs[cv][6]
-        if logistic:
-            yPred += list(mFit.predict_proba(xTest, lamb=lambdabest))
-        else:
-            yPred += list(mFit.predict(xTest, lamb=lambdabest))
-
-    if logistic:
-        if npv:
-            yTrue = np.array(yTrue) * -1
-        else:
-            yTrue = np.array(yTrue) * 1
-    if not logistic:
-        if npv:
-            yTrue = np.array(yTrue) < threshNeg
-        else:
-            yTrue = np.array(yTrue) >= threshPos
-
-    return(precision_recall_curve(yTrue, np.array(yPred)))
+#     return(lambdabest, MSEbest)
 
 def _get_tf_recall_curve(tfPairs, labels, predictions, Ys):
     """
