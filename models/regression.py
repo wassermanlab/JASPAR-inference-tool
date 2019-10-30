@@ -145,13 +145,24 @@ def train_models(pairwise_file, dbd=None, out_dir=out_dir, threads=1, thresh_neg
                 Jglobals.write(None, "\nRegressing %s..." % domain)
 
             # Train models
-            _train_LinReg_models(values, threads, verbose)
-            _train_LogReg_models(values, threads, verbose)
-            #_train_BLAST_models(values, threads, verbose)
+            # _train_LinReg_models(values, threads, verbose)
+            # _train_LogReg_models(values, threads, verbose)
+
+            # Get DBD %ID cutoff at 75% precision
+            _get_DBD_PID_cutoff(values, threads, verbose)
 
     # # Write pickle file
     # with open(models_file, "wb") as f:
     #     pickle.dump(models, f)
+
+def _get_lambda_path(min_lambda=1e-3, max_lambda=1e+3, reg_step = 0.01):
+
+    lambdas = np.arange(log(min_lambda), log(max_lambda), reg_step)
+    lambdas = list(np.power(10, lambdas))
+    lambdas.append(max_lambda)
+    lambdas.sort(reverse=True)
+
+    return(lambdas)
 
 def _train_LinReg_models(values, threads=1, verbose=False):
 
@@ -249,25 +260,13 @@ def _train_LogReg_models(values, threads=1, verbose=False):
 
         # Predict
         p = mFit.predict_proba(Xss, lamb=lambdabest)[:,1]
+
+        # Get precision, recall, thresholds
         prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
         for x in range(len(thresh)):
             if prec[x] >= 0.75:
                 print(prec[x], rec[x], thresh[x])
                 break
-
-# def _transform_Ys(Ys):
-
-#     # Initialize
-#     Ys_transformed = []
-
-#     for y in Ys:
-#         if y < 0:
-#             y = 0
-#         elif y >= 10:
-#             y = 10
-#         Ys_transformed.append(y)
-
-#     return(Ys_transformed)
 
 def _leaveOneTfOut(TFpairs):
     """
@@ -298,8 +297,7 @@ def _leaveOneTfOut(TFpairs):
 
 def _get_weights(Ys):
     """
-    Weight positive samples 1/freq (or 10x whichever is higher) higher 
-    than negatives because they are usually at a much lower frequency.
+    Weight samples 1/freq.
     """
 
     labels = Ys >= threshPos
@@ -307,21 +305,25 @@ def _get_weights(Ys):
     w = {}
     for l in c:
         w.setdefault(l, 1/(float(c[l])/len(labels)))
-    # if w[True] < 10:
-    #     w[True] = 10.
-    # w[False] = 1.
 
     return[w[l] for l in labels]
 
-def _get_lambda_path(min_lambda=1e-3, max_lambda=1e+3, reg_step = 0.01):
+def _get_DBD_PID_cutoff(values, threads=1, verbose=False):
 
-    lambdas = np.arange(log(min_lambda), log(max_lambda), reg_step)
-    lambdas = list(np.power(10, lambdas))
-    lambdas.append(max_lambda)
-    lambdas.sort(reverse=True)
+    # Initialize
+    global TFpairs
+    Xs = values[0]["identity"]
+    Ys = np.array(values[2])
 
-    return(lambdas)
+    # Get PIDs
+    pids = np.array([sum(x)/len(x) for x in Xs])
 
+    # Get precision, recall, thresholds
+    prec, rec, thresh = precision_recall_curve(Ys >= threshPos, pids)
+    for x in range(len(thresh)):
+        # if prec[x] >= 0.75:
+        print(prec[x], rec[x], thresh[x])
+    exit(0)
 # def _get_best_lambda(CVs, logistic=False):
 
 #     # Initialize
