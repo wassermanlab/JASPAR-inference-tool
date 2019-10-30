@@ -161,9 +161,6 @@ def _train_LinReg_models(values, threads=1, verbose=False):
     Ys = np.array(values[2])
     TFpairs = values[3]
 
-    print(Ys >= threshPos)
-    exit(0)
-
     # Get weights
     weights = _get_weights(Ys)
 
