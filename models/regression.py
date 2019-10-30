@@ -307,112 +307,57 @@ def _get_weights(Ys):
     w = {}
     for l in c:
         w.setdefault(l, 1/(float(c[l])/len(labels)))
-    if w[True] < 10:
-        w[True] = 10.
-    w[False] = 1.
+    # if w[True] < 10:
+    #     w[True] = 10.
+    # w[False] = 1.
 
     return[w[l] for l in labels]
 
-def _get_lambda_path():
+def _get_lambda_path(min_lambda=1e-3, max_lambda=1e+3, reg_step = 0.01):
 
-    # Initialize
-    min_lambda = 1e-3
-    max_lambda = 1e+3
-    regularization_step = 0.01
-
-    lambdas = np.arange(log(min_lambda), log(max_lambda), regularization_step)
+    lambdas = np.arange(log(min_lambda), log(max_lambda), reg_step)
     lambdas = list(np.power(10, lambdas))
     lambdas.append(max_lambda)
     lambdas.sort(reverse=True)
 
     return(lambdas)
 
-def _get_cross_validations(x, y, w, m, pairs, logistic=False):
+# def _get_best_lambda(CVs, logistic=False):
 
-    # Initialize
-    # CVs = []
+#     # Initialize
+#     MSEs = []
+#     lambdabest = max(lambdas)
+#     MSEbest = None
 
-    # # Get CV iterator
-    # CViterator = list(_get_CV_iterator(pairs))
+#     # For each cross-validation...
+#     for cv in range(len(CVs)):
 
-    # # For each cross-validation...
-    # for cv in range(len(CViterator)):
+#         MSEs.append([])
 
-    #     # Get train/test Xs/Ys/weights
-    #     xTrain = np.asarray(itemgetter(*CViterator[cv][0])(x))
-    #     yTrain = np.asarray(itemgetter(*CViterator[cv][0])(y))
-    #     wTrain = np.asarray(itemgetter(*CViterator[cv][0])(w))
-    #     xTest = np.asarray(itemgetter(*CViterator[cv][1])(x))
-    #     yTest = np.asarray(itemgetter(*CViterator[cv][1])(y))
-    #     wTest = np.asarray(itemgetter(*CViterator[cv][1])(w))
-
-    #     # Fit cross-validation model
-    #     if logistic:
-    #         mFit = m.fit(xTrain, yTrain >= threshPos, sample_weight=wTrain)
-    #     else:
-    #         mFit = m.fit(x, y, sample_weight=w)
-
-    #     # Predict
-    #     CVs.append((xTrain, yTrain, wTrain, xTest, yTest, wTest, mFit))
-
-    # lambdabest, MSEbest = _get_best_lambda(CVs)
-    # print(lambdabest, MSEbest)
-
-    # m.CV = _get_CV_iterator(pairs)
-    # mFit = m.fit(x, y, sample_weight=w)
-
-    # # Fit cross-validation model
-    # if logistic:
-    #     # mFit = m.fit(xTrain, yTrain >= threshPos, sample_weight=wTrain)
-    #     mFit = m.fit(x, y >= threshPos, sample_weight=w)
-    # else:
-    #     # mFit = m.fit(xTrain, yTrain, sample_weight=wTrain)
-    #     mFit = m.fit(x, y, sample_weight=w)
-
-    print(mFit.lambda_max_)
-    print(mFit.lambda_best_)
-    exit(0)
+#         # 0: xTrain
+#         # 1: yTrain
+#         # 2: wTrain
+#         # 3: xTest
+#         # 4: yTest
+#         # 5: wTest
+#         # 6: mFit
+#         xTest = CVs[cv][3]
+#         yTrue = list(CVs[cv][4])
+#         mFit = CVs[cv][6]
+#         if logistic:
+#             yPred = list(map(list, zip(*(yPred * 1))))
+#             print(yPred)
+#         else:
+#             yPred = mFit.predict(xTest, lamb=mFit.lambda_path_)
+#             yPred = list(map(list, zip(*yPred)))
 
 
+#         for l in range(len(lambdas)):
 
-    return(CVs)
-
-def _get_best_lambda(CVs, logistic=False):
-
-    # Initialize
-    MSEs = []
-    lambdabest = max(lambdas)
-    MSEbest = None
-
-    # For each cross-validation...
-    for cv in range(len(CVs)):
-
-        MSEs.append([])
-
-        # 0: xTrain
-        # 1: yTrain
-        # 2: wTrain
-        # 3: xTest
-        # 4: yTest
-        # 5: wTest
-        # 6: mFit
-        xTest = CVs[cv][3]
-        yTrue = list(CVs[cv][4])
-        mFit = CVs[cv][6]
-        if logistic:
-            yPred = list(map(list, zip(*(yPred * 1))))
-            print(yPred)
-        else:
-            yPred = mFit.predict(xTest, lamb=mFit.lambda_path_)
-            yPred = list(map(list, zip(*yPred)))
-
-
-        for l in range(len(lambdas)):
-
-            if logistic:
-                MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
-            else:
-                MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
+#             if logistic:
+#                 MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
+#             else:
+#                 MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
 
     # Transpose
     MSEs = list(map(list, zip(*MSEs)))
