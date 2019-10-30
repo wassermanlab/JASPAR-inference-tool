@@ -55,6 +55,8 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--domain", metavar="STR",
+        help="regress models for given domain (default = all)")
     parser.add_argument("-o", default=out_dir, metavar="DIR",
         help="output directory (default = ./)")
     parser.add_argument("-p", metavar="JSON",
@@ -76,10 +78,10 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    train_models(os.path.abspath(args.p), os.path.abspath(args.o), args.threads,
-        args.thresh_neg, args.thresh_pos, args.verbose)
+    train_models(os.path.abspath(args.p), args.domain, os.path.abspath(args.o),
+        args.threads, args.thresh_neg, args.thresh_pos, args.verbose)
 
-def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1., 
+def train_models(pairwise_file, dbd=None, out_dir=out_dir, threads=1, thresh_neg=1., 
     thresh_pos=6., verbose=False):
 
     # Initialize
@@ -126,30 +128,32 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1.,
         threshNeg = thresh_neg
 
         # For each DBD composition...
-        for domains, values in pairwise.items():
+        for domain, values in pairwise.items():
             # Zn_clus
             # PAX
             # Forkhead
             # HMG_box
             # zf-C2H2+zf-C2H2+zf-C2H2
             # zf-C4
-            if domains != "Forkhead":
-                continue
+
+            if dbd is not None:
+                if domain != dbd:
+                    continue
 
             # Verbose mode
             if verbose:
-                Jglobals.write(None, "\nRegressing %s..." % domains)
+                Jglobals.write(None, "\nRegressing %s..." % domain)
 
             # Train models
-            _train_LinReg_models(domains, values, threads, verbose)
-            _train_LogReg_models(domains, values, threads, verbose)
-            #_train_BLAST_models(domains, values, threads, verbose)
+            _train_LinReg_models(values, threads, verbose)
+            _train_LogReg_models(values, threads, verbose)
+            #_train_BLAST_models(values, threads, verbose)
 
     # # Write pickle file
     # with open(models_file, "wb") as f:
     #     pickle.dump(models, f)
 
-def _train_LinReg_models(domains, values, threads=1, verbose=False):
+def _train_LinReg_models(values, threads=1, verbose=False):
 
     # Initialize
     global TFpairs
@@ -200,7 +204,7 @@ def _train_LinReg_models(domains, values, threads=1, verbose=False):
                 continue
             print(prec[x], rec[x], thresh[x])
 
-def _train_LogReg_models(domains, values, threads=1, verbose=False):
+def _train_LogReg_models(values, threads=1, verbose=False):
 
     # Initialize
     global TFpairs
