@@ -246,7 +246,7 @@ def _train_LogReg_models(values, threads=1, verbose=False):
         # Initialize
         Xss = np.asarray(Xs[similarity])
         m = LogitNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
-            lower_limits=np.zeros(len(Xss[0])), n_jobs=threads))
+            lower_limits=np.zeros(len(Xss[0])), n_jobs=threads)
 
         # Set custom cross-validation
         m.CV = LeaveOneTfOut
