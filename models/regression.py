@@ -200,7 +200,9 @@ def _train_LinReg_models(values, threads=1, verbose=False):
         p = mFit.predict(Xss, lamb=lambdabest)
         prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
         for x in range(len(thresh)):
-            print(prec[x], rec[x], thresh[x])
+            if prec[x] >= 0.75:
+                print(prec[x], rec[x], thresh[x])
+                break
 
 def _train_LogReg_models(values, threads=1, verbose=False):
 
@@ -249,7 +251,9 @@ def _train_LogReg_models(values, threads=1, verbose=False):
         p = mFit.predict_proba(Xss, lamb=lambdabest)[:,1]
         prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
         for x in range(len(thresh)):
-            print(prec[x], rec[x], thresh[x])
+            if prec[x] >= 0.75:
+                print(prec[x], rec[x], thresh[x])
+                break
 
 # def _transform_Ys(Ys):
 
