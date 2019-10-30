@@ -318,8 +318,8 @@ def _get_weights(Ys):
 def _get_lambda_path():
 
     # Initialize
-    min_lambda = 1e-3
-    max_lambda = 1e+3
+    min_lambda = 1e-6
+    max_lambda = 1e+6
     regularization_step = 0.01
 
     lambdas = np.arange(log(min_lambda), log(max_lambda), regularization_step)
