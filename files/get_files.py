@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+from Bio import motifs
 from Bio import SearchIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -46,11 +47,12 @@ def parse_args():
 
     parser.add_argument("-d", "--devel", action="store_true",
         help="development mode (uses hfaistos; default = False)")
+    parser.add_argument("--dummy-dir", default="/tmp/", metavar="DIR",
+        help="dummy directory (default = /tmp/)")
     parser.add_argument("-o", default=out_dir, metavar="DIR",
         help="output directory (default = ./)")
     parser.add_argument("--threads", default=1, type=int, metavar="INT",
         help="threads to use (default = 1)")
-
 
     return(parser.parse_args())
 
@@ -60,9 +62,9 @@ def main():
     args = parse_args()
 
     # Get files
-    get_files(args.devel, os.path.abspath(args.o), args.threads)
+    get_files(args.devel, os.path.abspath(args.dummy_dir), os.path.abspath(args.o), args.threads)
 
-def get_files(devel=False, out_dir=out_dir, threads=1):
+def get_files(devel=False, dummy_dir="/tmp/", out_dir=out_dir, threads=1):
 
     # Globals
     global client
@@ -114,6 +116,9 @@ def get_files(devel=False, out_dir=out_dir, threads=1):
 
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(out_dir, threads)
+
+    # Group matrices by gapped k-mer similarity
+    _group_by_gkmer(dummy_dir, out_dir, threads)
 
     # Group UniProt Accessions by BLAST
     _group_by_BLAST(out_dir, threads)
@@ -255,20 +260,22 @@ def _download_JASPAR_profiles(taxon, out_dir=out_dir):
         # Move to taxon directory
         os.chdir(taxon_dir)
 
-        # Initialize
-        jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
-        if "hfaistos.uio.no:8002" in jaspar_url:
-            jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_meme.zip" % taxon
+        for fmt in ["jaspar", "meme"]:
 
-        # Get JASPAR profiles
-        os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download",
-            "CORE", jaspar_file))
+            # Initialize
+            jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_%s.zip" % (taxon, fmt)
+            if "hfaistos.uio.no:8002" in jaspar_url:
+                jaspar_file = "JASPAR2020_CORE_%s_redundant_pfms_%s.zip" % (taxon, fmt)
 
-        # Unzip
-        os.system("unzip -qq %s" % jaspar_file)
+            # Get JASPAR profiles
+            os.system("curl --silent -O %s" % os.path.join(jaspar_url, "download",
+                "CORE", jaspar_file))
 
-        # Remove zip files
-        os.remove("%s" % jaspar_file)
+            # Unzip
+            os.system("unzip -qq %s" % jaspar_file)
+
+            # Remove zip files
+            os.remove("%s" % jaspar_file)
 
         # Change dir
         os.chdir(cwd)
@@ -848,6 +855,118 @@ def _get_Tomtom_hits(tomtom_dir):
         hits.append([line[1], float(line[4])])
 
     return(hits)
+
+def _group_by_gkmer(dummy_dir="/tmp/", out_dir=out_dir, threads=1):
+
+    # Initialize
+    profiles = []
+
+    # Get all JASPAR profiles
+    # jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
+    jaspar_profiles = [str(f) for f in Path(out_dir).glob("*/*.jaspar")]
+
+    # For each JASPAR profile...
+    for jaspar_profile in jaspar_profiles:
+
+        # Load profile
+        with open(str(jaspar_profile)) as f:
+            profile = motifs.read(f, "jaspar")
+        
+        # Add background
+        profile.background = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25}
+
+        # Add JASPAR pseudocounts
+        profile.pseudocounts = motifs.jaspar.calculate_pseudocounts(profile)
+
+        # Add profile
+        profiles.append(profile)
+
+    # For each profile...
+    for profile in profiles:
+
+        if profile.matrix_id != "MA0139.1":
+            continue
+
+        # Write profile in PWMScan format
+        pwm_file = os.path.join(dummy_dir, "%s.pwm" % profile.matrix_id)
+        with open(pwm_file, "w") as f:
+
+            for i in range(len(profile.pssm["A"])):
+
+                f.write("%s\n" % "\t".join([str(int(profile.pssm[j][i]*100)) for j in "ACGT"]))
+
+        # Calculate distribution of PWM scores
+        cmd = "matrix_prob %s" % pwm_file
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        for line in process.stdout.decode("utf-8").split("\n"):
+
+            matches = re.findall("(\S+)", line)
+
+            if len(matches) == 3:
+
+                if float(matches[2][:-1]) < 90:
+                    break
+
+                score = matches[0]
+                p_value = float(matches[1])
+                perc = float(matches[2][:-1])
+
+        # Generate sequences from PWM at 90% cut-off
+        cmd = "mba -c %s %s" % (score, pwm_file)
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)       
+
+        for line in process.stdout.decode("utf-8").split("\n"):
+            
+
+
+    # Parallelize
+    pool = Pool(threads)
+    parallelized = partial(Tomtom, database=database, out_dir=out_dir)
+    for _ in tqdm(
+        pool.imap(parallelized, jaspar_profiles), desc="Tomtom", total=len(jaspar_profiles)
+    ):
+        pass
+    pool.close()
+    pool.join()
+
+    # Move to output directory
+    os.chdir(out_dir)
+
+    # For each JASPAR profile...
+    for jaspar_profile in jaspar_profiles:
+
+        # Initialize
+        m = re.search("(MA\d{4}.\d).meme$", jaspar_profile)
+        tomtom_dir = ".%s" % m.group(1)
+
+        # Get hits
+        tomtom.setdefault(m.group(1), _get_Tomtom_hits(tomtom_dir))
+
+        # Remove Tomtom directory
+        shutil.rmtree(tomtom_dir)
+
+    # Write
+    Jglobals.write(
+        gzip_file[:-3],
+        json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
+    )
+    fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+    fo = Jglobals._get_file_handle(gzip_file, "wb")
+    shutil.copyfileobj(fi, fo)
+    fi.close()
+    fo.close()
+    os.remove(gzip_file[:-3])
+
+    # For each taxon...
+    for taxon in Jglobals.taxons:
+
+        # Remove taxon directory
+        if os.path.isdir(taxon):
+            shutil.rmtree(taxon)
+
+    # Change dir
+    os.chdir(cwd) 
 
 def _group_by_BLAST(out_dir=out_dir, threads=1):
 

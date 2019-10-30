@@ -27,6 +27,23 @@ sys.path.append(root_dir)
 from __init__ import Jglobals
 
 #-------------#
+# Classes     #
+#-------------#
+
+class LeaveOneTfOut:
+
+    def __init__(self, n_splits=3, shuffle=False, random_state=None):
+        self.n_splits = n_splits
+
+    def split(self, X=None, y=None, groups=None):
+
+        for train, test in CViterator:
+            yield(train, test)
+
+    def get_n_splits(self, X=None, y=None, groups=None):
+        return self.n_splits
+
+#-------------#
 # Functions   #
 #-------------#
 
@@ -64,6 +81,10 @@ def main():
 
 def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1., 
     thresh_pos=6., verbose=False):
+
+    # Initialize
+    global lambdas
+    lambdas = _get_lambda_path()
 
     # Skip if pickle file already exists
     models_file = os.path.join(out_dir, "models.pickle")
@@ -112,7 +133,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1.,
             # HMG_box
             # zf-C2H2+zf-C2H2+zf-C2H2
             # zf-C4
-            if domains != "PAX":
+            if domains != "HMG_box":
                 continue
 
             # Verbose mode
@@ -121,7 +142,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1.,
 
             # Train models
             _train_LinReg_models(domains, values, threads, verbose)
-            _train_LogReg_models(domains, values, threads, verbose)
+            # _train_LogReg_models(domains, values, threads, verbose)
             #_train_BLAST_models(domains, values, threads, verbose)
 
     # # Write pickle file
@@ -131,12 +152,23 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1.,
 def _train_LinReg_models(domains, values, threads=1, verbose=False):
 
     # Initialize
+    global TFpairs
     Xs = values[0]
     Ys = np.array(values[2])
     TFpairs = values[3]
 
     # Get weights
     weights = _get_weights(Ys)
+
+    # Get unique TFs
+    TFs = set()
+    for TFpair in TFpairs:
+        TFs.add(TFpair[0])
+        TFs.add(TFpair[1])
+
+    # Get CV iterator
+    global CViterator
+    CViterator = _leaveOneTfOut(TFpairs)
 
     # For each sequence similarity representation...
     for similarity in ["identity", "blosum62"]:
@@ -147,86 +179,64 @@ def _train_LinReg_models(domains, values, threads=1, verbose=False):
 
         # Initialize
         Xss = np.asarray(Xs[similarity])
-
-        # Get lambdas for cross-validation
-        lambdas = _get_lambda_path()
-
-        # Initialize cross-validation model 
-        modelCV = ElasticNet(alpha=0, lambda_path=lambdas, standardize=False,
+        m = ElasticNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
             lower_limits=np.zeros(len(Xss[0])))
 
-        # Get cross-validations
-        CVs = _get_cross_validations(Xss, Ys, weights, modelCV, TFpairs)
+        # Set custom cross-validation
+        m.CV = LeaveOneTfOut
 
-        # Get best lambda
-        lambdabest, mse = _get_best_lambda(CVs, lambdas)
+        # Fit
+        mFit = m.fit(Xss, Ys, sample_weight=weights)
 
-        # Get Precision, Recall, thresholds
-        precision, recall, thresholds = _get_prc(CVs, lambdabest, npv=False)
-        # nprec, nrec, nthreshs = _get_prc(CVs, idx, threshNeg, npv=True)
+        # Get best lambda (i.e. max)
+        lambdabest = mFit.lambda_max_
 
-        # For each profile...
-        for i in range(len(precision) - 1):
-            # if precision[i] < 0.75:
-            #     continue
-            print(similarity, precision[i], recall[i], thresholds[i])
+        # Predict
+        p = mFit.predict(Xss, lamb=lambdabest)
+        prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
+        for x in range(len(thresh)):
+            print(prec[x], rec[x], thresh[x])
 
-def _train_LogReg_models(domains, values, threads=1, verbose=False):
+# def _transform_Ys(Ys):
 
-    # Initialize
-    Xs = values[0]
-    Ys = np.array(values[2])
-    TFpairs = values[3]
+#     # Initialize
+#     Ys_transformed = []
 
-    # Get weights
-    weights = _get_weights(Ys)
+#     for y in Ys:
+#         if y < 0:
+#             y = 0
+#         elif y >= 10:
+#             y = 10
+#         Ys_transformed.append(y)
 
-    # For each sequence similarity representation...
-    for similarity in ["identity", "blosum62"]:
+#     return(Ys_transformed)
 
-        # Verbose mode
-        if verbose:
-            Jglobals.write(None, "\t*** ElasticNet: %s" % similarity)
-
-        # Initialize
-        Xss = np.asarray(Xs[similarity])
-
-        # Get lambdas for cross-validation
-        lambdas = _get_lambda_path()
-
-        # Initialize cross-validation model 
-        modelCV = LogitNet(alpha=0, lambda_path=lambdas, standardize=False,
-            lower_limits=np.zeros(len(Xss[0])))
-
-        # Get cross-validations
-        CVs = _get_cross_validations(Xss, Ys >= threshPos, weights, modelCV, TFpairs)
-
-        # Get best lambda
-        lambdabest, mse = _get_best_lambda(CVs, lambdas, logistic=True)
-
-        # Get Precision, Recall, thresholds
-        precision, recall, thresholds = _get_prc(CVs, lambdabest, npv=False)
-        # nprec, nrec, nthreshs = _get_prc(CVs, idx, threshNeg, npv=True)
-
-        # For each profile...
-        for i in range(len(precision) - 1):
-            # if precision[i] < 0.75:
-            #     continue
-            print(similarity, precision[i], recall[i], thresholds[i])
-
-def _transform_Ys(Ys):
+def _leaveOneTfOut(TFpairs):
+    """
+    Leave one TF out.
+    """
 
     # Initialize
-    Ys_transformed = []
+    CViterator = []
 
-    for y in Ys:
-        if y < 0:
-            y = 0
-        elif y >= 10:
-            y = 10
-        Ys_transformed.append(y)
+    # 1. Get the TF names into a dict
+    TFidxs = {}
+    for tfPair in TFpairs:
+        for tf in tfPair:
+            TFidxs.setdefault(tf, [])
+    for tf, idxs in TFidxs.items():
+        for i in range(len(TFpairs)):
+            if tf in TFpairs[i]:
+                idxs.append(i)
 
-    return(Ys_transformed)
+    # 2. For each TF, figure out which index to include
+    for tf, idxs in TFidxs.items():
+        s = [i for i in range(len(TFpairs))]
+        idxTest = idxs
+        idxTrain = list(set(s) - set(idxTest))
+        CViterator.append((np.array(idxTrain), np.array(idxTest)))
+
+    return(CViterator)
 
 def _get_weights(Ys):
     """
@@ -259,61 +269,57 @@ def _get_lambda_path():
 
     return(lambdas)
 
-def _get_cross_validations(x, y, w, m, pairs):
+def _get_cross_validations(x, y, w, m, pairs, logistic=False):
 
     # Initialize
-    CVs = []
+    # CVs = []
 
-    # Get CV iterator
-    CViterator = _get_CV_iterator(pairs)
+    # # Get CV iterator
+    # CViterator = list(_get_CV_iterator(pairs))
 
-    # For each cross-validation...
-    for cv in range(len(CViterator)):
+    # # For each cross-validation...
+    # for cv in range(len(CViterator)):
 
-        # Get train/test Xs/Ys/weights
-        xTrain = np.asarray(itemgetter(*CViterator[cv][0])(x))
-        yTrain = np.asarray(itemgetter(*CViterator[cv][0])(y))
-        wTrain = np.asarray(itemgetter(*CViterator[cv][0])(w))
-        xTest = np.asarray(itemgetter(*CViterator[cv][1])(x))
-        yTest = np.asarray(itemgetter(*CViterator[cv][1])(y))
-        wTest = np.asarray(itemgetter(*CViterator[cv][1])(w))
+    #     # Get train/test Xs/Ys/weights
+    #     xTrain = np.asarray(itemgetter(*CViterator[cv][0])(x))
+    #     yTrain = np.asarray(itemgetter(*CViterator[cv][0])(y))
+    #     wTrain = np.asarray(itemgetter(*CViterator[cv][0])(w))
+    #     xTest = np.asarray(itemgetter(*CViterator[cv][1])(x))
+    #     yTest = np.asarray(itemgetter(*CViterator[cv][1])(y))
+    #     wTest = np.asarray(itemgetter(*CViterator[cv][1])(w))
 
-        # Fit cross-validation model
-        mFit = m.fit(xTrain, yTrain, sample_weight=wTrain)
+    #     # Fit cross-validation model
+    #     if logistic:
+    #         mFit = m.fit(xTrain, yTrain >= threshPos, sample_weight=wTrain)
+    #     else:
+    #         mFit = m.fit(x, y, sample_weight=w)
 
-        # Predict
-        CVs.append((xTrain, yTrain, wTrain, xTest, yTest, wTest, mFit))
+    #     # Predict
+    #     CVs.append((xTrain, yTrain, wTrain, xTest, yTest, wTest, mFit))
+
+    # lambdabest, MSEbest = _get_best_lambda(CVs)
+    # print(lambdabest, MSEbest)
+
+    # m.CV = _get_CV_iterator(pairs)
+    # mFit = m.fit(x, y, sample_weight=w)
+
+    # # Fit cross-validation model
+    # if logistic:
+    #     # mFit = m.fit(xTrain, yTrain >= threshPos, sample_weight=wTrain)
+    #     mFit = m.fit(x, y >= threshPos, sample_weight=w)
+    # else:
+    #     # mFit = m.fit(xTrain, yTrain, sample_weight=wTrain)
+    #     mFit = m.fit(x, y, sample_weight=w)
+
+    print(mFit.lambda_max_)
+    print(mFit.lambda_best_)
+    exit(0)
+
+
 
     return(CVs)
 
-def _get_CV_iterator(TFpairs):
-    """
-    Leave one TF out.
-    """
-
-    # Initialize
-    CViterator = []
-
-    # 1. Get the TF names into a dict
-    TFidxs = {}
-    for tfPair in TFpairs:
-        for tf in tfPair:
-            TFidxs.setdefault(tf, [])
-    for tf, idxs in TFidxs.items():
-        for i in range(len(TFpairs)):
-            if tf in TFpairs[i]:
-                idxs.append(i)
-
-    # 2. For each TF, figure out which index to include
-    for tf, idxs in TFidxs.items():
-        s = [i for i in range(len(TFpairs))]
-        idxTest = idxs
-        idxTrain = list(set(s) - set(idxTest))
-        CViterator.append((idxTrain, idxTest))
-
-    return(CViterator)
-
-def _get_best_lambda(CVs, lambdas, logistic=False):
+def _get_best_lambda(CVs, logistic=False):
 
     # Initialize
     MSEs = []
@@ -333,18 +339,15 @@ def _get_best_lambda(CVs, lambdas, logistic=False):
         # 5: wTest
         # 6: mFit
         xTest = CVs[cv][3]
-        if logistic:
-            yTrue = list((CVs[cv][4] >= threshPos) * 1)
-        else:
-            yTrue = list(CVs[cv][4])
+        yTrue = list(CVs[cv][4])
         mFit = CVs[cv][6]
-        yPred = mFit.predict(xTest, lamb=mFit.lambda_path_)
         if logistic:
+            yPred = list(map(list, zip(*(yPred * 1))))
             print(yPred)
-            yPred = list(map(list, zip(*yPred)))
-            exit(0)
         else:
+            yPred = mFit.predict(xTest, lamb=mFit.lambda_path_)
             yPred = list(map(list, zip(*yPred)))
+
 
         for l in range(len(lambdas)):
 
@@ -366,7 +369,7 @@ def _get_best_lambda(CVs, lambdas, logistic=False):
 
     return(lambdabest, MSEbest)
 
-def _get_prc(CVs, lambdabest, npv=False):
+def _get_prc(CVs, lambdabest, logistic=False, npv=False):
     """
     From sklearn.metrics.precision_recall_curve
 
@@ -392,14 +395,21 @@ def _get_prc(CVs, lambdabest, npv=False):
         xTest = CVs[cv][3]
         yTrue += list(CVs[cv][4])
         mFit = CVs[cv][6]
-        yPred += list(mFit.predict(xTest, lamb=lambdabest))
+        if logistic:
+            yPred += list(mFit.predict_proba(xTest, lamb=lambdabest))
+        else:
+            yPred += list(mFit.predict(xTest, lamb=lambdabest))
 
-    print(len(yTrue))
-
-    if npv:
-        yTrue = np.array(yTrue) < threshNeg
-    else:
-        yTrue = np.array(yTrue) >= threshPos
+    if logistic:
+        if npv:
+            yTrue = np.array(yTrue) * -1
+        else:
+            yTrue = np.array(yTrue) * 1
+    if not logistic:
+        if npv:
+            yTrue = np.array(yTrue) < threshNeg
+        else:
+            yTrue = np.array(yTrue) >= threshPos
 
     return(precision_recall_curve(yTrue, np.array(yPred)))
 
