@@ -816,7 +816,7 @@ def _get_profiles_from_latest_version(jaspar_profiles):
     for jaspar_profile in sorted(jaspar_profiles, reverse=True):
 
         # Initialize
-        m = re.search("(MA\d{4}).\d.meme$", str(jaspar_profile))
+        m = re.search("(MA\d{4}).\d.\S+$", str(jaspar_profile))
         matrix_id = m.group(1)
 
         # Skip if done
