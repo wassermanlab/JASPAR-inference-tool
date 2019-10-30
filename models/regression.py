@@ -183,9 +183,8 @@ def _train_LinReg_models(values, threads=1, verbose=False):
 
         # Initialize
         Xss = np.asarray(Xs[similarity])
-        # m = ElasticNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
-        #     lower_limits=np.zeros(len(Xss[0])))
-        m = ElasticNet(alpha=0, n_splits=len(TFs), lower_limits=np.zeros(len(Xss[0])))
+        m = ElasticNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
+            lower_limits=np.zeros(len(Xss[0])))
 
         # Set custom cross-validation
         m.CV = LeaveOneTfOut
@@ -235,9 +234,8 @@ def _train_LogReg_models(values, threads=1, verbose=False):
 
         # Initialize
         Xss = np.asarray(Xs[similarity])
-        # m = LogitNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
-        #     lower_limits=np.zeros(len(Xss[0])))
-        m = LogitNet(alpha=0, n_splits=len(TFs), lower_limits=np.zeros(len(Xss[0])))
+        m = LogitNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
+            lower_limits=np.zeros(len(Xss[0])))
 
         # Set custom cross-validation
         m.CV = LeaveOneTfOut
@@ -318,8 +316,8 @@ def _get_weights(Ys):
 def _get_lambda_path():
 
     # Initialize
-    min_lambda = 1e-6
-    max_lambda = 1e+6
+    min_lambda = 1e-3
+    max_lambda = 1e+3
     regularization_step = 0.01
 
     lambdas = np.arange(log(min_lambda), log(max_lambda), regularization_step)
