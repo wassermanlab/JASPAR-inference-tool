@@ -133,7 +133,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1.,
             # HMG_box
             # zf-C2H2+zf-C2H2+zf-C2H2
             # zf-C4
-            if domains != "HMG_box":
+            if domains != "Forkhead":
                 continue
 
             # Verbose mode
@@ -142,7 +142,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, thresh_neg=1.,
 
             # Train models
             _train_LinReg_models(domains, values, threads, verbose)
-            # _train_LogReg_models(domains, values, threads, verbose)
+            _train_LogReg_models(domains, values, threads, verbose)
             #_train_BLAST_models(domains, values, threads, verbose)
 
     # # Write pickle file
@@ -190,11 +190,65 @@ def _train_LinReg_models(domains, values, threads=1, verbose=False):
 
         # Get best lambda (i.e. max)
         lambdabest = mFit.lambda_max_
+        print("\t\t- lambdabest: %s" % lambdabest)
 
         # Predict
         p = mFit.predict(Xss, lamb=lambdabest)
         prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
         for x in range(len(thresh)):
+            if prec[x] < 0.75:
+                continue
+            print(prec[x], rec[x], thresh[x])
+
+def _train_LogReg_models(domains, values, threads=1, verbose=False):
+
+    # Initialize
+    global TFpairs
+    Xs = values[0]
+    Ys = np.array(values[2])
+    TFpairs = values[3]
+
+    # Get weights
+    weights = _get_weights(Ys)
+
+    # Get unique TFs
+    TFs = set()
+    for TFpair in TFpairs:
+        TFs.add(TFpair[0])
+        TFs.add(TFpair[1])
+
+    # Get CV iterator
+    global CViterator
+    CViterator = _leaveOneTfOut(TFpairs)
+
+    # For each sequence similarity representation...
+    for similarity in ["identity", "blosum62"]:
+
+        # Verbose mode
+        if verbose:
+            Jglobals.write(None, "\t*** LogitNet: %s" % similarity)
+
+        # Initialize
+        Xss = np.asarray(Xs[similarity])
+        m = LogitNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
+            lower_limits=np.zeros(len(Xss[0])))
+
+        # Set custom cross-validation
+        m.CV = LeaveOneTfOut
+
+        # Fit
+        mFit = m.fit(Xss, Ys >= threshPos, sample_weight=weights)
+
+        # Get best lambda (i.e. max)
+        lambdabest = mFit.lambda_max_
+        print("\t\t- lambdabest: %s" % lambdabest)
+
+        # Predict
+        p = mFit.predict_proba(Xss, lamb=lambdabest)[:,1]
+        prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
+        for x in range(len(thresh)):
+            if prec[x] < 0.75:
+                continue
             print(prec[x], rec[x], thresh[x])
 
 # def _transform_Ys(Ys):
