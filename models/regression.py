@@ -90,7 +90,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
         # Initialize
         models = {
             "Keys": "DBD composition",
-            "Values": ["model", "lambdabest", "y"]
+            "Values": ["similarity", "model", "lambdabest", "y cut-off"]
         }
 
         # Load JSON file
@@ -101,9 +101,6 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
 
         # For each DBD composition...
         for domain, values in pairwise.items():
-
-            if domain != "zf-C2H2+zf-C2H2+zf-C2H2":
-                continue
 
             # Verbose mode
             if verbose:
