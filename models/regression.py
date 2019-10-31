@@ -201,7 +201,7 @@ def _train_LinReg_models(values, threads=1, verbose=False):
     # No results...
     if len(results) == 0:
         if verbose:
-            Jglobals.write(None, "\t*** similarity regression models could not be trained!")
+            Jglobals.write(None, "\t*** could not train similarity regression!")
         return(None, None, None, None)
 
     # Sort by recall
