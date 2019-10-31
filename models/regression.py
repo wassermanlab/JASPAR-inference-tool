@@ -6,7 +6,7 @@
 
 import argparse
 from collections import Counter
-from glmnet import ElasticNet, LogitNet
+from glmnet import ElasticNet
 import json
 import numpy as np
 from numpy import log10 as log
@@ -55,18 +55,12 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--domain", metavar="STR",
-        help="regress models for given domain (default = all)")
+    parser.add_argument("-j", metavar="JSON",
+        help="compressed JSON file from pairwise.py")
     parser.add_argument("-o", default=out_dir, metavar="DIR",
         help="output directory (default = ./)")
-    parser.add_argument("-p", metavar="JSON",
-        help="compressed JSON file from pairwise.py")
     parser.add_argument("--threads", type=int, default=1, metavar="INT",
         help="threads to use (default = 1)")
-    parser.add_argument("--thresh-neg", type=float, default=1., metavar="FLT",
-        help="threshold negatives (default = 1.0)")
-    parser.add_argument("--thresh-pos", type=float, default=3., metavar="FLT",
-        help="threshold positives (default = 3.0)")
     parser.add_argument("-v", "--verbose", action="store_true",
         help="verbose mode (default = False)")
 
@@ -78,39 +72,25 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    train_models(os.path.abspath(args.p), args.domain, os.path.abspath(args.o),
-        args.threads, args.thresh_neg, args.thresh_pos, args.verbose)
+    train_models(os.path.abspath(args.j), os.path.abspath(args.o),
+        args.threads, args.verbose)
 
-def train_models(pairwise_file, dbd=None, out_dir=out_dir, threads=1, thresh_neg=1., 
-    thresh_pos=3., verbose=False):
+def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
 
     # Initialize
     global lambdas
     lambdas = _get_lambda_path()
+    global threshPos
+    threshPos = 8.
 
     # Skip if pickle file already exists
     models_file = os.path.join(out_dir, "models.pickle")
-    results_file = os.path.join(out_dir, "results.json")
-    if not os.path.exists(models_file) or not os.path.exists(results_file):
+    if not os.path.exists(models_file):
 
         # Initialize
         models = {
             "Keys": "DBD composition",
-            "Values": {
-                (
-                    "regression approach",
-                    "similarity representation"
-                ) : "model"
-            }
-        }
-        results = {
-            "Keys": "DBD composition",
-            "Values": {
-                (
-                    "regression approach",
-                    "similarity representation"
-                ) : ("Ys", "predictions")
-            }
+            "Values": ["model", "lambdabest", "y"]
         }
 
         # Load JSON file
@@ -119,41 +99,25 @@ def train_models(pairwise_file, dbd=None, out_dir=out_dir, threads=1, thresh_neg
         pairwise = json.load(handle)
         handle.close()
 
-        # E-value thresholds from cisbp.ipynb:
-        # For (+) 6.702705320605285 and 6.34620565834759
-        global threshPos
-        threshPos = thresh_pos
-        # For (-) 0.9352972238139634 and -0.6065759798508961
-        global threshNeg
-        threshNeg = thresh_neg
-
         # For each DBD composition...
         for domain, values in pairwise.items():
-            # Zn_clus
-            # PAX
-            # Forkhead
-            # HMG_box
-            # zf-C2H2+zf-C2H2+zf-C2H2
-            # zf-C4
 
-            if dbd is not None:
-                if domain != dbd:
-                    continue
+            if domain != "zf-C2H2+zf-C2H2+zf-C2H2":
+                continue
 
             # Verbose mode
             if verbose:
                 Jglobals.write(None, "\nRegressing %s..." % domain)
 
             # Train models
-            _train_LinReg_models(values, threads, verbose)
-            _train_LogReg_models(values, threads, verbose)
+            similarity, model, lambdabest, y = _train_LinReg_models(values, threads, verbose)
 
-            # Get DBD %ID cutoff at 75% precision
-            # _get_DBD_PID_cutoff(values, threads, verbose)
+            # Add model
+            models.setdefault(domain, [similarity, model, lambdabest, y])
 
-    # # Write pickle file
-    # with open(models_file, "wb") as f:
-    #     pickle.dump(models, f)
+        # Write pickle file
+        with open(models_file, "wb") as f:
+            pickle.dump(models, f)
 
 def _get_lambda_path(min_lambda=1e-3, max_lambda=1e+3, reg_step = 0.01):
 
@@ -168,6 +132,7 @@ def _train_LinReg_models(values, threads=1, verbose=False):
 
     # Initialize
     global TFpairs
+    results = []
     Xs = values[0]
     Ys = np.array(values[1])
     TFpairs = values[2]
@@ -205,7 +170,8 @@ def _train_LinReg_models(values, threads=1, verbose=False):
 
         # Get best lambda (i.e. max)
         lambdabest = mFit.lambda_max_
-        print("\t\t- lambdabest: %s" % lambdabest)
+        if verbose:
+            Jglobals.write(None, "\t\t- lambdabest: %s" % lambdabest)
 
         # Predict
         p = mFit.predict(Xss, lamb=lambdabest)
@@ -214,75 +180,23 @@ def _train_LinReg_models(values, threads=1, verbose=False):
         prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
         for x in range(len(thresh)):
             if prec[x] >= 0.75:
-                print(prec[x], rec[x], thresh[x])
+                results.append([similarity, mFit, lambdabest, thresh, rec[x]])
                 break
 
-        # # NPV
-        # nprec, nrec, nthresh = precision_recall_curve(Ys < threshNeg, p)
-        # for x in range(len(nthresh)):
-        #     if nprec[x] >= 0.75:
-        #         print(nprec[x], nrec[x], nthresh[x])
-        #         break
+        # If results...
+        if len(results) > 0:
+            if verbose:
+                Jglobals.write(None, "\t\t- recall @ 75% precision: {0:.2f}%".\
+                    format(round(results[-1][-1] * 100, 2)))
 
-def _train_LogReg_models(values, threads=1, verbose=False):
+    # No results...
+    if len(results) == 0:
+        return(None, None, None, None)
 
-    # Initialize
-    global TFpairs
-    Xs = values[0]
-    Ys = np.array(values[1])
-    TFpairs = values[2]
+    # Sort by recall
+    results.sort(key=lambda x: x[-1], reverse=True)
 
-    # Get weights
-    weights = _get_weights(Ys)
-
-    # Get unique TFs
-    TFs = set()
-    for TFpair in TFpairs:
-        TFs.add(TFpair[0])
-        TFs.add(TFpair[1])
-
-    # Get CV iterator
-    global CViterator
-    CViterator = _leaveOneTfOut(TFpairs)
-
-    # For each sequence similarity representation...
-    for similarity in ["identity", "blosum62"]:
-
-        # Verbose mode
-        if verbose:
-            Jglobals.write(None, "\t*** LogitNet: %s" % similarity)
-
-        # Initialize
-        Xss = np.asarray(Xs[similarity])
-        m = LogitNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
-            lower_limits=np.zeros(len(Xss[0])), n_jobs=threads)
-
-        # Set custom cross-validation
-        m.CV = LeaveOneTfOut
-
-        # Fit
-        mFit = m.fit(Xss, Ys >= threshPos, sample_weight=weights)
-
-        # Get best lambda (i.e. max)
-        lambdabest = mFit.lambda_max_
-        print("\t\t- lambdabest: %s" % lambdabest)
-
-        # Predict
-        p = mFit.predict_proba(Xss, lamb=lambdabest)[:,1]
-
-        # PPV
-        prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
-        for x in range(len(thresh)):
-            if prec[x] >= 0.75:
-                print(prec[x], rec[x], thresh[x])
-                break
-
-        # # NPV
-        # nprec, nrec, nthresh = precision_recall_curve(Ys < threshNeg, p)
-        # for x in range(len(nthresh)):
-        #     if nprec[x] >= 0.75:
-        #         print(nprec[x], nrec[x], nthresh[x])
-        #         break
+    return(results[0][:4])
 
 def _leaveOneTfOut(TFpairs):
     """
@@ -323,115 +237,6 @@ def _get_weights(Ys):
         w.setdefault(l, 1/(float(c[l])/len(labels)))
 
     return[w[l] for l in labels]
-
-def _get_DBD_PID_cutoff(values, threads=1, verbose=False):
-
-    # Initialize
-    global TFpairs
-    Xs = values[0]["identity"]
-    Ys = np.array(values[1])
-
-    # Get PIDs
-    pids = np.array([sum(x)/len(x) for x in Xs])
-
-    # Get precision, recall, thresholds
-    prec, rec, thresh = precision_recall_curve(Ys >= threshPos, pids)
-    for x in range(len(thresh)):
-        # if prec[x] >= 0.75:
-        print(prec[x], rec[x], thresh[x])
-    exit(0)
-
-# def _get_best_lambda(CVs, logistic=False):
-
-#     # Initialize
-#     MSEs = []
-#     lambdabest = max(lambdas)
-#     MSEbest = None
-
-#     # For each cross-validation...
-#     for cv in range(len(CVs)):
-
-#         MSEs.append([])
-
-#         # 0: xTrain
-#         # 1: yTrain
-#         # 2: wTrain
-#         # 3: xTest
-#         # 4: yTest
-#         # 5: wTest
-#         # 6: mFit
-#         xTest = CVs[cv][3]
-#         yTrue = list(CVs[cv][4])
-#         mFit = CVs[cv][6]
-#         if logistic:
-#             yPred = list(map(list, zip(*(yPred * 1))))
-#             print(yPred)
-#         else:
-#             yPred = mFit.predict(xTest, lamb=mFit.lambda_path_)
-#             yPred = list(map(list, zip(*yPred)))
-
-
-#         for l in range(len(lambdas)):
-
-#             if logistic:
-#                 MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
-#             else:
-#                 MSEs[-1].append(mean_squared_error(yTrue, yPred[l]))
-
-#     # Transpose
-#     MSEs = list(map(list, zip(*MSEs)))
-
-#     for l in range(len(lambdas)):
-
-#         MSEavg = np.mean(MSEs[l])
-
-#         if MSEbest is None or MSEavg < MSEbest:
-#             lambdabest = lambdas[l]
-#             MSEbest = np.mean(MSEs[l])
-
-#     return(lambdabest, MSEbest)
-
-def _get_tf_recall_curve(tfPairs, labels, predictions, Ys):
-    """
-    From sklearn.metrics.precision_recall_curve
-
-    The last precision and recall values are "1." and "0." respectively and do
-    not have a corresponding threshold. This ensures that the graph starts on
-    the y axis.
-    """
-
-    # Initialize
-    tf_recall = []
-    tfs = set(tf for i in range(len(tfPairs)) if labels[i] == 1 for j in tfPair)
-
-    # For each y...
-    for y in Ys:
-
-        # Initialize
-        tfs_recalled = set()
-
-        # For each predictions...
-        for i in range(len(predictions)):
-            if predictions[i] >= y:
-                tfs_recalled.add(tfPairs[i][0])
-                tfs_recalled.add(tfPairs[i][1])
-
-        tf_recall.append(float(len(tfs_recalled)) / len(tfs))
-
-    # Append a last recall value of 0.0
-    tf_recall.append(0.0)
-
-    return(np.array(tf_recall))
-
-def _get_value_at_precision_threshold(Prec, values, threshold=0.75):
-
-    # For each y...
-    for i in range(len(Prec)):
-
-        if Prec[i] >= threshold or i +1 == len(values):
-            break
-
-    return(values[i])
 
 #-------------#
 # Main        #

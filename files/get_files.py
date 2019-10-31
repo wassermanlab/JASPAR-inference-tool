@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-from Bio import motifs
 from Bio import SearchIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
