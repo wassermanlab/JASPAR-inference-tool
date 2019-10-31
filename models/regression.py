@@ -59,8 +59,6 @@ def parse_args():
         help="compressed JSON file from pairwise.py")
     parser.add_argument("-o", default=out_dir, metavar="DIR",
         help="output directory (default = ./)")
-    parser.add_argument("--threads", type=int, default=1, metavar="INT",
-        help="threads to use (default = 1)")
     parser.add_argument("-v", "--verbose", action="store_true",
         help="verbose mode (default = False)")
 
@@ -72,10 +70,11 @@ def main():
     args = parse_args()
 
     # Make Pfam files
-    train_models(os.path.abspath(args.j), os.path.abspath(args.o),
-        args.threads, args.verbose)
+    global verbose
+    verbose = args.verbose
+    train_models(os.path.abspath(args.j), os.path.abspath(args.o))
 
-def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
+def train_models(pairwise_file, out_dir=out_dir):
 
     # Initialize
     global lambdas
@@ -107,7 +106,7 @@ def train_models(pairwise_file, out_dir=out_dir, threads=1, verbose=False):
                 Jglobals.write(None, "\nRegressing %s..." % domain)
 
             # Train models
-            similarity, model, lambdabest, y = _train_LinReg_models(values, threads, verbose)
+            similarity, model, lambdabest, y = _train_LinReg_models(values)
 
             # Add model
             models.setdefault(domain, [similarity, model, lambdabest, y])
@@ -129,7 +128,7 @@ def _get_lambda_path(min_lambda=1e-3, max_lambda=1e+3, reg_step = 0.01):
 
     return(lambdas)
 
-def _train_LinReg_models(values, threads=1, verbose=False):
+def _train_LinReg_models(values):
 
     # Initialize
     global TFpairs
