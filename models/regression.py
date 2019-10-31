@@ -157,45 +157,46 @@ def _train_LinReg_models(values):
         if verbose:
             Jglobals.write(None, "\t*** ElasticNet: %s" % similarity)
 
+        # Get Xss
         try:
-
-            # Initialize
             Xss = np.asarray(Xs[similarity])
-            m = ElasticNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
-                lower_limits=np.zeros(len(Xss[0])), n_jobs=threads)
-
-            # Set custom cross-validation
-            m.CV = LeaveOneTfOut
-
-            # Fit
-            mFit = m.fit(Xss, Ys, sample_weight=weights)
-
-            # Get best lambda (i.e. max)
-            lambdabest = mFit.lambda_max_
-            if verbose:
-                Jglobals.write(None, "\t\t- lambdabest: %s" % lambdabest)
-
-            # Predict
-            p = mFit.predict(Xss, lamb=lambdabest)
-
-            # PPV
-            prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
-            for x in range(len(thresh)):
-                if prec[x] >= 0.75:
-                    results.append([similarity, mFit, lambdabest, thresh, rec[x]])
-                    break
-
-            # If results...
-            if len(results) > 0:
-                if verbose:
-                    Jglobals.write(None, "\t\t- recall @ 75% precision: {0:.2f}%".\
-                        format(round(results[-1][-1] * 100, 2)))
-            # Else...
-            else:
-                if verbose:
-                    Jglobals.write(None, "\t\t- could not reach 75% precision!")
         except:
-            pass
+            continue
+
+        # Initialize linear regression model
+        m = ElasticNet(alpha=0, n_splits=len(TFs), lambda_path=lambdas,
+            lower_limits=np.zeros(len(Xss[0])))
+
+        # Set custom cross-validation
+        m.CV = LeaveOneTfOut
+
+        # Fit
+        mFit = m.fit(Xss, Ys, sample_weight=weights)
+
+        # Get best lambda (i.e. max)
+        lambdabest = mFit.lambda_max_
+        if verbose:
+            Jglobals.write(None, "\t\t- lambdabest: %s" % lambdabest)
+
+        # Predict
+        p = mFit.predict(Xss, lamb=lambdabest)
+
+        # PPV
+        prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
+        for x in range(len(thresh)):
+            if prec[x] >= 0.75:
+                results.append([similarity, mFit, lambdabest, thresh, rec[x]])
+                break
+
+        # If results...
+        if len(results) > 0:
+            if verbose:
+                Jglobals.write(None, "\t\t- recall @ 75% precision: {0:.2f}%".\
+                    format(round(results[-1][-1] * 100, 2)))
+        # Else...
+        else:
+            if verbose:
+                Jglobals.write(None, "\t\t- could not reach 75% precision!")
 
     # No results...
     if len(results) == 0:
