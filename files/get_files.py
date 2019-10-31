@@ -117,9 +117,6 @@ def get_files(devel=False, dummy_dir="/tmp/", out_dir=out_dir, threads=1):
     # Group matrices by Tomtom similarity
     _group_by_Tomtom(out_dir, threads)
 
-    # # Group UniProt Accessions by BLAST
-    # _group_by_BLAST(out_dir, threads)
-
 def _download_Pfam_DBD_HMMs(out_dir=out_dir):
 
     # Skip if Pfam DBD file already exists
@@ -664,8 +661,7 @@ def _group_by_DBD_composition(out_dir=out_dir):
             for uniacc, values in pfams.items():
 
                 # Unwind
-                # domains = "+".join([v[0] for v in values])
-                domains = [v[0] for v in values]
+                domains = "+".join([v[0] for v in values])
                 alignments = [v[1] for v in values]
 
                 # Skip if no DBD
@@ -673,24 +669,8 @@ def _group_by_DBD_composition(out_dir=out_dir):
                     continue
 
                 # Add member
-                # groups.setdefault(domains, [])
-                # groups[domains].append([uniaccs[uniacc][0], alignments, uniacc])
-                for domain in sorted(set(domains)):
-
-                    # Initialize
-                    domain_alignments = []
-                    groups.setdefault(domain, [])
-
-                    for i in range(len(domains)):
-
-                        if domains[i] == domain:
-                            domain_alignments.append(alignments[i])
-                        else:
-                            domain_alignments.append(None)
-
-                    groups[domain].append(
-                        [uniaccs[uniacc][0], domain_alignments, uniacc]
-                    )
+                groups.setdefault(domains, [])
+                groups[domains].append([uniaccs[uniacc][0], alignments, uniacc])
 
         # Write
         Jglobals.write(
@@ -853,50 +833,6 @@ def _get_Tomtom_hits(tomtom_dir):
 
     return(hits)
 
-# def _group_by_BLAST(out_dir=out_dir, threads=1):
-
-#     # Skip if groups JSON file already exists
-#     gzip_file = os.path.join(out_dir, "groups.blast.json.gz")
-#     if not os.path.exists(gzip_file):
-
-#         # Initialize
-#         blast = {}
-#         seq_records = []
-
-#         # For each taxon...
-#         for taxon in Jglobals.taxons:
-
-#             # Intialize
-#             fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
-
-#             # For each SeqRecord...
-#             for seq_record in Jglobals.parse_fasta_file(fasta_file):
-#                 seq_records.append(seq_record)
-
-#         # Parallelize
-#         pool = Pool(threads)
-#         parallelized = partial(_SeqRecord_BLAST_search, files_dir=out_dir)
-#         for blast_results in tqdm(
-#             pool.imap(parallelized, seq_records), desc="BLAST+", total=len(seq_records)
-#         ):
-#             blast_results = list(zip(*blast_results))
-#             uniacc = blast_results.pop(0)
-#             blast.setdefault(uniacc[0], list(zip(*blast_results)))
-#         pool.close()
-#         pool.join()
-
-#         # Write
-#         Jglobals.write(
-#             gzip_file[:-3],
-#             json.dumps(blast, sort_keys=True, indent=4, separators=(",", ": "))
-#         )
-#         fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
-#         fo = Jglobals._get_file_handle(gzip_file, "wb")
-#         shutil.copyfileobj(fi, fo)
-#         fi.close()
-#         fo.close()
-#         os.remove(gzip_file[:-3])
-
 #-------------#
 # Main        #
 #-------------#
@@ -904,113 +840,3 @@ def _get_Tomtom_hits(tomtom_dir):
 if __name__ == "__main__":
 
     main()
-
-#-------------#
-# Not tested  #
-#-------------#
-
-# # Group matrices by gapped k-mer similarity
-# _group_by_gkmer(dummy_dir, out_dir, threads)
-
-# def _group_by_gkmer(dummy_dir="/tmp/", out_dir=out_dir, threads=1):
-
-#     # Initialize
-#     profiles = []
-
-#     # Get all JASPAR profiles
-#     # jaspar_profiles = _get_profiles_from_latest_version(Path(out_dir).glob("*/*.meme"))
-#     jaspar_profiles = [str(f) for f in Path(out_dir).glob("*/*.jaspar")]
-
-#     # For each JASPAR profile...
-#     for jaspar_profile in jaspar_profiles:
-
-#         # Load profile
-#         with open(str(jaspar_profile)) as f:
-#             profile = motifs.read(f, "jaspar")
-        
-#         # Add background
-#         profile.background = {"A": 0.25, "C": 0.25, "G": 0.25, "T": 0.25}
-
-#         # Add JASPAR pseudocounts
-#         profile.pseudocounts = motifs.jaspar.calculate_pseudocounts(profile)
-
-#         # Add profile
-#         profiles.append(profile)
-
-#     # Parallelize
-#     pool = Pool(threads)
-#     parallelized = partial(_get_8mers, dummy_dir=dummy_dir)
-#     for _ in tqdm(
-#         pool.imap(parallelized, profiles), desc="Gkmers", total=len(profiles)
-#     ):
-#         pass
-#     pool.close()
-#     pool.join()
-
-    # # Write
-    # Jglobals.write(
-    #     gzip_file[:-3],
-    #     json.dumps(tomtom, sort_keys=True, indent=4, separators=(",", ": "))
-    # )
-    # fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
-    # fo = Jglobals._get_file_handle(gzip_file, "wb")
-    # shutil.copyfileobj(fi, fo)
-    # fi.close()
-    # fo.close()
-    # os.remove(gzip_file[:-3])
-
-    # # For each taxon...
-    # for taxon in Jglobals.taxons:
-
-    #     # Remove taxon directory
-    #     if os.path.isdir(taxon):
-    #         shutil.rmtree(taxon)
-
-    # # Change dir
-    # os.chdir(cwd) 
-
-# def _get_8mers(profile, dummy_dir="/tmp/", l=8, k=8):
-
-#     if profile.matrix_id in ["MA0139.1", "MA0531.1", "MA1102.2"]:
-
-#         # Initialize
-#         pwm_file = os.path.join(dummy_dir, "%s.pwm" % profile.matrix_id)
-#         fasta_file = os.path.join(dummy_dir, "%s.fa" % profile.matrix_id)
-
-#         # Write profile in PWMScan format
-#         file_content = []
-#         for i in range(len(profile.pssm["A"])):
-
-#             file_content.append("\t".join([str(int(profile.pssm[j][i]*100)) for j in "ACGT"]))
-
-#         Jglobals.write(pwm_file, "\n".join(file_content))
-
-#         # Calculate distribution of PWM scores
-#         cmd = "matrix_prob %s" % pwm_file
-#         process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-#         for line in process.stdout.decode("utf-8").split("\n"):
-
-#             matches = re.findall("(\S+)", line)
-
-#             if len(matches) == 3:
-
-#                 if float(matches[2][:-1]) < 95:
-#                     break
-
-#                 score = matches[0]
-#                 # p_value = float(matches[1])
-#                 # perc = float(matches[2][:-1])
-
-#         # Generate sequences from PWM at 95% cut-off
-#         file_content = []
-#         cmd = "mba -c %s %s" % (score, pwm_file)
-#         process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)       
-
-#         for line in process.stdout.decode("utf-8").split("\n"):
-
-#             line = line.split()
-#             if len(line) == 2:
-#                 file_content.append(">%s\n%s" % (line[0], line[0]))
-
-#         Jglobals.write(fasta_file, "\n".join(file_content))
