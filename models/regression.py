@@ -64,9 +64,9 @@ def parse_args():
     parser.add_argument("--threads", type=int, default=1, metavar="INT",
         help="threads to use (default = 1)")
     parser.add_argument("--thresh-neg", type=float, default=1., metavar="FLT",
-        help="threads to use (default = 1.0)")
-    parser.add_argument("--thresh-pos", type=float, default=6., metavar="FLT",
-        help="threads to use (default = 6.0)")
+        help="threshold negatives (default = 1.0)")
+    parser.add_argument("--thresh-pos", type=float, default=3., metavar="FLT",
+        help="threshold positives (default = 3.0)")
     parser.add_argument("-v", "--verbose", action="store_true",
         help="verbose mode (default = False)")
 
@@ -82,7 +82,7 @@ def main():
         args.threads, args.thresh_neg, args.thresh_pos, args.verbose)
 
 def train_models(pairwise_file, dbd=None, out_dir=out_dir, threads=1, thresh_neg=1., 
-    thresh_pos=6., verbose=False):
+    thresh_pos=3., verbose=False):
 
     # Initialize
     global lambdas
@@ -149,7 +149,7 @@ def train_models(pairwise_file, dbd=None, out_dir=out_dir, threads=1, thresh_neg
             _train_LogReg_models(values, threads, verbose)
 
             # Get DBD %ID cutoff at 75% precision
-            _get_DBD_PID_cutoff(values, threads, verbose)
+            # _get_DBD_PID_cutoff(values, threads, verbose)
 
     # # Write pickle file
     # with open(models_file, "wb") as f:
@@ -209,11 +209,20 @@ def _train_LinReg_models(values, threads=1, verbose=False):
 
         # Predict
         p = mFit.predict(Xss, lamb=lambdabest)
+
+        # PPV
         prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
         for x in range(len(thresh)):
             if prec[x] >= 0.75:
                 print(prec[x], rec[x], thresh[x])
                 break
+
+        # # NPV
+        # nprec, nrec, nthresh = precision_recall_curve(Ys < threshNeg, p)
+        # for x in range(len(nthresh)):
+        #     if nprec[x] >= 0.75:
+        #         print(nprec[x], nrec[x], nthresh[x])
+        #         break
 
 def _train_LogReg_models(values, threads=1, verbose=False):
 
@@ -261,12 +270,19 @@ def _train_LogReg_models(values, threads=1, verbose=False):
         # Predict
         p = mFit.predict_proba(Xss, lamb=lambdabest)[:,1]
 
-        # Get precision, recall, thresholds
+        # PPV
         prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
         for x in range(len(thresh)):
             if prec[x] >= 0.75:
                 print(prec[x], rec[x], thresh[x])
                 break
+
+        # # NPV
+        # nprec, nrec, nthresh = precision_recall_curve(Ys < threshNeg, p)
+        # for x in range(len(nthresh)):
+        #     if nprec[x] >= 0.75:
+        #         print(nprec[x], nrec[x], nthresh[x])
+        #         break
 
 def _leaveOneTfOut(TFpairs):
     """
