@@ -195,6 +195,8 @@ def _train_LinReg_models(values, threads=1, verbose=False):
             else:
                 if verbose:
                     Jglobals.write(None, "\t\t- could not reach 75% precision!")
+        except:
+            pass
 
     # No results...
     if len(results) == 0:
