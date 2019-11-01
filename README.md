@@ -35,3 +35,16 @@ As a usage example, the inferred JASPAR profiles for the `MAX` TF can be obtaine
 The script returns (if any) the inferred JASPAR profiles for the specified TF(s) along with the details regarding the inference, including:
 * The BLAST alignment between the query and JASPAR TF, including the the start and end amino acid positions, and the Expect value (E); and
 * The % of identical residues between the query and the JASPAR TF DBDs
+
+## Similarity regression results
+
+<div class="scrollable" id="scrollable">
+	<ul>
+		<li>List Item</li>
+		<li>List Item</li>
+		<li>List Item</li>
+		<li>List Item</li>
+		<li>List Item</li>
+		<li>List Item</li>
+	</ul>
+</div>
