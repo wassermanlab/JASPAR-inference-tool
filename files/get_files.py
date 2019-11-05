@@ -173,7 +173,7 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
                 continue
 
             # For each Pfam ID...
-            for pfam_id in pfam_ids.split(",")
+            for pfam_id in pfam_ids.split(","):
 
                 # Skip if not Pfam ID
                 if len(pfam_id) == 0 or pfam_id == "UNKNOWN":
