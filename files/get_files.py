@@ -146,9 +146,13 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
         process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         pairs = [l.split("\t") for l in process.stdout.decode("utf-8").split("\n")]
+        print(pairs[0])
+        exit(0)
 
         # For each pair..
-        for pfam_id, cutoff in pairs:
+        for pair in pairs:
+
+            pfam_id, cutoff = pair
 
             # Skip if multiple Pfam IDs...
             if "," in pfam_id:
