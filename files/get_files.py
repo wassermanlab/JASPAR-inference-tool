@@ -150,6 +150,7 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
         # For each pair..
         for pair in pairs:
 
+            print(pair)
             pfam_id, cutoff = pair
 
             # Skip if multiple Pfam IDs...
