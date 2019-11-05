@@ -145,20 +145,17 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
         cmd = "unzip -p %s | cut -f 11,13 | sort | uniq | grep -v DBDs" % cisbp_file
         process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        pairs = [l.split("\t") for l in process.stdout.decode("utf-8").split("\n")]
+        pairs = [l.split("\t") for l in process.stdout.decode("utf-8").split("\n") if len(l) > 0]
 
         # For each pair..
-        for pair in pairs:
-
-            print(pair)
-            pfam_id, cutoff = pair
+        for pfam_id, cutoff in pairs:
 
             # Skip if multiple Pfam IDs...
             if "," in pfam_id:
                 continue
 
             # Skip if not Pfam ID
-            if len(pfam_id) == 0 or pfam_id == "UNKNOWN":
+            if pfam_id == "UNKNOWN":
                 continue
 
             # Fix faulty Pfam IDs
@@ -169,9 +166,7 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
             cutoffs.setdefault(pfam_id, float(cutoff))
 
         # For each pair..
-        for pair in pairs:
-
-            pfam_ids, cutoff = pair
+        for pfam_ids, cutoff in pairs:
 
             # Skip if only one Pfam ID...
             if "," not in pfam_ids:
@@ -181,7 +176,7 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
             for pfam_id in pfam_ids.split(","):
 
                 # Skip if not Pfam ID
-                if len(pfam_id) == 0 or pfam_id == "UNKNOWN":
+                if pfam_id == "UNKNOWN":
                     continue
 
                 # Fix faulty Pfam IDs
