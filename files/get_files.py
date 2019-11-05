@@ -123,8 +123,8 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
     if not os.path.exists(pfam_DBD_file):
 
         # Initialize
+        cutoffs = {}
         pfam_DBDs = {}
-        pfam_ids = set()
         url = "http://cisbp.ccbr.utoronto.ca/data/2.00/DataFiles/Bulk_downloads/EntireDataset/"
         cisbp_file = "TF_Information_all_motifs.txt.zip"
         faulty_pfam_ids = {
@@ -141,27 +141,50 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
             # Download TF info
             os.system("curl --silent -O %s%s" % (url, cisbp_file))
 
-        # Get DBDs
-        cmd = "unzip -p %s | cut -f 11 | sort | uniq | grep -v DBDs" % cisbp_file
+        # Get DBD/cut-off pairs
+        cmd = "unzip -p %s | cut -f 11,13 | sort | uniq | grep -v DBDs" % cisbp_file
         process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
+        pairs = [l.split("\t") for l in process.stdout.decode("utf-8").split("\n")]
 
-        # For each output line...
-        for line in process.stdout.decode("utf-8").split("\n"):
+        # For each pair..
+        for pfam_id, cutoff in pairs:
+
+            # Skip if multiple Pfam IDs...
+            if "," in pfam_id:
+                continue
+
+            # Skip if not Pfam ID
+            if len(pfam_id) == 0 or pfam_id == "UNKNOWN":
+                continue
+
+            # Fix faulty Pfam IDs
+            if pfam_id in faulty_pfam_ids:
+                pfam_id = faulty_pfam_ids[pfam_id]
+
+            # Add Pfam ID cut-off
+            cutoffs.setdefault(pfam_id, float(cutoff))
+
+        # For each pair..
+        for pfam_ids, cutoff in pairs:
+
+            # Skip if only one Pfam ID...
+            if "," not in pfam_ids:
+                continue
 
             # For each Pfam ID...
-            for pfam_id in line.split(","):
+            for pfam_id in pfam_ids.split(",")
 
-                    # Skip if not Pfam ID
-                    if len(pfam_id) == 0 or pfam_id == "UNKNOWN":
-                        continue
+                # Skip if not Pfam ID
+                if len(pfam_id) == 0 or pfam_id == "UNKNOWN":
+                    continue
 
-                    # Fix faulty Pfam IDs
-                    if pfam_id in faulty_pfam_ids:
-                        pfam_id = faulty_pfam_ids[pfam_id]
+                # Fix faulty Pfam IDs
+                if pfam_id in faulty_pfam_ids:
+                    pfam_id = faulty_pfam_ids[pfam_id]
 
-                    # Add Pfam ID
-                    pfam_ids.add(pfam_id)
+                # Add Pfam ID cut-off
+                cutoffs.setdefault(pfam_id, float(cutoff))
 
         # Create Pfam dir
         pfam_dir = "pfam-DBDs"
@@ -172,7 +195,7 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
         os.chdir(pfam_dir)
 
         # For each Pfam ID...
-        for pfam_id in sorted(pfam_ids):
+        for pfam_id in sorted(cutoffs):
 
             # Fetch MSA from Pfam
             msa_file = pfam.fetchPfamMSA(pfam_id, alignment="seed")
@@ -201,7 +224,7 @@ def _download_Pfam_DBD_HMMs(out_dir=out_dir):
                 stderr=subprocess.DEVNULL)
 
             # Add Pfam
-            pfam_DBDs.setdefault(pfam_ac, pfam_id_std)
+            pfam_DBDs.setdefault(pfam_ac, [pfam_id_std, cutoffs[pfam_id]])
 
             # Remove MSA file
             os.remove(msa_file)
