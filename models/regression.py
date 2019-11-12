@@ -207,7 +207,7 @@ def _train_LinReg_models(values):
             for x in range(len(thresh)):
                 if prec[x] >= 0.75:
                     # results.append([similarity, mFit, lambdabest, thresh, rec[x]])
-                    results.append([similarity, mFit.coef_, thresh, rec[x]])
+                    results.append([similarity, list(mFit.coef_), thresh[x], rec[x]])
                     break
 
             # If results...
@@ -227,9 +227,6 @@ def _train_LinReg_models(values):
         if verbose:
             Jglobals.write(None, "\t*** could not train similarity regression!")
         return(None, None, None, None)
-
-    print(results[0])
-    exit(0)
 
     # Sort by recall
     results.sort(key=lambda x: x[-1], reverse=True)
