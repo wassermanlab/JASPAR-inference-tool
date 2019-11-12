@@ -228,6 +228,9 @@ def _train_LinReg_models(values):
             Jglobals.write(None, "\t*** could not train similarity regression!")
         return(None, None, None, None)
 
+    print(results[0])
+    exit(0)
+
     # Sort by recall
     results.sort(key=lambda x: x[-1], reverse=True)
 
