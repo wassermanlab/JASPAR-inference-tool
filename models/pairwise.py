@@ -8,7 +8,6 @@ import numpy as np
 from numpy import log10 as log
 import os
 import shutil
-import string
 import sys
 
 # Defaults
@@ -21,6 +20,7 @@ sys.path.append(root_dir)
 
 # Import globals
 from __init__ import Jglobals
+from infer_profile import _fetchXs, _removeLowercase
 
 #-------------#
 # Functions   #
@@ -152,55 +152,6 @@ def _get_Tomtom_groups(files_dir=files_dir):
             tomtom_filtered[matrix_id].setdefault(m, e)
 
     return(tomtom_filtered)
-
-def _removeLowercase(s):
-
-    return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
-
-def _fetchXs(seq1, seq2, similarity="identity"):
-    """
-    Called for each comparison to compare the strings.
-    """
-
-    # Fill Xs with zeroes
-    scores = [0] * len(seq1)
-
-    # Strings should have same length
-    if len(seq1) == len(seq2):
-
-        for n in range(len(seq1)):
-
-            if similarity == "identity":
-                scores[n] = _IDscoring(seq1[n], seq2[n])
-
-            elif similarity == "blosum62":
-                scores[n] = _BLOSUMscoring(seq1[n], seq2[n])
-
-    else:
-        # there is something wrong
-        print("Strings have different length!\n\tA: %s\n\tB: %s" % (seq1, seq2))
-        exit(0)
-
-    return(scores)
-
-def _IDscoring(aa1, aa2):
-
-    if aa1 == aa2 and aa1 != "-":
-        return(1)
-    else:
-        return(0)
-
-def _BLOSUMscoring(aa1, aa2):
-
-    if aa1 == "-" and aa2 == "-":
-        return(1)
-    elif aa1 == "-" or aa2 == "-":
-        return(-4)
-    else:
-        if (aa1, aa2) in blosum62:
-            return(blosum62[(aa1, aa2)])
-        else:
-            return(blosum62[(aa2, aa1)])
 
 def _fetchY(maIDlist1, maIDlist2):
     """

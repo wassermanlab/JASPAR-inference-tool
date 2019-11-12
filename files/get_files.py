@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-from Bio import SearchIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
@@ -26,11 +25,10 @@ root_dir = os.path.join(out_dir, os.pardir)
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
-sys.path.pop(0) # i.e. import the correct __init__.py
 
 # Import globals
 from __init__ import Jglobals
-from infer_profile import _SeqRecord_BLAST_search
+from infer_profile import hmmAlign, hmmScan, _makeSeqFile
 
 #-------------#
 # Functions   #
@@ -521,140 +519,6 @@ def _get_Pfam_alignments(taxon, out_dir=out_dir):
 
         # Change dir
         os.chdir(cwd)
-
-def _makeSeqFile(seq_record, file_name=".seq.fa"):
-
-    # Remove seq file if exists...
-    if os.path.exists(file_name):
-        os.remove(file_name)
-
-    # Write
-    Jglobals.write(file_name, seq_record.format("fasta"))
-
-def hmmScan(seq_file, hmm_file, non_overlapping_domains=False):
-
-    # Initialize
-    out_file = ".out.txt"
-
-    # Scan
-    cmd = "hmmscan --domtblout %s %s %s" % (out_file, hmm_file, seq_file)
-    process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL)
-
-    # Read domains
-    domains = _readDomainsTab(out_file)
-
-    # Remove output file
-    if os.path.exists(out_file):
-        os.remove(out_file)
-
-    # Filter overlapping domains
-    if non_overlapping_domains:
-        domains = _getNonOverlappingDomains(domains)
-
-    # Yield domains one by one
-    for pfam_ac, start, end, evalue in sorted(domains, key=lambda x: x[1]):
-
-        yield(pfam_ac, start, end, evalue)
-
-def _readDomainsTab(file_name):
-    """
-    From PMID:22942020;
-    A hit has equal probability of being in the same clan as a different clan
-    when the E-value is 0.01 (log 10 = -2). When the E-value is 10-5, the pro-
-    bability that a sequence belongs to the same clan is >95%.
-
-    From CIS-BP paper;
-    We scanned all protein sequences for putative DNA-binding domains (DBDs)
-    using the 81 Pfam (Finn et al., 2010) models listed in (Weirauch and
-    Hughes, 2011) and the HMMER tool (Eddy, 2009), with the recommended de-
-    tection thresholds of Per-sequence Eval < 0.01 and Per-domain conditional
-    Eval < 0.01.
-    """
-
-    # Initialize
-    domains = []
-    cutoff_mod = 1e-5
-    cutoff_dom = 0.01
-
-    # For each result...
-    for res in SearchIO.parse(file_name, "hmmscan3-domtab"):
-
-        # For each model...
-        for mod in res.iterhits():
-
-            # Skip poor models
-            if mod.evalue > cutoff_mod:
-                continue
-
-            # For each domain...
-            for dom in mod.hsps:
-
-                # Skip poor domains
-                if dom.evalue_cond > cutoff_dom:
-                    continue
-
-                # Append domain
-                domains.append((mod.id, dom.query_start, dom.query_end,
-                    dom.evalue_cond))
-
-    return(domains)
-
-def _getNonOverlappingDomains(domains):
-    """
-    Do domains 1 & 2 overlap?
-    ---------1111111---------
-    -------22222-------------  True
-    ----------22222----------  True
-    -------------22222-------  True
-    -----22222---------------  False
-    ---------------22222-----  False
-    """
-
-    # Initialize
-    nov_domains = []
-
-    # Sort domains by e-value
-    for domain in sorted(domains, key=lambda x: x[-1]):
-
-        # Initialize
-        domains_overlap = False
-
-        # For each non-overlapping domain...
-        for nov_domain in nov_domains:
-
-            if domain[1] < nov_domain[2] and domain[2] > nov_domain[1]:
-                domains_overlap = True
-                break
-
-        # Add non-overlapping domain
-        if not domains_overlap:
-            nov_domains.append(domain)
-
-    return(nov_domains)
-
-def hmmAlign(seq_file, hmm_file):
-
-    # Align
-    cmd = "hmmalign --outformat PSIBLAST %s %s" % (hmm_file, seq_file)
-    process = subprocess.check_output([cmd], shell=True, universal_newlines=True)
-
-    return(_readPSIBLASToutformat(process))
-
-def _readPSIBLASToutformat(psiblast_alignment):
-
-    # Initialize
-    alignment = ""
-
-    # For each chunk...
-    for chunk in psiblast_alignment.split("\n"):
-
-        # If alignment substring...
-        m = re.search("\s+(\S+)$", chunk)
-        if m:
-            alignment += m.group(1)
-
-    return(alignment)
 
 def _group_by_DBD_composition(out_dir=out_dir):
 

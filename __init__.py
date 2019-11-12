@@ -4,7 +4,7 @@ JASPAR profile inference tool
 
 __author__ = "Oriol Fornes, Xi Zhang"
 __email__ = "oriol@cmmt.ubc.ca, nzhang@cmmt.ubc.ca"
-__organization__ = "[Wasserman Lab](http://www.cisreg.ca)"
+__organization__ = "The JASPAR Consortium"
 __version__ = "2.0.1"
 
 from Bio import SeqIO

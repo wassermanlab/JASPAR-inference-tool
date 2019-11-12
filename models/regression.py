@@ -12,7 +12,8 @@ import numpy as np
 from numpy import log10 as log
 from operator import itemgetter 
 import os
-import pickle
+# import pickle
+import shutil
 from sklearn.metrics import precision_recall_curve
 import sys
 
@@ -82,14 +83,18 @@ def train_models(pairwise_file, out_dir=out_dir):
     global threshPos
     threshPos = 8.
 
-    # Skip if pickle file already exists
-    models_file = os.path.join(out_dir, "models.pickle")
-    if not os.path.exists(models_file):
+    # # Skip if pickle file already exists
+    # models_file = os.path.join(out_dir, "models.pickle")
+    # if not os.path.exists(models_file):
+    # Skip if models JSON file already exists
+    gzip_file = os.path.join(out_dir, "models.json.gz")
+    if not os.path.exists(gzip_file):
 
         # Initialize
         models = {
             "Keys": "DBD composition",
-            "Values": ["similarity", "model", "lambdabest", "y cut-off"]
+            # "Values": ["similarity", "model", "lambdabest", "y cut-off"]
+            "Values": ["similarity", "coefficients", "Y cut-off", "coverage @ 75% precision"]
         }
 
         # Load JSON file
@@ -106,14 +111,27 @@ def train_models(pairwise_file, out_dir=out_dir):
                 Jglobals.write(None, "\nRegressing %s..." % domain)
 
             # Train models
-            similarity, model, lambdabest, y = _train_LinReg_models(values)
+            # similarity, model, lambdabest, y = _train_LinReg_models(values)
+            similarity, coeffs, Y, coverage = _train_LinReg_models(values)
 
             # Add model
-            models.setdefault(domain, [similarity, model, lambdabest, y])
+            # models.setdefault(domain, [similarity, model, lambdabest, y])
+            models.setdefault(domain, [similarity, coeffs, Y, coverage])
 
-        # Write pickle file
-        with open(models_file, "wb") as f:
-            pickle.dump(models, f)
+        # # Write pickle file
+        # with open(gzip_file, "wb") as f:
+        #     pickle.dump(models, f)
+        # Write
+        Jglobals.write(
+            gzip_file[:-3],
+            json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))
+        )
+        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+        fo = Jglobals._get_file_handle(gzip_file, "wb")
+        shutil.copyfileobj(fi, fo)
+        fi.close()
+        fo.close()
+        os.remove(gzip_file[:-3])
 
         # Verbose mode
         if verbose:
@@ -156,7 +174,6 @@ def _train_LinReg_models(values):
         # Verbose mode
         if verbose:
             Jglobals.write(None, "\t*** ElasticNet: %s" % similarity)
-
         
         try:
 
@@ -185,7 +202,8 @@ def _train_LinReg_models(values):
             prec, rec, thresh = precision_recall_curve(Ys >= threshPos, p)
             for x in range(len(thresh)):
                 if prec[x] >= 0.75:
-                    results.append([similarity, mFit, lambdabest, thresh, rec[x]])
+                    # results.append([similarity, mFit, lambdabest, thresh, rec[x]])
+                    results.append([similarity, mFit.coef_, thresh, rec[x]])
                     break
 
             # If results...
