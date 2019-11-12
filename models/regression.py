@@ -124,7 +124,7 @@ def train_models(pairwise_file, out_dir=out_dir):
         # Write
         Jglobals.write(
             gzip_file[:-3],
-            json.dumps(groups, sort_keys=True, indent=4, separators=(",", ": "))
+            json.dumps(models, sort_keys=True, indent=4, separators=(",", ": "))
         )
         fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
         fo = Jglobals._get_file_handle(gzip_file, "wb")
