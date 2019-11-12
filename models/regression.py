@@ -106,6 +106,9 @@ def train_models(pairwise_file, out_dir=out_dir):
         # For each DBD composition...
         for domain, values in pairwise.items():
 
+            if domain != "zf-C2H2+zf-C2H2+zf-C2H2":
+                continue
+
             # Verbose mode
             if verbose:
                 Jglobals.write(None, "\nRegressing %s..." % domain)
@@ -113,6 +116,7 @@ def train_models(pairwise_file, out_dir=out_dir):
             # Train models
             # similarity, model, lambdabest, y = _train_LinReg_models(values)
             similarity, coeffs, Y, coverage = _train_LinReg_models(values)
+            print(coeffs)
 
             # Add model
             # models.setdefault(domain, [similarity, model, lambdabest, y])
