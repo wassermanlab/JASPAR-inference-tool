@@ -282,7 +282,7 @@ def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
             pids.append(sum(_fetchXs(s1, s2))/float(len(s1)))
             pid_cutoffs.append(pids[-1] >= cutoffs[SeqRecord_DBDs[a]])
         if True in pid_cutoffs:
-            identities = np.mean(np.array(pids))
+            identities = round(np.mean(np.array(pids)), 3)
         else:
             identities = None
 
@@ -296,7 +296,7 @@ def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
                 s1 = _removeLowercase(SeqRecord_alignments[a])
                 s2 = _removeLowercase(pfam_results[result[1]][1][a])
                 Xs.extend(_fetchXs(s1, s2, similarity=similarity))
-            similarity_regression = sum(np.array(Xs) * coeffs)
+            similarity_regression = round(sum(np.array(Xs) * coeffs), 3)
             if similarity_regression < Y:
                 similarity_regression = None
 

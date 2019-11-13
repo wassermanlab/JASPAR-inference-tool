@@ -6,10 +6,10 @@ This repository contains the data and code used by the JASPAR profile inference 
 
 ## Content
 * The folder `examples` contains the sequences of two transcription factors and that of a negative example (_i.e._ [MTOR](https://www.uniprot.org/uniprot/P42345))
-* The folder `files` contains the output from the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which creates [JSON files](https://en.wikipedia.org/wiki/JSON) for inference (_i.e._ *.json.gz) and downloads profile inference cut-offs on the percentage of sequence identity from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), transcription factor sequences and DNA-binding domains (DBDs) from UniProt and [Pfam](https://pfam.xfam.org/), respectively, etc.
-* The folder `models` contains the outputs from the scripts [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py), which creates the pairwise alignment of DBDs, and [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py), which builts the similarity (linear) regression models
+* The folder `files` contains the output from the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which creates [JSON files](https://en.wikipedia.org/wiki/JSON) for inference and downloads profile inference cut-offs on the percentage of sequence identity from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), transcription factor sequences and DNA-binding domains (DBDs) from [UniProt](https://www.uniprot.org/) and [Pfam](https://pfam.xfam.org/), respectively, etc.
+* The folder `models` contains the outputs from the scripts [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py), which creates the pairwise alignment of DBDs, and [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py), which builts the similarity regression models
 * The script [`infer_profile.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/infer_profile.py) takes as input the `files` and `models` folders and a proteic sequence, in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format), and provides profile inferences
-* The file [`environment.yml`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/environment.yml) contains the conda environment (see Installation) to run the profile inference tool as of JASPAR 2020
+* The file [`environment.yml`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/environment.yml) contains the conda environment (see Installation) used to develop the profile inference tool for JASPAR 2020
 
 The original scripts used for the publication of [JASPAR 2016](https://doi.org/10.1093/nar/gkv1176) have been placed in the folder [`version-1.0`](https://github.com/wassermanlab/JASPAR-profile-inference/tree/master/version-1.0).
 
@@ -32,12 +32,12 @@ To illustrate the use of the profile inference tool, we provide an example for t
 * Create pairwise 
 ```
 ./infer_profile.py --fasta-file ./examples/Egr1.fa --files-dir ./files/ --models-dir ./models/ --latest
-100%|████████████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.54s/it]
+100%|█████████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.54s/it]
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Regression
-EGR1_RAT        EGR1    MA0162.4        0.0     1-508   29-543  1.0     20.152809255049007
-EGR1_RAT        EGR3    MA0732.1        4.53e-90        69-422  46-385  0.8840579710144927      18.268131142177957
-EGR1_RAT        EGR2    MA0472.1        2.27e-74        62-398  45-424  0.9565217391304349      19.2874303040493
-EGR1_RAT        EGR4    MA0733.1        1.12e-51        306-401 478-573 0.8115942028985507      None
+EGR1_RAT        EGR1    MA0162.4        0.0     1-508   29-543  1.0     20.153
+EGR1_RAT        EGR3    MA0732.1        4.53e-90        69-422  46-385  0.884   18.268
+EGR1_RAT        EGR2    MA0472.1        2.27e-74        62-398  45-424  0.957   19.287
+EGR1_RAT        EGR4    MA0733.1        1.12e-51        306-401 478-573 0.812   None
 ```
 For this example, the JASPAR profiles [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/), [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) and [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/) are inferred based on the percentage of identical residues between the DBD of EGR1_RAT and those of these proteins and  and EGR1-3 based on the similarity regression model for the DBD composition `3x zf-C2H2`.
 
