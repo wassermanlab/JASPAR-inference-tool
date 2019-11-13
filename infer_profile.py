@@ -10,7 +10,6 @@ import json
 import math
 from multiprocessing import Pool
 import numpy as np
-import pickle
 import shutil
 import string
 import subprocess
