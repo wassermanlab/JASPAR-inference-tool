@@ -34,19 +34,14 @@ To illustrate the use of the profile inference tool, we provide an example for t
 * Create pairwise 
 ```
 ./infer_profile.py --fasta-file ./examples/Egr1.fa --files-dir ./files/ --models-dir ./models/ --latest
-100%|██████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.66s/it]
+100%|███████████████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.54s/it]
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Regression
 EGR1_RAT        EGR1    MA0162.4        0.0     1-508   29-543  1.0     20.152809255049007
 EGR1_RAT        EGR3    MA0732.1        4.53e-90        69-422  46-385  0.8840579710144927      18.268131142177957
 EGR1_RAT        EGR2    MA0472.1        2.27e-74        62-398  45-424  0.9565217391304349      19.2874303040493
 EGR1_RAT        EGR4    MA0733.1        1.12e-51        306-401 478-573 0.8115942028985507      None
 ```
-For this example, the profiles .
-* Create the genomic track
-```
-./scans2bigBed -c ./genomes/sacCer3/sacCer3.chrom.sizes -i ./tracks/sacCer3/ -o ./tracks/sacCer3.bb -t 4
-```
-TFBS predictions from the previous step are merged into a [bigBed track file](https://genome.ucsc.edu/goldenPath/help/bigBed.html). As scores (column 5), we use <i>p</i>-values from PWMScan (scaled between 0-1000, where 0 corresponds to <i>p</i>-value = 1 and 1000 to <i>p</i>-value ≤ 10-10). This allows for comparison of prediction confidence across TFBSs. Again, for this example, this step should be completed within a few minutes, while for larger genomes it can take a few hours.
+For this example, the JASPAR profiles [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/), [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) and [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/) are inferred based on the percentage of identical residues between the DBD of EGR1_RAT and those of these proteins and  and EGR1-3 based on the similarity regression model for the DBD composition `3x zf-C2H2`.
 
 **Important note:** both disk space and memory requirements for large genomes (*i.e.* danRer11, hg19, hg38 and mm10) are substantial. In these cases, we highly recommend allocating at least 1Tb of disk space and 512Gb of ram.
 
