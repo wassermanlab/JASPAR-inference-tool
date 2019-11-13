@@ -34,7 +34,7 @@ To illustrate the use of the profile inference tool, we provide an example for t
 * Create pairwise 
 ```
 ./infer_profile.py --fasta-file ./examples/Egr1.fa --files-dir ./files/ --models-dir ./models/ --latest
-100%|███████████████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.54s/it]
+100%|████████████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.54s/it]
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Regression
 EGR1_RAT        EGR1    MA0162.4        0.0     1-508   29-543  1.0     20.152809255049007
 EGR1_RAT        EGR3    MA0732.1        4.53e-90        69-422  46-385  0.8840579710144927      18.268131142177957
