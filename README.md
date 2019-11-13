@@ -33,8 +33,8 @@ conda env create -f ./environment.yml
 To illustrate the use of the profile inference tool, we provide an example for the [brown rat](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock) transcription factor [Egr1](https://www.uniprot.org/uniprot/P08154):
 * Create pairwise 
 ```
-./infer_profile.py --fasta-file ./examples/Egr1.fa --files-dir ./files/ --models-dir ./models/ --latest --taxon vertebrates 
-100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.66s/it]
+./infer_profile.py --fasta-file ./examples/Egr1.fa --files-dir ./files/ --models-dir ./models/ --latest
+100%|██████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.66s/it]
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Regression
 EGR1_RAT        EGR1    MA0162.4        0.0     1-508   29-543  1.0     20.152809255049007
 EGR1_RAT        EGR3    MA0732.1        4.53e-90        69-422  46-385  0.8840579710144927      18.268131142177957
