@@ -1,7 +1,5 @@
 # JASPAR profile inference tool
-This repository contains the data and code used by the JASPAR profile inference tool.
-</br>
-For more information refer to the Supplementary Data of the JASPAR [2016](https://academic.oup.com/nar/article/44/D1/D110/2502663) and [2020](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkz1001/5614568) manuscripts.
+This repository contains the data and code used by the JASPAR profile inference tool. For more information refer to the Supplementary Data of the JASPAR [2016](https://academic.oup.com/nar/article/44/D1/D110/2502663) and [2020](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkz1001/5614568) manuscripts.
 
 ## News
 11/11/2019 We improved the profile inference tool using our own implementation of the recently described [similarity regression](https://www.nature.com/articles/s41588-019-0411-1) method.
