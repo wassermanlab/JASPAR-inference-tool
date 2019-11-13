@@ -9,6 +9,7 @@ from functools import partial
 import json
 import math
 from multiprocessing import Pool
+import numpy as np
 import pickle
 import shutil
 import string
@@ -151,19 +152,12 @@ def infer_profiles(fasta_file, files_dir, models_dir, dummy_dir="/tmp/",
         seq_records.append(seq_record)
 
     # Load JSON files
-    global domains, jaspar
-    domains, jaspar = _load_json_files(files_dir)
-
-    # Load models
-    global models
-    with open(os.path.join(models_dir, "models.pickle"), "rb") as f:
-        models = pickle.load(f)
-    print(models)
-    exit(0)
+    global domains, jaspar, models, profiles
+    domains, jaspar, models = _load_json_files(files_dir, models_dir)
 
     # Write
     columns = ["Query", "TF Name", "TF Matrix", "E-value", "Query Start-End",
-        "TF Start-End", "DBD %ID"]
+        "TF Start-End", "DBD %ID", "Similarity Regression"]
     Jglobals.write(dummy_file, "\t".join(columns))
 
     # Infer SeqRecord profiles
@@ -184,26 +178,29 @@ def infer_profiles(fasta_file, files_dir, models_dir, dummy_dir="/tmp/",
                 if inference_results[i][2][:6] == inference_results[i - 1][2][:6]:
                     continue
             # Write
-            JTglobals.write(dummy_file, "\t".join(map(str, inference_results[i])))
+            Jglobals.write(dummy_file, "\t".join(map(str, inference_results[i])))
     pool.close()
     pool.join()
 
-#     # Write
-#     if output_file:
-#         shutil.copy(dummy_file, output_file)
-#     else:
-#         with open(dummy_file) as f:
-#             # For each line...
-#             for line in f:
-#                 JTglobals.write(None, line.strip("\n"))
+    # Write
+    if output_file:
+        shutil.copy(dummy_file, output_file)
+    else:
+        with open(dummy_file) as f:
+            # For each line...
+            for line in f:
+                Jglobals.write(None, line.strip("\n"))
 
-#     # Remove dummy dir
-#     shutil.rmtree(dummy_dir)
+    # Remove dummy dir
+    shutil.rmtree(dummy_dir)
 
-def _load_json_files(files_dir, taxons=Jglobals.taxons):
+def _load_json_files(files_dir, models_dir, taxons=Jglobals.taxons):
 
     # Initialize
     jaspar = {}
+    pfams = {}
+    profiles = {}
+    uniprots = {}
 
     with open(os.path.join(files_dir, "pfam-DBDs.json")) as f:
         domains = json.load(f)
@@ -211,9 +208,30 @@ def _load_json_files(files_dir, taxons=Jglobals.taxons):
     for taxon in taxons:
         with open(os.path.join(files_dir, "%s.pfam.json" % taxon)) as f:
             for key, values in json.load(f).items():
-                jaspar.setdefault(key, values)
+                pfams.setdefault(key, values)
+        with open(os.path.join(files_dir, "%s.profiles.json" % taxon)) as f:
+            for key, values in json.load(f).items():
+                profiles.setdefault(key, values)
+        with open(os.path.join(files_dir, "%s.uniprot.json" % taxon)) as f:
+            for key, values in json.load(f).items():
+                uniprots.setdefault(key, values)
 
-    return(domains, jaspar)
+    for uniprot in pfams:
+
+        # Add Pfam domains
+        jaspar.setdefault(uniprot, {})
+        jaspar[uniprot].setdefault("pfam", pfams[uniprot])
+
+        # Add profiles
+        jaspar[uniprot].setdefault("profiles", [])
+        for profile in uniprots[uniprot][0]:
+            jaspar[uniprot]["profiles"].append([profile, profiles[profile]])
+
+    handle = Jglobals._get_file_handle(os.path.join(models_dir, "models.json.gz"))
+    models = json.load(handle)
+    handle.close()
+
+    return(domains, jaspar, models)
 
 def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
     latest=False, n=5, taxons=Jglobals.taxons):
@@ -232,6 +250,10 @@ def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
     SeqRecord_alignments = [v[1] for v in SeqRecord_Pfam_alignments] 
     pfam_results = _get_results_Pfam_alignments(blast_results)
 
+    # Skip if no Pfam DBDs
+    if len(SeqRecord_Pfam_alignments) == 0:
+        return(inference_results)
+
     # Filter results
     filtered_results = _filter_results(blast_results, pfam_results,
         SeqRecord_DBDs, n)
@@ -240,6 +262,14 @@ def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
     for pfam_ac in domains:
         if domains[pfam_ac][0] in SeqRecord_DBDs:
             cutoffs.setdefault(domains[pfam_ac][0], domains[pfam_ac][1])
+
+    # Get similarity, coefficients and Y cut-off
+    DBDs = "+".join(SeqRecord_DBDs)
+    if DBDs in models:
+        similarity, coeffs, Y = models[DBDs][:3]
+        coeffs = np.array(coeffs)
+    else:
+        similarity = None
 
     # For each result...
     for result in filtered_results:
@@ -252,32 +282,31 @@ def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
             s2 = _removeLowercase(pfam_results[result[1]][1][a])
             pids.append(sum(_fetchXs(s1, s2))/float(len(s1)))
             pid_cutoffs.append(pids[-1] >= cutoffs[SeqRecord_DBDs[a]])
+        if True in pid_cutoffs:
+            identities = np.mean(np.array(pids))
+        else:
+            identities = None
 
         # Inference: similarity regression
-        srs = []
-        sr_cutoffs = []
-        for similarity in ["identity", "blosum62"]:
-            Xs = []
+        Xs = []
+        similarity_regression = None
+        if similarity is not None:
+            sr = []
+            sr_cutoff = False
             for a in range(len(SeqRecord_alignments)):
                 s1 = _removeLowercase(SeqRecord_alignments[a])
                 s2 = _removeLowercase(pfam_results[result[1]][1][a])
                 Xs.extend(_fetchXs(s1, s2, similarity=similarity))
-            
+            similarity_regression = sum(np.array(Xs) * coeffs)
+            if similarity_regression < Y:
+                similarity_regression = None
 
-        continue
-
-        # Initialize
-        query, target, query_start_end, target_start_end, e_value, score = result
-
-        # For each result...
-        for result in _SeqRecord_profile_inference(seq_record, target, files_dir):
-
-            # Initialize
-            (gene_name, matrix, identities) = result
-
-            # Add result
-            inference_results.append([seq_record.id, gene_name, matrix, e_value,
-                query_start_end, target_start_end, identities])
+        # Add result
+        if identities is not None or similarity_regression is not None:
+            for matrix, gene_name in jaspar[result[1]]["profiles"]:
+                inference_results.append([result[0], gene_name, matrix,
+                    result[4], result[2], result[3], identities,
+                    similarity_regression])
 
     return(inference_results)
 
@@ -512,8 +541,8 @@ def _get_results_Pfam_alignments(blast_results):
     for blast_result in blast_results:
 
         # Unwind
-        DBDs = [v[0] for v in jaspar[blast_result[1]]]
-        alignments = [v[1] for v in jaspar[blast_result[1]]]
+        DBDs = [v[0] for v in jaspar[blast_result[1]]["pfam"]]
+        alignments = [v[1] for v in jaspar[blast_result[1]]["pfam"]]
         results_Pfam_alignments.setdefault(blast_result[1], [DBDs, alignments])
 
     return(results_Pfam_alignments)
