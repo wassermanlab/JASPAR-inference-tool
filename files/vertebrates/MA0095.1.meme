@@ -1,0 +1,19 @@
+MEME version 4
+
+ALPHABET= ACGT
+
+strands: + -
+
+Background letter frequencies
+A 0.25 C 0.25 G 0.25 T 0.25
+
+MOTIF MA0095.1 YY1
+letter-probability matrix: alength= 4 w= 6 nsites= 17 E= 0
+ 0.352941  0.058824  0.411765  0.176471
+ 0.000000  0.941176  0.000000  0.058824
+ 0.000000  1.000000  0.000000  0.000000
+ 1.000000  0.000000  0.000000  0.000000
+ 0.000000  0.000000  0.000000  1.000000
+ 0.176471  0.470588  0.176471  0.176471
+URL http://jaspar.genereg.net/matrix/MA0095.1
+
