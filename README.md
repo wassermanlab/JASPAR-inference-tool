@@ -8,7 +8,7 @@ This repository contains the data and code used by the JASPAR profile inference 
 * The folder `examples` contains the sequences of two transcription factors (TFs) and that of a negative example such as the human serine/threonine-protein kinase [mTOR](https://www.uniprot.org/uniprot/P42345)
 * The folder `files` contains the output from the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which creates [JSON files](https://en.wikipedia.org/wiki/JSON) and BLAST+ formatted databases required by the inference tool, and downloads TF sequences and DNA-binding domains (DBDs) from [UniProt](https://www.uniprot.org/) and [Pfam](https://pfam.xfam.org/), respectively, cut-offs on the DBD percentage of sequence identity from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), etc.
 * The folder `models` contains the similarity regression models resulting from the execution of the scripts [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py) and [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py) in sequential order
-* The script [`infer_profile.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/infer_profile.py) takes as input the `files` and `models` folders and a proteic sequence, in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format), and provides profile inferences
+* The script [`infer_profile.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/infer_profile.py) takes as input folders `files` and `models`, and a proteic sequence in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format), and infers profiles from JASPAR 
 * The file [`environment.yml`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/environment.yml) contains the conda environment (see Installation) used to develop the profile inference tool for JASPAR 2020
 
 The original scripts used for the publication of [JASPAR 2016](https://doi.org/10.1093/nar/gkv1176) have been placed in the folder [`version-1.0`](https://github.com/wassermanlab/JASPAR-profile-inference/tree/master/version-1.0).
@@ -32,14 +32,12 @@ To illustrate the use of the profile inference tool, we provide an example for t
 ```
 ./infer_profile.py --fasta-file ./examples/Egr1.fa --files-dir ./files/ --models-dir ./models/ --latest
 100%|█████████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.54s/it]
-Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Regression
-EGR1_RAT        EGR1    MA0162.4        0.0     1-508   29-543  1.0     20.153
-EGR1_RAT        EGR3    MA0732.1        4.53e-90        69-422  46-385  0.884   18.268
-EGR1_RAT        EGR2    MA0472.1        2.27e-74        62-398  45-424  0.957   19.287
-EGR1_RAT        EGR4    MA0733.1        1.12e-51        306-401 478-573 0.812   None
+Query   TF Name   TF Matrix   E-value   Query Start-End   TF Start-End   DBD %ID   Similarity Regression
+Egr1    EGR1      MA0162.4    0.0     	1-508       	  29-543    	 1.0       20.153
+Egr1    EGR3      MA0732.1    4.53e-90  69-422       	  46-385    	 0.884     18.268
+Egr1    EGR2      MA0472.1    2.27e-74  62-398       	  45-424    	 0.957     19.287
+Egr1    EGR4      MA0733.1    1.12e-51  306-401      	  478-573    	 0.812     None
 ```
-Based on the sequence of Egr1, the tool inferred the JASPAR profiles of [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/) and [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) based on:
-* The percentage of identical residues between the DBDs of Egr1 and those of the JASPAR TFs (_i.e._ `DBD %ID`); and
-* A linear regression model trained on the pairwise sequence identities of JASPAR TFs with the DBD composition `3x zf-C2H2` (_i.e._ `Similarity Regression`)
+The tool infers that the `Query` (_i.e._ EGR1_RAT) is likely to have similar DNA-binding preferences than the JASPAR TFs [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/), [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) and [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/). For the first 3 EGRs, the inference is based on both the percentage of identical residues between the Query DBDs of Egr1 and those of the JASPAR TFs (_i.e._ `DBD %ID`) and a linear regression model trained on the pairwise sequence identities of JASPAR TFs with the DBD composition `3x zf-C2H2` (_i.e._ `Similarity Regression`).
 
-Note that the profile [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/) could not be inferred by Similarity Regression.
+Note that the profile  could not be inferred by Similarity Regression.
