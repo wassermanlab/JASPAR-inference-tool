@@ -5,8 +5,8 @@ This repository contains the data and code used by the JASPAR profile inference 
 11/11/2019 We improved the profile inference tool using our own implementation of the recently described [similarity regression](https://www.nature.com/articles/s41588-019-0411-1) method.
 
 ## Content
-* The folder `examples` contains the sequences of two transcription factors and that of a negative example (_i.e._ [MTOR](https://www.uniprot.org/uniprot/P42345))
-* The folder `files` contains the output from the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which creates [JSON files](https://en.wikipedia.org/wiki/JSON) for inference and downloads profile inference cut-offs on the percentage of sequence identity from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), transcription factor sequences and DNA-binding domains (DBDs) from [UniProt](https://www.uniprot.org/) and [Pfam](https://pfam.xfam.org/), respectively, etc.
+* The folder `examples` contains the sequences of two transcription factors (TFs) and that of a negative example (_i.e._ [MTOR](https://www.uniprot.org/uniprot/P42345))
+* The folder `files` contains the output from the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which creates [JSON files](https://en.wikipedia.org/wiki/JSON) for inference and downloads profile inference cut-offs on the percentage of sequence identity from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), TF sequences and DNA-binding domains (DBDs) from [UniProt](https://www.uniprot.org/) and [Pfam](https://pfam.xfam.org/), respectively, etc.
 * The folder `models` contains the outputs from the scripts [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py), which creates the pairwise alignment of DBDs, and [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py), which builts the similarity regression models
 * The script [`infer_profile.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/infer_profile.py) takes as input the `files` and `models` folders and a proteic sequence, in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format), and provides profile inferences
 * The file [`environment.yml`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/environment.yml) contains the conda environment (see Installation) used to develop the profile inference tool for JASPAR 2020
@@ -19,7 +19,7 @@ The original scripts used for the publication of [JASPAR 2016](https://doi.org/1
 * [Python 3.7](https://www.python.org/download/releases/3.7/) with the [Biopython](http://biopython.org) (<1.74), [CoreAPI](http://www.coreapi.org), [glmnet](https://github.com/civisanalytics/python-glmnet), [NumPy](https://numpy.org/), [pandas](https://pandas.pydata.org/), [ProDy](http://prody.csb.pitt.edu/), [SciPy](https://www.scipy.org/), [scikit-learn](https://scikit-learn.org/stable/) and [tqdm](https://tqdm.github.io) libraries
 * [Tomtom](http://meme-suite.org/doc/tomtom.html) as distributed in the [MEME](http://meme-suite.org/index.html) suite (version ≥5.0)
 
-Note that for running `infer_profile.py`, the Python dependencies CoreAPI, glmnet, ProDy and scikit-learn, and Tomtom are not required.
+Note that for running `infer_profile.py`, neither Tomtom nor any of the following Python dependencies, CoreAPI, glmnet, ProDy and scikit-learn, are required.
 
 ## Installation
 All dependencies can be installed through the [conda](https://docs.conda.io/en/latest/) package manager:
@@ -28,7 +28,7 @@ conda env create -f ./environment.yml
 ```
 
 ## Usage
-To illustrate the use of the profile inference tool, we provide an example for the [brown rat](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock) transcription factor [Egr1](https://www.uniprot.org/uniprot/P08154):
+To illustrate the use of the profile inference tool, we provide an example for the [brown rat](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock) TF [Egr1](https://www.uniprot.org/uniprot/P08154):
 * Create pairwise 
 ```
 ./infer_profile.py --fasta-file ./examples/Egr1.fa --files-dir ./files/ --models-dir ./models/ --latest
@@ -39,7 +39,7 @@ EGR1_RAT        EGR3    MA0732.1        4.53e-90        69-422  46-385  0.884   
 EGR1_RAT        EGR2    MA0472.1        2.27e-74        62-398  45-424  0.957   19.287
 EGR1_RAT        EGR4    MA0733.1        1.12e-51        306-401 478-573 0.812   None
 ```
-For this example, the JASPAR profiles [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/), [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) and [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/) are inferred based on the percentage of identical residues between the DBD of EGR1_RAT and those of these proteins and  and EGR1-3 based on the similarity regression model for the DBD composition `3x zf-C2H2`.
+For this example, the tool inferred the JASPAR profiles [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/) and [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) based on the percentage of identical residues between the query and the JASPAR TF DBDs (_i.e._ `DBD %ID`) and a linear regression model trained on sequence identities of JASPAR `3x zf-C2H2` TFs with a DBD composition of (_i.e._ `Similarity Regression`). Note that [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/) is only inferred based on the percentage of identical residues between DBDs.
 
 **Important note:** both disk space and memory requirements for large genomes (*i.e.* danRer11, hg19, hg38 and mm10) are substantial. In these cases, we highly recommend allocating at least 1Tb of disk space and 512Gb of ram.
 
