@@ -15,9 +15,9 @@ The original scripts used for the publication of [JASPAR 2016](https://doi.org/1
 
 ## Dependencies
 * [BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
-* [HMMER](http://hmmer.org/) (version 3+)
+* [HMMER](http://hmmer.org/) (version ≥3.0)
 * [Python 3.7](https://www.python.org/download/releases/3.7/) with the [Biopython](http://biopython.org) (<1.74), [CoreAPI](http://www.coreapi.org), [glmnet](https://github.com/civisanalytics/python-glmnet), [NumPy](https://numpy.org/), [pandas](https://pandas.pydata.org/), [ProDy](http://prody.csb.pitt.edu/), [SciPy](https://www.scipy.org/), [scikit-learn](https://scikit-learn.org/stable/) and [tqdm](https://tqdm.github.io) libraries
-* [`Tomtom`](http://meme-suite.org/doc/tomtom.html) as distributed in the [`MEME`](http://meme-suite.org/index.html) suite
+* [Tomtom](http://meme-suite.org/doc/tomtom.html) as distributed in the [MEME](http://meme-suite.org/index.html) suite (version ≥5.0)
 
 Note that for running `infer_profile.py`, the Python dependencies CoreAPI, glmnet, ProDy and scikit-learn, and Tomtom are not required.
 
