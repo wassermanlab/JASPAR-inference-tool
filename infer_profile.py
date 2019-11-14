@@ -16,8 +16,12 @@ import subprocess
 import sys
 from tqdm import tqdm
 
-# Append JASPAR-profile-inference to path
+# Defaults
 root_dir = os.path.dirname(os.path.realpath(__file__))
+files_dir = os.path.join(root_dir, "files")
+models_dir = os.path.join(root_dir, "models")
+
+# Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
 
 # Import globals
@@ -34,12 +38,14 @@ usage: %s --fasta-file FILE --files-dir DIR
 
 help_msg = """%s
   --fasta-file FILE   one or more sequences in FASTA format
-  --files-dir DIR     output directory from get_files.py
-  --models-dir DIR    output directory from regression.py
 
 optional arguments:
   -h, --help          show this help message and exit
   --dummy-dir DIR     dummy directory (default = /tmp/)
+  --files-dir DIR     files directory (from get_files.py;
+                      default = ./files/)
+  --models-dir DIR    models directory (from regression.py;
+                      default = ./models/)
   --output-file FILE  output file (default = STDOUT)
   --threads INT       threads to use (default = 1)
 
@@ -61,13 +67,13 @@ def parse_args():
 
     # Mandatory args
     parser.add_argument("--fasta-file")
-    parser.add_argument("--files-dir")
-    parser.add_argument("--models-dir")
 
     # Optional args
     optional_group = parser.add_argument_group("optional arguments")
     optional_group.add_argument("-h", "--help", action="store_true")
     optional_group.add_argument("--dummy-dir", default="/tmp/")
+    optional_group.add_argument("--files-dir", default=files_dir)
+    optional_group.add_argument("--models-dir", default=models_dir)
     optional_group.add_argument("--output-file")
     optional_group.add_argument("-l", "--latest", action="store_true")
     optional_group.add_argument("--rost", default=5)
@@ -91,8 +97,8 @@ def check_args(args):
         exit(0)
 
     # Check mandatory arguments
-    if not args.fasta_file or not args.files_dir or not args.models_dir:
-        error = ["%s\n%s" % (usage_msg, os.path.basename(__file__)), "error", "arguments \"--fasta-file\" \"--files-dir\" \"--models-dir\" are required\n"]
+    if not args.fasta_file:
+        error = ["%s\n%s" % (usage_msg, os.path.basename(__file__)), "error", "argument \"--fasta-file\" is required\n"]
         print(": ".join(error))
         exit(0)
 
@@ -127,12 +133,13 @@ def main():
     args = parse_args()
 
     # Infer profiles
-    infer_profiles(args.fasta_file, args.files_dir, args.models_dir,
-        args.dummy_dir, args.output_file, args.threads, args.latest,
+    infer_profiles(args.fasta_file, args.dummy_dir, args.files_dir,
+        args.models_dir, args.output_file, args.threads, args.latest,
         args.rost, args.taxon)
 
-def infer_profiles(fasta_file, files_dir, models_dir, dummy_dir="/tmp/",
-    output_file=None, threads=1, latest=False, n=5, taxons=Jglobals.taxons):
+def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
+    models_dir=models_dir, output_file=None, threads=1, latest=False, n=5,
+    taxons=Jglobals.taxons):
 
     # Initialize
     base_name = os.path.basename(__file__)
@@ -150,10 +157,6 @@ def infer_profiles(fasta_file, files_dir, models_dir, dummy_dir="/tmp/",
     for seq_record in Jglobals.parse_fasta_file(fasta_file):
         seq_records.append(seq_record)
 
-    # Load JSON files
-    global domains, jaspar, models, profiles
-    domains, jaspar, models = _load_json_files(files_dir, models_dir)
-
     # Write
     columns = ["Query", "TF Name", "TF Matrix", "E-value", "Query Start-End",
         "TF Start-End", "DBD %ID", "Similarity Regression"]
@@ -161,23 +164,15 @@ def infer_profiles(fasta_file, files_dir, models_dir, dummy_dir="/tmp/",
 
     # Infer SeqRecord profiles
     pool = Pool(threads)
-    parallelized = partial(infer_SeqRecord_profiles, files_dir=files_dir,
-        dummy_dir=dummy_dir, latest=latest, n=n, taxons=taxons)
+    parallelized = partial(infer_SeqRecord_profiles, dummy_dir=dummy_dir,
+        files_dir=files_dir, models_dir=models_dir, latest=latest, n=n,
+        taxons=taxons)
     for inference_results in tqdm(pool.imap(parallelized, seq_records),
         total=len(seq_records)):
-        # Sort by E-value, TF Name and Matrix
-        if latest:
-            inference_results.sort(key=lambda x: (x[3], x[1], -float(x[2][2:])))
-        else:
-            inference_results.sort(key=lambda x: (x[3], x[1], float(x[2][2:])))
         # For each inference...
-        for i in range(len(inference_results)):
-            # Use the lastest version of JASPAR
-            if latest and i > 0:
-                if inference_results[i][2][:6] == inference_results[i - 1][2][:6]:
-                    continue
+        for inference_result in inference_results:
             # Write
-            Jglobals.write(dummy_file, "\t".join(map(str, inference_results[i])))
+            Jglobals.write(dummy_file, "\t".join(map(str, inference_result)))
     pool.close()
     pool.join()
 
@@ -193,47 +188,12 @@ def infer_profiles(fasta_file, files_dir, models_dir, dummy_dir="/tmp/",
     # Remove dummy dir
     shutil.rmtree(dummy_dir)
 
-def _load_json_files(files_dir, models_dir, taxons=Jglobals.taxons):
+def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
+    models_dir=models_dir, latest=False, n=5, taxons=Jglobals.taxons):
 
-    # Initialize
-    jaspar = {}
-    pfams = {}
-    profiles = {}
-    uniprots = {}
-
-    with open(os.path.join(files_dir, "pfam-DBDs.json")) as f:
-        domains = json.load(f)
-
-    for taxon in taxons:
-        with open(os.path.join(files_dir, "%s.pfam.json" % taxon)) as f:
-            for key, values in json.load(f).items():
-                pfams.setdefault(key, values)
-        with open(os.path.join(files_dir, "%s.profiles.json" % taxon)) as f:
-            for key, values in json.load(f).items():
-                profiles.setdefault(key, values)
-        with open(os.path.join(files_dir, "%s.uniprot.json" % taxon)) as f:
-            for key, values in json.load(f).items():
-                uniprots.setdefault(key, values)
-
-    for uniprot in pfams:
-
-        # Add Pfam domains
-        jaspar.setdefault(uniprot, {})
-        jaspar[uniprot].setdefault("pfam", pfams[uniprot])
-
-        # Add profiles
-        jaspar[uniprot].setdefault("profiles", [])
-        for profile in uniprots[uniprot][0]:
-            jaspar[uniprot]["profiles"].append([profile, profiles[profile]])
-
-    handle = Jglobals._get_file_handle(os.path.join(models_dir, "models.json.gz"))
-    models = json.load(handle)
-    handle.close()
-
-    return(domains, jaspar, models)
-
-def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
-    latest=False, n=5, taxons=Jglobals.taxons):
+    # Load JSON files
+    global domains, jaspar, models, profiles
+    domains, jaspar, models = _load_json_files(files_dir, models_dir)
 
     # Initialize
     cutoffs = {}
@@ -306,8 +266,60 @@ def infer_SeqRecord_profiles(seq_record, files_dir, dummy_dir="/tmp/",
                 inference_results.append([result[0], gene_name, matrix,
                     result[4], result[2], result[3], identities,
                     similarity_regression])
+    
+    # If use the lastest version of JASPAR...
+    if latest:
+        # Sort
+        inference_results.sort(key=lambda x: (x[3], x[1], -float(x[2][2:])))
+        # Remove profiles from older versions
+        for i in sorted(frozenset(range(len(inference_results))), reverse=True):
+            if inference_results[i][2][:6] == inference_results[i - 1][2][:6]:
+                inference_results.pop(i)
+    # ... Else, just sort...
+    else:
+        inference_results.sort(key=lambda x: (x[3], x[1], float(x[2][2:])))
 
     return(inference_results)
+
+def _load_json_files(files_dir=files_dir, models_dir=models_dir,
+    taxons=Jglobals.taxons):
+
+    # Initialize
+    jaspar = {}
+    pfams = {}
+    profiles = {}
+    uniprots = {}
+
+    with open(os.path.join(files_dir, "pfam-DBDs.json")) as f:
+        domains = json.load(f)
+
+    for taxon in taxons:
+        with open(os.path.join(files_dir, "%s.pfam.json" % taxon)) as f:
+            for key, values in json.load(f).items():
+                pfams.setdefault(key, values)
+        with open(os.path.join(files_dir, "%s.profiles.json" % taxon)) as f:
+            for key, values in json.load(f).items():
+                profiles.setdefault(key, values)
+        with open(os.path.join(files_dir, "%s.uniprot.json" % taxon)) as f:
+            for key, values in json.load(f).items():
+                uniprots.setdefault(key, values)
+
+    for uniprot in pfams:
+
+        # Add Pfam domains
+        jaspar.setdefault(uniprot, {})
+        jaspar[uniprot].setdefault("pfam", pfams[uniprot])
+
+        # Add profiles
+        jaspar[uniprot].setdefault("profiles", [])
+        for profile in uniprots[uniprot][0]:
+            jaspar[uniprot]["profiles"].append([profile, profiles[profile]])
+
+    handle = Jglobals._get_file_handle(os.path.join(models_dir, "models.json.gz"))
+    models = json.load(handle)
+    handle.close()
+
+    return(domains, jaspar, models)
 
 def BLAST(seq_record, files_dir, taxons=Jglobals.taxons):
 
