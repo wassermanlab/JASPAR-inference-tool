@@ -39,7 +39,7 @@ Egr1    EGR2      MA0472.1    2.27e-74  62-398       	  45-424    	 0.957     19
 Egr1    EGR4      MA0733.1    1.12e-51  306-401      	  478-573    	 0.812     None
 ```
 The tool infers that the DNA-binding preferences of the `Query` (_i.e._ Egr1) are similar to those from the JASPAR TFs [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/), [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) and [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/). The inference is based on the percentage of identical residues between the DBDs of their TFs (_i.e._ `DBD %ID`) and, except for EGR4, a linear regression model trained on the DBD pairwise sequence identities of JASPAR TFs with 3x `zf-C2H2` domains (_i.e._ `Similarity Regression`).
-### As a Python module
+#### As a Python module
 ```
 >>> from Bio.Seq import Seq
 >>> from Bio.SeqRecord import SeqRecord
