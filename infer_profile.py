@@ -235,16 +235,17 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
 
         # Inference: percentage of sequence identity
         pids = []
-        pid_cutoffs = []
+        skip = False
+        identities = None
         for a in range(len(SeqRecord_alignments)):
             s1 = _removeLowercase(SeqRecord_alignments[a])
             s2 = _removeLowercase(pfam_results[result[1]][1][a])
             pids.append(_get_pid(s1, s2))
-            pid_cutoffs.append(pids[-1] >= cutoffs[SeqRecord_DBDs[a]])
-        if True in pid_cutoffs:
+            if pids[-1] < cutoffs[SeqRecord_DBDs[a]]
+                skip = True
+                break
+        if not skip:
             identities = round(np.mean(np.array(pids)), 3)
-        else:
-            identities = None
 
         # Inference: similarity regression
         Xs = []
