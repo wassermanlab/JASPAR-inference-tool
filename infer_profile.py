@@ -241,7 +241,7 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
             s1 = _removeLowercase(SeqRecord_alignments[a])
             s2 = _removeLowercase(pfam_results[result[1]][1][a])
             pids.append(_get_pid(s1, s2))
-            if pids[-1] < cutoffs[SeqRecord_DBDs[a]]
+            if pids[-1] < cutoffs[SeqRecord_DBDs[a]]:
                 skip = True
                 break
         if not skip:
