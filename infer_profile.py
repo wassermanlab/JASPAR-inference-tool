@@ -239,7 +239,7 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
         for a in range(len(SeqRecord_alignments)):
             s1 = _removeLowercase(SeqRecord_alignments[a])
             s2 = _removeLowercase(pfam_results[result[1]][1][a])
-            pids.append(sum(_fetchXs(s1, s2))/float(len(s1)))
+            pids.append(_get_pid(s1, s2))
             pid_cutoffs.append(pids[-1] >= cutoffs[SeqRecord_DBDs[a]])
         if True in pid_cutoffs:
             identities = round(np.mean(np.array(pids)), 3)
@@ -672,6 +672,21 @@ def _get_Rost_cutoff_percent_similarity(L, n=12):
 #         return len([i for i in range(len(A)) if A[i] == B[i]])
 
 #     return None
+
+def _get_pid(seq1, seq2):
+
+    # Initialize
+    double_gaps = 0
+    seq1 = _removeLowercase(seq1)
+    seq2 = _removeLowercase(seq2)
+
+    identities = _fetchXs(seq1, seq2)
+
+    for i in range(len(seq1)):
+        if seq1[i] == seq2[i] and seq1[i] == "-":
+            double_gaps += 1
+
+    return(sum(_fetchXs(seq1, seq2))/float(len(seq1)-double_gaps))
 
 def _removeLowercase(s):
 
