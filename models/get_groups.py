@@ -8,9 +8,11 @@ from Bio.Alphabet import IUPAC
 from functools import partial
 import json
 from multiprocessing import Pool
+import numpy as np
 import os
 import random
 # import re
+from scipy.spatial import distance
 import shutil
 import subprocess
 import sys
@@ -191,8 +193,11 @@ def __group_by_cosine_similarity(
 
         # Get TFBS vectors
         vectors = __get_TFBS_vectors(seq_records, files_dir, out_dir, threads)
-        print(seqs)
-        print(len(seqs))
+        print(vectors["MA0714.1"])
+        print(vectors["MA0212.1"])
+        print(1 - distance.cosine(vectors["MA0714.1"], vectors["MA0212.1"]))
+        print(vectors["MA0139.1"])
+        print(1 - distance.cosine(vectors["MA0714.1"], vectors["MA0139.1"]))
         exit(0)
 
 def __get_random_sequences(out_dir=out_dir):
@@ -294,38 +299,44 @@ def __get_TFBS_vectors(
         fo.close()
         os.remove(gzip_file[:-3])
 
-    return(None)
+    # Load JSON files
+    handle = Jglobals._get_file_handle(gzip_file)
+    vectors = json.load(handle)
+    handle.close()
+
+    # Return as numpy arrays
+    for matrix_id in vectors:
+        vectors[matrix_id] = np.array(vectors[matrix_id])
+        vectors[matrix_id][vectors[matrix_id] >= 0.8] = 1.
+        vectors[matrix_id][vectors[matrix_id] < 0.8] = 0.
+
+    return(vectors)
 
 def __get_TFBS_vector(motif, seq_records):
 
     # Initialize
     vector = []
+    threshold = (motif.pssm.max - motif.pssm.min) * 0.8 + motif.pssm.min
 
     # For each sequence...
     for seq_record in seq_records:
 
-        # Score sequence
-        score = __score_sequence(
-            motif, Seq(str(seq_record.seq), IUPAC.unambiguous_dna)
-        )
-        vector.append(round(score, 3))
+        # TFBS in sequence?
+        seq = Seq(str(seq_record.seq), IUPAC.unambiguous_dna)
+        if __TFBS_in_sequence(motif, seq, threshold):
+            vector.append(1.)
+        else:
+            vector.append(0.)
 
     return(motif.matrix_id, vector)
 
-def __score_sequence(motif, seq):
-
-    # Initialize
-    scores = []
-    divisor = motif.pssm.max - motif.pssm.min
+def __TFBS_in_sequence(motif, seq, threshold):
 
     # Search
-    for position, score in motif.pssm.search(seq, motif.pssm.min):
-        scores.append(float(score))
+    for position, score in motif.pssm.search(seq, threshold):
+        return(True)
 
-    # Sort
-    scores.sort(reverse=True)
-
-    return(float((scores[0] - motif.pssm.min) / divisor))
+    return(False)
 
 def __group_by_cluster(files_dir=files_dir, out_dir=out_dir):
 
