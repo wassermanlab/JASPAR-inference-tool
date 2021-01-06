@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  CP2
-ACC   PF04516.15
+ACC   PF04516.16
 DESC  CP2 transcription factor
 LENG  230
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Tue Nov  5 13:47:44 2019
+DATE  Wed Dec 23 10:13:38 2020
 NSEQ  11
 EFFN  1.200439
 CKSUM 1936075317

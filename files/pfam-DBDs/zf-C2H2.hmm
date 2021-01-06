@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  zf-C2H2
-ACC   PF00096.26
+ACC   PF00096.27
 DESC  Zinc finger, C2H2 type
 LENG  23
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Nov  5 13:52:00 2019
+DATE  Wed Dec 23 10:16:59 2020
 NSEQ  159
 EFFN  159.000000
 CKSUM 863016284

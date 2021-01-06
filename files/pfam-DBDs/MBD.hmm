@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  MBD
-ACC   PF01429.19
+ACC   PF01429.20
 DESC  Methyl-CpG binding domain
 LENG  77
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Nov  5 13:49:32 2019
+DATE  Wed Dec 23 10:15:08 2020
 NSEQ  14
 EFFN  4.310059
 CKSUM 681893284

@@ -238,8 +238,8 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
         skip = False
         identities = None
         for a in range(len(SeqRecord_alignments)):
-            s1 = _removeLowercase(SeqRecord_alignments[a])
-            s2 = _removeLowercase(pfam_results[result[1]][1][a])
+            s1 = __removeLowercase(SeqRecord_alignments[a])
+            s2 = __removeLowercase(pfam_results[result[1]][1][a])
             pids.append(_get_pid(s1, s2))
             if pids[-1] < cutoffs[SeqRecord_DBDs[a]]:
                 skip = True
@@ -254,9 +254,9 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
             sr = []
             sr_cutoff = False
             for a in range(len(SeqRecord_alignments)):
-                s1 = _removeLowercase(SeqRecord_alignments[a])
-                s2 = _removeLowercase(pfam_results[result[1]][1][a])
-                Xs.extend(_fetchXs(s1, s2, similarity=similarity))
+                s1 = __removeLowercase(SeqRecord_alignments[a])
+                s2 = __removeLowercase(pfam_results[result[1]][1][a])
+                Xs.extend(__fetchXs(s1, s2, similarity=similarity))
             similarity_regression = round(sum(np.array(Xs) * coeffs), 3)
             if similarity_regression < Y:
                 similarity_regression = None
@@ -390,7 +390,7 @@ def _get_SeqRecord_Pfam_alignments(seq_record, files_dir, dummy_dir="/tmp/"):
 
     # Make seq file
     seq_file = os.path.join(dummy_dir, ".seq.fasta")
-    _makeSeqFile(seq_record, seq_file)
+    __makeSeqFile(seq_record, seq_file)
 
     # For each DBD...
     for pfam_id_std, start, end, evalue in hmmScan(seq_file, hmm_db, dummy_dir,
@@ -402,7 +402,7 @@ def _get_SeqRecord_Pfam_alignments(seq_record, files_dir, dummy_dir="/tmp/"):
         # Make seq file
         sub_seq_record = SeqRecord(seq_record.seq[start:end], id=seq_record.id,
             name=seq_record.name, description=seq_record.description)
-        _makeSeqFile(sub_seq_record, seq_file)
+        __makeSeqFile(sub_seq_record, seq_file)
 
         # Add DBDs
         alignment = hmmAlign(seq_file, hmm_file)
@@ -410,7 +410,7 @@ def _get_SeqRecord_Pfam_alignments(seq_record, files_dir, dummy_dir="/tmp/"):
 
     return(alignments)
 
-def _makeSeqFile(seq_record, file_name=".seq.fa"):
+def __makeSeqFile(seq_record, file_name=".seq.fa"):
 
     # Remove seq file if exists...
     if os.path.exists(file_name):
@@ -678,55 +678,76 @@ def _get_pid(seq1, seq2):
 
     # Initialize
     double_gaps = 0
-    seq1 = _removeLowercase(seq1)
-    seq2 = _removeLowercase(seq2)
+    seq1 = __removeLowercase(seq1)
+    seq2 = __removeLowercase(seq2)
 
-    identities = _fetchXs(seq1, seq2)
+    identities = __fetchXs(seq1, seq2)
 
     for i in range(len(seq1)):
         if seq1[i] == seq2[i] and seq1[i] == "-":
             double_gaps += 1
 
-    return(sum(_fetchXs(seq1, seq2))/float(len(seq1)-double_gaps))
+    return(sum(__fetchXs(seq1, seq2))/float(len(seq1)-double_gaps))
 
-def _removeLowercase(s):
+def __removeLowercase(s):
 
     return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
 
-def _fetchXs(seq1, seq2, similarity="identity"):
+def __fetchXs(seq1, seq2, similarity="identity"):
     """
-    Called for each comparison to compare the strings.
+    Called for each comparison to compare the DBDs.
     """
 
-    # Fill Xs with zeroes
-    scores = [0] * len(seq1)
+    # Initialize
+    scores = []
 
-    # Strings should have same length
-    if len(seq1) == len(seq2):
+    # Assign sequence with more DBDs to seq1
+    seq1, seq2 = __reassign(seq1, seq2)
 
-        for n in range(len(seq1)):
+    for i in range(len(seq1) - len(seq2) + 1):
 
-            if similarity == "identity":
-                scores[n] = _IDscoring(seq1[n], seq2[n])
+        # Initialize
+        array = [0] * len(seq1[i])
 
-            elif similarity == "blosum62":
-                scores[n] = _BLOSUMscoring(seq1[n], seq2[n])
+        for j in range(len(seq2)):
 
-    else:
-        # there is something wrong
-        print("Strings have different length!\n\tA: %s\n\tB: %s" % (seq1, seq2))
-        exit(0)
+            if len(seq1[i+j]) != len(seq2[j]):
+                # i.e. something is wrong
+                print("DBDs have different length!\n\tA: %s\n\tB: %s" % \
+                     (seq1[i+j], seq2[j]))
+                exit(0)
 
-    return(scores)
+            for k in range(len(seq1[i+j])):
 
-def _IDscoring(aa1, aa2):
+                if similarity == "identity":
+                    array[k] += __IDscoring(seq1[i+j][k], seq2[j][k])
+
+                elif similarity == "blosum62":
+                    array[k] += __BLOSUMscoring(seq1[i+j][k], seq2[j][k])
+
+        scores.append(np.array(array))
+        scores[-1] = scores[-1] / len(seq2)
+
+    # Sort
+    scores.sort(key=lambda x: sum(x), reverse=True)
+
+    return(scores[0])
+
+def __reassign(seq1, seq2):
+
+    if len(seq1) < len(seq2):
+        return(seq2, seq1)
+
+    return(seq1, seq2)
+
+def __IDscoring(aa1, aa2):
 
     if aa1 == aa2 and aa1 != "-":
         return(1)
     else:
         return(0)
 
-def _BLOSUMscoring(aa1, aa2):
+def __BLOSUMscoring(aa1, aa2):
 
     if aa1 == "-" and aa2 == "-":
         return(1)

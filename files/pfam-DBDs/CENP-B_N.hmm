@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  CENP-B_N
-ACC   PF04218.13
+ACC   PF04218.14
 DESC  CENP-B N-terminal DNA-binding domain
 LENG  53
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Nov  5 13:47:32 2019
+DATE  Wed Dec 23 10:13:30 2020
 NSEQ  6
 EFFN  3.553711
 CKSUM 4218122956

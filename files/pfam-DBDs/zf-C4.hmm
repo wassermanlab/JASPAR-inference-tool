@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  zf-C4
-ACC   PF00105.18
+ACC   PF00105.19
 DESC  Zinc finger, C4 type (two domains)
 LENG  70
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Nov  5 13:52:07 2019
+DATE  Wed Dec 23 10:17:04 2020
 NSEQ  26
 EFFN  0.891846
 CKSUM 1251281540

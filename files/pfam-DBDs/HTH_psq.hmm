@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  HTH_psq
-ACC   PF05225.16
+ACC   PF05225.17
 DESC  helix-turn-helix, Psq domain
 LENG  45
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Tue Nov  5 13:49:00 2019
+DATE  Wed Dec 23 10:14:44 2020
 NSEQ  14
 EFFN  9.635254
 CKSUM 3849530185

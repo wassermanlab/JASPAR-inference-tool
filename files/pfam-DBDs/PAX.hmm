@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  PAX
-ACC   PF00292.18
+ACC   PF00292.19
 DESC  'Paired box' domain
 LENG  125
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Tue Nov  5 13:49:54 2019
+DATE  Wed Dec 23 10:15:26 2020
 NSEQ  4
 EFFN  0.472656
 CKSUM 2065658155
