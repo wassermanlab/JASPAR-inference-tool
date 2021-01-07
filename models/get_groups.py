@@ -10,8 +10,9 @@ import json
 from multiprocessing import Pool
 import numpy as np
 import os
+import pandas as pd
 import random
-# import re
+import re
 from scipy.spatial import distance
 import shutil
 import subprocess
@@ -22,6 +23,8 @@ from tqdm import tqdm
 out_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "groups")
 root_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)
 files_dir = os.path.join(root_dir, "files")
+scan_sequence = os.path.join(root_dir, "JASPAR-UCSC-tracks", "scan_sequence.py")
+profiles_dir = os.path.join(root_dir, "JASPAR-UCSC-tracks", "profiles")
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
@@ -74,9 +77,7 @@ def get_groups(files_dir=files_dir, out_dir=out_dir, threads=1):
 
     # Get groups
     __group_by_DBD(files_dir, out_dir)
-    __group_by_cosine_similarity(files_dir, out_dir, threads)
-    # __group_by_Tomtom(files_dir, out_dir)
-    # __group_by_cluster(files_dir, out_dir)
+    __group_by_overlap(files_dir, out_dir, threads)
 
 def __group_by_DBD(files_dir=files_dir, out_dir=out_dir):
 
@@ -174,12 +175,12 @@ def __get_Pfam_alignments(taxon, files_dir=files_dir, out_dir=out_dir):
 
     return(pfams)
 
-def __group_by_cosine_similarity(
+def __group_by_overlap(
     files_dir=files_dir, out_dir=out_dir, threads=1
 ):
 
     # Skip if JSON file already exists
-    gzip_file = os.path.join(out_dir, "groups.cosine_similarity.json.gz")
+    gzip_file = os.path.join(out_dir, "groups.overlap.json.gz")
     if not os.path.exists(gzip_file):
 
         # Initialize
@@ -189,108 +190,28 @@ def __group_by_cosine_similarity(
         os.chdir(out_dir)
 
         # Get random sequences
-        seq_records = __get_random_sequences(out_dir)
+        seq_records = __get_random_sequences(out_dir, threads)
 
-        # Get TFBS vectors
-        vectors = __get_TFBS_vectors(seq_records, files_dir, out_dir, threads)
-        print(vectors["MA0714.1"])
-        print(vectors["MA0212.1"])
-        print(1 - distance.cosine(vectors["MA0714.1"], vectors["MA0212.1"]))
-        print(vectors["MA0139.1"])
-        print(1 - distance.cosine(vectors["MA0714.1"], vectors["MA0139.1"]))
+        # Get TFBS predictions
+        predictions = __get_TFBS_predictions(seq_records, out_dir, threads)
+
+        # Get overlaps
+        matrix_ids = list(predictions.keys())
+        k, v = __get_overlaps("MA0139.1", predictions)
+        print(k)
+        print(v)
         exit(0)
-
-def __get_random_sequences(out_dir=out_dir):
-
-    # Skip if FASTA file already exists
-    fasta_file = "random_seqs.fa"
-    if not os.path.exists(fasta_file):
-
-        # Initialize
-        bp = 30
-        all_seqs = []
-        random.seed(123456)
-
-        # For each % GC...
-        for gc in range(101):
-
-            # Initialize
-            i = 1
-            seqs = set()
-
-            # While not enough sequences...
-            while len(seqs) < 100:
-
-                # Initialize
-                seq = ""
-
-                # For each nucleotide...
-                for _ in range(bp):
-
-                    # AT or CG?
-                    r = random.choices([0, 1], cum_weights=[100 - gc, 100])
-
-                    # If AT...
-                    if r[0] == 0:
-                        seq += random.choice("AT")
-
-                    # If CG...
-                    else:
-                        seq += random.choice("CG")
-
-                # Add sequence
-                seqs.add(seq)
-
-            # Add sequences
-            all_seqs.extend(list(seqs))
-
-        # Write
-        for header, sequence in zip(list(range(len(all_seqs))), all_seqs):
-            Jglobals.write(fasta_file, ">%s\n%s" % (header, sequence))
-
-    return([seq_record for seq_record in Jglobals.parse_fasta_file(fasta_file)])
-
-def __get_TFBS_vectors(
-    seq_records, files_dir=files_dir, out_dir=out_dir, threads=1
-):
-
-    # Skip if JSON file already exists
-    gzip_file = os.path.join(out_dir, "vectors.json.gz")
-    if not os.path.exists(gzip_file):
-
-        # Initialize
-        profiles = []
-        vectors = {}
-
-        # For each taxon...
-        for taxon in Jglobals.taxons:
-
-            # For each JASPAR profile...
-            for file_name in os.listdir(os.path.join(files_dir, taxon)):
-
-                # Skip
-                if not file_name.endswith(".jaspar"):
-                    continue
-
-                # Get JASPAR motif
-                motif_file = os.path.join(files_dir, taxon, file_name)
-                with open(motif_file) as f:
-                    motif = motifs.read(f, "jaspar")
-                motif.pseudocounts = motifs.jaspar.calculate_pseudocounts(motif)
-                profiles.append(motif)
-
-        # Get TFBS vectors 
         pool = Pool(threads)
-        p = partial(__get_TFBS_vector, seq_records=seq_records)
-        for motif, vector in tqdm(pool.imap(p, profiles), total=len(profiles)):
-            vectors.setdefault(motif, vector)
+        p = partial(__get_overlaps, predictions=predictions)
+        for k, v in tqdm(pool.imap(p, matrix_ids), total=len(matrix_ids)):
+            groups.setdefault(k, v)
         pool.close()
         pool.join()
 
         # Write
         Jglobals.write(
             gzip_file[:-3],
-            json.dumps(vectors, sort_keys=True, indent=4)
+            json.dumps(groups, sort_keys=True, indent=4)
         )
         fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
         fo = Jglobals._get_file_handle(gzip_file, "wb")
@@ -299,36 +220,142 @@ def __get_TFBS_vectors(
         fo.close()
         os.remove(gzip_file[:-3])
 
-    # Load JSON files
-    handle = Jglobals._get_file_handle(gzip_file)
-    vectors = json.load(handle)
-    handle.close()
+        # Change dir
+        os.chdir(cwd)
 
-    # Return as numpy arrays
-    for matrix_id in vectors:
-        vectors[matrix_id] = np.array(vectors[matrix_id])
-        vectors[matrix_id][vectors[matrix_id] >= 0.8] = 1.
-        vectors[matrix_id][vectors[matrix_id] < 0.8] = 0.
+def __get_random_sequences(out_dir=out_dir, threads=1):
 
-    return(vectors)
+    # Skip if FASTA file already exists
+    gzip_file = ".random_seqs.fa.gz"
+    if not os.path.exists(gzip_file):
 
-def __get_TFBS_vector(motif, seq_records):
+        # Initialize
+        sequences = []
+
+        # Get random sequences 
+        pool = Pool(threads)
+        p = partial(__get_random_sequences_with_fix_gc_content)
+        for seqs in tqdm(pool.imap(p, range(101)), total=101):
+            for s in seqs:
+                sequences.append(s)
+        pool.close()
+        pool.join()
+
+        # Write
+        for header, s in zip(list(range(len(sequences))), sequences):
+            Jglobals.write(gzip_file[:-3], ">%s\n%s" % (header, s))
+        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+        fo = Jglobals._get_file_handle(gzip_file, "wb")
+        shutil.copyfileobj(fi, fo)
+        fi.close()
+        fo.close()
+        os.remove(gzip_file[:-3])
+
+    return([seq_record for seq_record in Jglobals.parse_fasta_file(gzip_file)])
+
+def __get_random_sequences_with_fix_gc_content(
+    gc_content=0, length=50, total_sequences=10000
+):
 
     # Initialize
-    vector = []
-    threshold = (motif.pssm.max - motif.pssm.min) * 0.8 + motif.pssm.min
+    sequences = set()
+    random.seed(gc_content)
 
-    # For each sequence...
-    for seq_record in seq_records:
+    # While not enough sequences...
+    while len(sequences) < total_sequences:
 
-        # TFBS in sequence?
-        seq = Seq(str(seq_record.seq), IUPAC.unambiguous_dna)
-        if __TFBS_in_sequence(motif, seq, threshold):
-            vector.append(1.)
-        else:
-            vector.append(0.)
+        # Initialize
+        sequence = ""
 
-    return(motif.matrix_id, vector)
+        # For each nucleotide...
+        for _ in range(length):
+
+            # AT or CG?
+            r = random.choices([0, 1], cum_weights=[100 - gc_content, 100])
+
+            # If AT...
+            if r[0] == 0:
+                sequence += random.choice("AT")
+
+            # If CG...
+            else:
+                sequence += random.choice("CG")
+
+        # Add sequence
+        sequences.add(sequence)
+
+    return(list(sequences))
+
+def __get_TFBS_predictions(seq_records, out_dir=out_dir, threads=1):
+
+    # Initialize
+    predictions = {}
+
+    # Get scans
+    scans_dir = "./scans/"
+    if not os.path.isdir(scans_dir):
+        fasta_file = "tmp.fa"
+        for seq_record in seq_records:
+            sequence = ">%s\n%s" % (seq_record.id, str(seq_record.seq))
+            Jglobals.write(fasta_file, sequence)
+        cmd = """
+            %s --fasta-file %s \
+            --profiles-dir %s \
+            --output-dir %s \
+            --threads %s
+        """ % (scan_sequence, fasta_file, profiles_dir, scans_dir, threads)
+        process = subprocess.run([cmd], shell=True)
+        os.remove(fasta_file)
+    scans_files = [
+        os.path.join(scans_dir, f) for f in os.listdir(scans_dir)
+    ]
+
+    # Get TFBS vectors 
+    pool = Pool(threads)
+    for motif, preds in tqdm(
+        pool.imap(__get_predictions, scans_files), total=len(scans_files)
+    ):
+        predictions.setdefault(motif, np.array(preds))
+    pool.close()
+    pool.join()
+
+    return(predictions)
+
+def __get_predictions(scans_file):
+
+    # Initialize
+    predictions = []
+    matrix_id = re.search("(MA\d{4}\.\d)", scans_file)
+
+    # Load scans
+    try:
+        df = pd.read_csv(scans_file, sep="\t", header=None)
+        predictions = list(set(df[0].to_list()))
+    except:
+        pass
+
+    return(matrix_id.group(1), predictions)
+
+def __get_overlaps(matrix_id, predictions):
+
+    # Initialize
+    overlaps = {}
+    ar1 = predictions[matrix_id]
+
+    # For each other matrix...
+    for next_matrix_id in predictions:
+
+        # Overlap
+        try:
+            ar2 = predictions[next_matrix_id]
+            intersect = np.intersect1d(ar1, ar2)
+            union = np.union1d(ar1, ar2)
+            overlap = round(intersect.size / float(union.size), 3)
+            overlaps.setdefault(next_matrix_id, overlap)
+        except:
+            overlaps.setdefault(next_matrix_id, 0.)
+
+    return(matrix_id, overlaps)
 
 def __TFBS_in_sequence(motif, seq, threshold):
 
@@ -337,6 +364,41 @@ def __TFBS_in_sequence(motif, seq, threshold):
         return(True)
 
     return(False)
+
+def __get_cosine_similarities(vectors, out_dir=out_dir):
+
+    # Skip if JSON file already exists
+    gzip_file = ".cosine_similarities.json.gz"
+    if not os.path.exists(gzip_file):
+
+        # Initialize
+        data = []
+        matrix_ids = sorted(vectors.keys())
+
+        # For each matrix...
+        for i in range(len(matrix_ids) - 1):
+
+            # Test CTCF
+            if matrix_ids[i] != "MA0139.1":
+                continue
+
+            # Initialize
+            u = vectors[matrix_ids[i]]
+            print(sum(u))
+
+            # For each other matrix...
+            for j in range(i + 1, len(matrix_ids)):
+
+                # Add cosine distance
+                v = vectors[matrix_ids[j]]
+                print(sum(v))
+                cosine_distance = round(1 - distance.cosine(u, v), 3)
+                data.append([matrix_ids[i], matrix_ids[j], cosine_distance])
+                data.append([matrix_ids[j], matrix_ids[i], cosine_distance])
+
+            data.sort(key=lambda x: x[-1], reverse=True)
+            print(data[0])
+            exit(0)
 
 def __group_by_cluster(files_dir=files_dir, out_dir=out_dir):
 
