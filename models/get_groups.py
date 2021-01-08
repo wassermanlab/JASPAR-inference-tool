@@ -193,20 +193,25 @@ def __group_by_overlap(
         seq_records = __get_random_sequences(out_dir, threads)
 
         # Get TFBS predictions
+        global predictions
         predictions = __get_TFBS_predictions(seq_records, out_dir, threads)
 
+        # Create overlaps directory
+        overlaps_dir = "./overlaps/"
+        if not os.path.isdir(overlaps_dir):
+            os.makedirs(overlaps_dir)
+
         # Get overlaps
+        overlaps = {}
         matrix_ids = list(predictions.keys())
-        k, v = __get_overlaps("MA0139.1", predictions)
-        print(k)
-        print(v)
-        exit(0)
         pool = Pool(threads)
-        p = partial(__get_overlaps, predictions=predictions)
-        for k, v in tqdm(pool.imap(p, matrix_ids), total=len(matrix_ids)):
-            groups.setdefault(k, v)
+        for matrix_id, overlaps_file in tqdm(
+            pool.imap(__get_overlaps, matrix_ids), total=len(matrix_ids)
+        ):
+            overlaps.setdefault(matrix_id, overlaps_file)
         pool.close()
         pool.join()
+        exit(0)
 
         # Write
         Jglobals.write(
@@ -302,26 +307,29 @@ def __get_TFBS_predictions(seq_records, out_dir=out_dir, threads=1):
             %s --fasta-file %s \
             --profiles-dir %s \
             --output-dir %s \
-            --threads %s
+            --threads %s \
+            --rthresh 0.85
         """ % (scan_sequence, fasta_file, profiles_dir, scans_dir, threads)
         process = subprocess.run([cmd], shell=True)
         os.remove(fasta_file)
-    scans_files = [
-        os.path.join(scans_dir, f) for f in os.listdir(scans_dir)
-    ]
 
-    # Get TFBS vectors 
+    # For each scans file...
+    scans_files = []
+    for scans_file in os.listdir(scans_dir):
+        scans_files.append(os.path.join(scans_dir, scans_file))
+
+    # Load scans file
     pool = Pool(threads)
-    for motif, preds in tqdm(
-        pool.imap(__get_predictions, scans_files), total=len(scans_files)
+    for matrix_id, p in tqdm(
+        pool.imap(__load_TFBS_predictions, scans_files), total=len(scans_files)
     ):
-        predictions.setdefault(motif, np.array(preds))
+        predictions.setdefault(matrix_id, p)
     pool.close()
     pool.join()
 
     return(predictions)
 
-def __get_predictions(scans_file):
+def __load_TFBS_predictions(scans_file):
 
     # Initialize
     predictions = []
@@ -330,32 +338,46 @@ def __get_predictions(scans_file):
     # Load scans
     try:
         df = pd.read_csv(scans_file, sep="\t", header=None)
-        predictions = list(set(df[0].to_list()))
+        return(matrix_id.group(1), np.array(list(set(df[0].to_list()))))
     except:
-        pass
+        return(matrix_id.group(1), None)
 
-    return(matrix_id.group(1), predictions)
+def __get_overlaps(matrix_id):
 
-def __get_overlaps(matrix_id, predictions):
+    # Skip if JSON file already exists
+    gzip_file = os.path.join("./overlaps/", "%s.json.gz" % matrix_id)
+    if not os.path.exists(gzip_file):
 
-    # Initialize
-    overlaps = {}
-    ar1 = predictions[matrix_id]
+        # Initialize
+        overlaps = {}
+        ar1 = predictions[matrix_id]
 
-    # For each other matrix...
-    for next_matrix_id in predictions:
+        # For each other matrix...
+        for next_matrix_id in predictions:
 
-        # Overlap
-        try:
+            # Compute overlap
             ar2 = predictions[next_matrix_id]
-            intersect = np.intersect1d(ar1, ar2)
-            union = np.union1d(ar1, ar2)
-            overlap = round(intersect.size / float(union.size), 3)
-            overlaps.setdefault(next_matrix_id, overlap)
-        except:
-            overlaps.setdefault(next_matrix_id, 0.)
+            if ar1 is None or ar2 is None:
+                overlaps.setdefault(next_matrix_id, 0.)
+            else:
+                intersect = np.intersect1d(ar1, ar2)
+                union = np.union1d(ar1, ar2)
+                overlap = round(intersect.size / float(union.size), 3)
+                overlaps.setdefault(next_matrix_id, overlap)
 
-    return(matrix_id, overlaps)
+        # Write
+        Jglobals.write(
+            gzip_file[:-3],
+            json.dumps(overlaps, sort_keys=True, indent=4)
+        )
+        fi = Jglobals._get_file_handle(gzip_file[:-3], "rb")
+        fo = Jglobals._get_file_handle(gzip_file, "wb")
+        shutil.copyfileobj(fi, fo)
+        fi.close()
+        fo.close()
+        os.remove(gzip_file[:-3])
+
+    return(matrix_id, gzip_file)
 
 def __TFBS_in_sequence(motif, seq, threshold):
 
@@ -472,7 +494,7 @@ def __get_DBD_clusters(DBD, uniaccs, motifs, files_dir=files_dir):
     matrix_ids = set()
 
     # Create output dir
-    if not os.path.exists(DBD):
+    if not os.path.isdir(DBD):
         os.makedirs(DBD)
 
     # Skip if already done
