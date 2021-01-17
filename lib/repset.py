@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 """
 Source: https://github.com/mlibbrecht/submodular_sequence_repset
@@ -102,7 +102,11 @@ def run_psiblast(workdir, seqs):
             seq_id2 = line[1]
             pident = float(line[2])
             evalue = line[5]
-            log10_e = math.log10(float(evalue))
+            try:
+                log10_e = math.log10(float(evalue))
+            except:
+                # fix 0 error
+                log10_e = math.log10(sys.float_info.min)
             if float(evalue) <= 1e-2:
                 db[seq_id2]["neighbors"][seq_id1] = {"log10_e": log10_e, "pct_identical": pident}
                 db[seq_id1]["in_neighbors"][seq_id2] = {"log10_e": log10_e, "pct_identical": pident}
