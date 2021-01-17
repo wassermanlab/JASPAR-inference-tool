@@ -256,7 +256,7 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
             for a in range(len(SeqRecord_alignments)):
                 s1 = __removeLowercase(SeqRecord_alignments[a])
                 s2 = __removeLowercase(pfam_results[result[1]][1][a])
-                Xs.extend(__fetchXs(s1, s2, similarity=similarity))
+                Xs.extend(__get_X(s1, s2, similarity=similarity))
             similarity_regression = round(sum(np.array(Xs) * coeffs), 3)
             if similarity_regression < Y:
                 similarity_regression = None
@@ -681,19 +681,19 @@ def _get_pid(seq1, seq2):
     seq1 = __removeLowercase(seq1)
     seq2 = __removeLowercase(seq2)
 
-    identities = __fetchXs(seq1, seq2)
+    identities = __get_X(seq1, seq2)
 
     for i in range(len(seq1)):
         if seq1[i] == seq2[i] and seq1[i] == "-":
             double_gaps += 1
 
-    return(sum(__fetchXs(seq1, seq2))/float(len(seq1)-double_gaps))
+    return(sum(__get_X(seq1, seq2))/float(len(seq1)-double_gaps))
 
 def __removeLowercase(s):
 
     return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
 
-def __fetchXs(seq1, seq2, similarity="identity"):
+def __get_X(seq1, seq2, similarity="identity"):
     """
     Called for each comparison to compare the DBDs.
     """

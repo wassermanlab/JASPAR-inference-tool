@@ -1,3 +1,0 @@
-[submodule "submodules/JASPAR-UCSC-tracks"]
-	path = submodules/JASPAR-UCSC-tracks
-	url = git@github.com:wassermanlab/JASPAR-UCSC-tracks.git
