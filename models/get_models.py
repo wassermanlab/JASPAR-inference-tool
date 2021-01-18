@@ -17,7 +17,7 @@ import sys
 # Defaults
 out_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 root_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)
-data_splits_dir = copy.copy(out_dir)
+data_splits_file = os.path.join(out_dir, "data_splits.json.gz")
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
@@ -54,9 +54,8 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--data-splits-dir", default=data_splits_dir, metavar="DIR",
-        help="data splits directory (\"-o\" from get_data_splits.py)")
+    parser.add_argument("--data-splits-file", default=data_splits_file,
+        metavar="FILE", help="compressed json file from get_data_splits.py")
     parser.add_argument("-o", default=out_dir, metavar="DIR",
         help="output directory (default = ./)")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -72,9 +71,9 @@ def main():
     # Globals
     global cwd
     cwd = os.getcwd()
+    out_dir = os.path.abspath(args.o)
     global data_splits
-    json_file = os.path.join(args.data_splits_dir, ".data_splits.json.gz")
-    handle = Jglobals._get_file_handle(json_file)
+    handle = Jglobals._get_file_handle(os.path.abspath(args.data_splits_file))
     data_splits = json.load(handle)
     handle.close()
     global lambdas
@@ -87,12 +86,12 @@ def main():
         os.makedirs(out_dir)
 
     # Get models
-    get_models(os.path.abspath(args.o))
+    get_models(out_dir)
 
 def get_models(out_dir=out_dir):
 
     # Skip if JSON file already exists
-    json_file = os.path.join(out_dir, "models.json.gz")
+    json_file = os.path.join(out_dir, "models.json")
     if not os.path.exists(json_file):
 
         # Initialize
@@ -101,17 +100,19 @@ def get_models(out_dir=out_dir):
             "Values": [
                 "similarity",
                 "coefficients",
-                "Y cut-off",
-                "coverage @ 75% precision"
+                "threshold @ 75% precision",
+                "recall @ 75% precision",
+                "precision",
+                "recall",
             ]
         }
 
-        # Create groups dir
-        if not os.path.isdir("models"):
-            os.makedirs("models")
+        # Create data splits dir
+        if not os.path.isdir(os.path.join(out_dir, "models")):
+            os.makedirs(os.path.join(out_dir, "models"))
 
-        # Move to groups directory
-        os.chdir("models")
+        # Move to data splits directory
+        os.chdir(os.path.join(out_dir, "models"))
 
         # For each DBD composition...
         for DBD in data_splits:
@@ -133,9 +134,6 @@ def get_models(out_dir=out_dir):
                     # Train model
                     m = __train_model(DBD, similarity)
                     models.setdefault(similarity, m)
-
-                    # Compute statistics
-                    statistics = __compute_statistics(DBD, similarity, m)
 
                 # Write
                 handle = Jglobals._get_file_handle(pickle_file, "wb")
@@ -187,19 +185,10 @@ def __train_model(DBD, similarity):
 
     # Verbose mode
     if verbose:
-        Jglobals.write(None, "\t*** LogitNet: %s" % similarity)
+        Jglobals.write(None, "\t*** similarity: %s" % similarity)
 
     # Get pairs, Xs, ys
-    pairs, Xs, ys = __get_pairs_Xs_ys(DBD, similarity, "train")
-
-    # Skip training
-    if len(list(chain.from_iterable(ys["stringent"]))) < 2:
-
-        # Verbose mode
-        if verbose:
-            Jglobals.write(None, "\t*** not enough data: skip training!")
-
-        return(None)
+    pairs, Xs, ys = __get_pairs_Xs_ys(DBD, similarity, "training")
 
     try:
 
@@ -226,7 +215,7 @@ def __train_model(DBD, similarity):
 
         # Verbose mode
         if verbose:
-            Jglobals.write(None, "\t*** model training: successful!")
+            Jglobals.write(None, "\t*** LogitNet training: success!")
 
         return(m_fit)
 
@@ -234,7 +223,7 @@ def __train_model(DBD, similarity):
 
         # Verbose mode
         if verbose:
-            Jglobals.write(None, "\t*** model training: failed!")
+            Jglobals.write(None, "\t*** LogitNet training: fail!")
 
         return(None) 
 
