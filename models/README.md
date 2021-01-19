@@ -4,319 +4,406 @@ python get_models.py --data-splits-file data_splits.json.gz -v
 
 AP2...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 2.009233
-        *** Recall @ 75% Precision: 37.96%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 9.33e-06
-        *** Recall @ 75% Precision: 4.68%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 67.66%
+        *** Precision @ Cis-BP Threshold: 29.41
+        *** Recall @ Cis-BP Threshold: 9.62
 
 B3...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00247708
-        *** Recall @ 75% Precision: 93.14%
+        *** Recall @ 75% Precision: 99.91%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 5.34e-06
-        *** Recall @ 75% Precision: 84.37%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 40.0
+        *** Recall @ Cis-BP Threshold: 100.0
 
 CP2...
         *** similarity: identity
-        *** LogitNet training: fail!
+        *** LogitNet training: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: fail!
+        *** LogitNet training: FAIL!
+        *** Cis-BP Threshold: FAIL!
 
 CUT...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 4.64158883
-        *** Recall @ 75% Precision: 23.98%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 2.65608778
-        *** Recall @ 75% Precision: 13.61%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 0.0
+        *** Recall @ Cis-BP Threshold: 0.0
 
 DM...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1000000.0
-        *** Recall @ 75% Precision: 50.00%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.03053856
-        *** Recall @ 75% Precision: 8.61%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 84.53%
+        *** Precision @ Cis-BP Threshold: 50.0
+        *** Recall @ Cis-BP Threshold: 50.0
 
 E2F_TDP...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 7.05e-06
-        *** Recall @ 75% Precision: 0.00%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00756463
-        *** Recall @ 75% Precision: 3.57%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 42.86%
+        *** Precision @ Cis-BP Threshold: 30.77
+        *** Recall @ Cis-BP Threshold: 80.0
 
 Ets...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1.149757
-        *** Recall @ 75% Precision: 47.42%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.07054802
-        *** Recall @ 75% Precision: 57.94%
+        *** Recall @ 75% Precision: 70.06%
+        *** Cis-BP Threshold: 71.74%
+        *** Precision @ Cis-BP Threshold: 44.44
+        *** Recall @ Cis-BP Threshold: 5.97
 
 Forkhead...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.12328467
-        *** Recall @ 75% Precision: 42.11%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.37649358
-        *** Recall @ 75% Precision: 42.58%
+        *** Recall @ 75% Precision: 78.95%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 12.5
+        *** Recall @ Cis-BP Threshold: 2.63
 
 GATA...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1.149757
-        *** Recall @ 75% Precision: 40.17%
+        *** Recall @ 75% Precision: 82.26%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00432876
-        *** Recall @ 75% Precision: 24.42%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 42.86
+        *** Recall @ Cis-BP Threshold: 47.37
 
 HLH...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 3.51119173
-        *** Recall @ 75% Precision: 44.05%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 4.64158883
-        *** Recall @ 75% Precision: 44.81%
+        *** Recall @ 75% Precision: 65.31%
+        *** Cis-BP Threshold: 83.78%
+        *** Precision @ Cis-BP Threshold: 42.86
+        *** Recall @ Cis-BP Threshold: 2.26
 
 HMG_box...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.28480359
-        *** Recall @ 75% Precision: 57.51%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00572237
-        *** Recall @ 75% Precision: 65.01%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 20.0
+        *** Recall @ Cis-BP Threshold: 26.67
 
 HSF_DNA-bind...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.05336699
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 65.79%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.869749
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 57.17%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 100.0
+        *** Recall @ Cis-BP Threshold: 9.09
 
 Homeodomain...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.0231013
-        *** Recall @ 75% Precision: 2.89%
+        *** Recall @ 75% Precision: 96.41%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 3.765e-05
-        *** Recall @ 75% Precision: 0.51%
+        *** Recall @ 75% Precision: 98.61%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 54.38
+        *** Recall @ Cis-BP Threshold: 6.4
 
 MH1...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.09326033
-        *** Recall @ 75% Precision: 15.70%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.05336699
-        *** Recall @ 75% Precision: 16.22%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 33.33
+        *** Recall @ Cis-BP Threshold: 33.33
 
 Myb_DNA-binding...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00247708
-        *** Recall @ 75% Precision: 15.55%
+        *** Recall @ 75% Precision: 98.86%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00061359
-        *** Recall @ 75% Precision: 15.47%
+        *** Recall @ 75% Precision: 98.54%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 59.09
+        *** Recall @ Cis-BP Threshold: 35.14
 
 NAM...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1.63e-05
-        *** Recall @ 75% Precision: 0.00%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.03053856
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 90.73%
+        *** Cis-BP Threshold: FAIL!
 
 PAX...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.12328467
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 73.34%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00107227
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 98.30%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 27.27
+        *** Recall @ Cis-BP Threshold: 100.0
 
 Pou...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00756463
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 62.52%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00756463
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 70.89%
+        *** Cis-BP Threshold: FAIL!
 
 RFX_DNA_binding...
         *** similarity: identity
-        *** LogitNet training: fail!
+        *** LogitNet training: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: fail!
+        *** LogitNet training: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 100.0
+        *** Recall @ Cis-BP Threshold: 50.0
 
 RHD_DNA_bind...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 32.74549163
-        *** Recall @ 75% Precision: 48.34%
+        *** Recall @ 75% Precision: 53.57%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 10.72267222
-        *** Recall @ 75% Precision: 51.64%
+        *** Recall @ 75% Precision: 60.05%
+        *** Cis-BP Threshold: FAIL!
 
 SBP...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00572237
-        *** Recall @ 75% Precision: 12.96%
+        *** Recall @ 75% Precision: 56.93%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.09326033
-        *** Recall @ 75% Precision: 5.54%
+        *** Recall @ 75% Precision: 55.61%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 66.67
+        *** Recall @ Cis-BP Threshold: 50.0
 
 SRF-TF...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1.51991108
-        *** Recall @ 75% Precision: 75.00%
+        *** Recall @ 75% Precision: 49.62%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1.149757
-        *** Recall @ 75% Precision: 79.43%
+        *** Recall @ 75% Precision: 49.95%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 80.0
+        *** Recall @ Cis-BP Threshold: 80.0
 
 STAT_bind...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1.51991108
-        *** Recall @ 75% Precision: 31.45%
+        *** Recall @ 75% Precision: 34.13%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1e-06
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 99.96%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 100.0
+        *** Recall @ Cis-BP Threshold: 14.29
 
 T-box...
         *** similarity: identity
-        *** LogitNet training: fail!
+        *** LogitNet training: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: fail!
+        *** LogitNet training: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 66.67
+        *** Recall @ Cis-BP Threshold: 14.29
 
 TCP...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.09326033
-        *** Recall @ 75% Precision: 35.99%
+        *** Recall @ 75% Precision: 68.46%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00061359
-        *** Recall @ 75% Precision: 15.80%
+        *** Recall @ 75% Precision: 80.50%
+        *** Cis-BP Threshold: FAIL!
 
 TCR...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 2.009233
-        *** Recall @ 75% Precision: 25.58%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.12328467
-        *** Recall @ 75% Precision: 1.78%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 0.0
+        *** Recall @ Cis-BP Threshold: 0.0
 
 TEA...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1000000.0
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 50.00%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 1000000.0
-        *** Recall @ 75% Precision: fail!
+        *** Recall @ 75% Precision: 50.00%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 75.0
+        *** Recall @ Cis-BP Threshold: 75.0
 
 WRKY...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.21544347
-        *** Recall @ 75% Precision: 33.28%
+        *** Recall @ 75% Precision: 84.82%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.01321941
-        *** Recall @ 75% Precision: 26.22%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 50.0
+        *** Recall @ Cis-BP Threshold: 5.33
 
 Zn_clus...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.28480359
-        *** Recall @ 75% Precision: 32.62%
+        *** Recall @ 75% Precision: FAIL!
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00035112
-        *** Recall @ 75% Precision: 6.85%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: FAIL!
 
 bZIP_1...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 8.11130831
-        *** Recall @ 75% Precision: 46.17%
+        *** Recall @ 75% Precision: 63.52%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.04037017
-        *** Recall @ 75% Precision: 17.49%
+        *** Recall @ 75% Precision: 95.17%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 57.14
+        *** Recall @ Cis-BP Threshold: 2.3
 
 zf-C2H2...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 18.73817423
-        *** Recall @ 75% Precision: 45.77%
+        *** Recall @ 75% Precision: 54.21%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 10.72267222
-        *** Recall @ 75% Precision: 43.25%
+        *** Recall @ 75% Precision: 57.04%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 69.77
+        *** Recall @ Cis-BP Threshold: 38.46
 
 zf-C4...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 2.009233
-        *** Recall @ 75% Precision: 42.43%
+        *** Recall @ 75% Precision: 80.98%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.01321941
-        *** Recall @ 75% Precision: 23.30%
+        *** Recall @ 75% Precision: FAIL!
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 52.63
+        *** Recall @ Cis-BP Threshold: 13.7
 
 zf-Dof...
         *** similarity: identity
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.00327455
-        *** Recall @ 75% Precision: 1.16%
+        *** Recall @ 75% Precision: 82.58%
         *** similarity: blosum62
-        *** LogitNet training: success!
+        *** LogitNet training: SUCCESS!
         *** best lambda: 0.01321941
-        *** Recall @ 75% Precision: 1.73%
+        *** Recall @ 75% Precision: 89.59%
+        *** Cis-BP Threshold: 70.00%
+        *** Precision @ Cis-BP Threshold: 19.44
+        *** Recall @ Cis-BP Threshold: 58.33
 ```

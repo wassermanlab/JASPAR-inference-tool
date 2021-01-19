@@ -114,7 +114,8 @@ def get_models(out_dir=out_dir):
                     "Threshold @ 75% Precision",
                     "Recall @ 75% Precision",
                     "Precision",
-                    "Recall"
+                    "Recall",
+                    "Thresholds"
                 ]
             }
         }
@@ -157,7 +158,8 @@ def get_models(out_dir=out_dir):
                         statistics["Threshold @ 75% Precision"],
                         statistics["Recall @ 75% Precision"],
                         statistics["Precision"],
-                        statistics["Recall"]
+                        statistics["Recall"],
+                        statistics["Thresholds"]
                     ])
 
                 # Write
@@ -171,13 +173,12 @@ def get_models(out_dir=out_dir):
             models[DBD][similarity].append([
                 coefficients,
                 lamdabest,
-                statistics["Threshold @ 75% Precision"],
-                statistics["Recall @ 75% Precision"],
+                statistics["Cis-BP Threshold"],
+                statistics["Precision @ Cis-BP Threshold"],
+                statistics["Recall @ Cis-BP Threshold"],
                 statistics["Precision"],
                 statistics["Recall"]
             ])
-
-            exit(0)
 
         # Write
         Jglobals.write(
@@ -219,7 +220,7 @@ def __train_model(DBD, similarity):
 
         # Verbose mode
         if verbose:
-            Jglobals.write(None, "\t*** LogitNet training: success!")
+            Jglobals.write(None, "\t*** LogitNet training: SUCCESS!")
 
         return(m_fit, list(m_fit.coef_[0]), m_fit.lambda_max_)
 
@@ -227,7 +228,7 @@ def __train_model(DBD, similarity):
 
         # Verbose mode
         if verbose:
-            Jglobals.write(None, "\t*** LogitNet training: fail!")
+            Jglobals.write(None, "\t*** LogitNet training: FAIL!")
 
         return(None, None, None) 
 
@@ -303,6 +304,7 @@ def __compute_statistics(DBD, similarity, m=None):
         "Recall @ 75% Precision": None,
         "Precision": None,
         "Recall": None,
+        "Thresholds": None,
     }
 
     if m is not None:
@@ -329,6 +331,7 @@ def __compute_statistics(DBD, similarity, m=None):
         )
         statistics["Precision"] = list(precision)
         statistics["Recall"] = list(recall)
+        statistics["Thresholds"] = list(thresholds)
         for idx in range(len(thresholds)):
             if precision[idx] < 0.75:
                 continue
@@ -345,7 +348,7 @@ def __compute_statistics(DBD, similarity, m=None):
                     "\t*** Recall @ 75% Precision: {0:.2f}%".format(recall)
                 )
             else:
-                Jglobals.write(None, "\t*** Recall @ 75% Precision: fail!")
+                Jglobals.write(None, "\t*** Recall @ 75% Precision: FAIL!")
 
     return(statistics)
 
@@ -360,73 +363,80 @@ def __compute_CisBP_statistics(DBD):
         "Recall @ Cis-BP Threshold": None,
         "Precision": None,
         "Recall": None,
+        "Thresholds": None,
     }
 
-    # Get pairs, Xs, ys
-    pairs, Xs, ys = __get_pairs_Xs_ys(DBD, "identity", "test")
+    try:
 
-    # Get Xs, ys
-    Xs_test = np.asarray(Xs)
-    ys_test = np.asarray(ys["stringent"])
+        # Get pairs, Xs, ys
+        pairs, Xs, ys = __get_pairs_Xs_ys(DBD, "identity", "test")
 
-    # Get thresholds
-    thresholds = sorted(set([float(sum(X)) / len(X) for X in Xs_test]))
+        # Get Xs, ys
+        Xs_test = np.asarray(Xs)
+        ys_test = np.asarray(ys["stringent"])
 
-    # For each threshold...
-    for t in thresholds:
+        # Get thresholds
+        thresholds = sorted(set([float(sum(X)) / len(X) for X in Xs_test]))
+        statistics["Thresholds"] = thresholds
 
-        # Initialize
-        tp = 0; fp = 0
-
-        # For each X, y...
-        for X, y in zip(Xs_test, ys_test):
+        # For each threshold...
+        for t in thresholds:
 
             # Initialize
-            pid = float(sum(X)) / len(X)
+            tp = 0; fp = 0
 
-            # If %ID is smaller than threshold = negative
-            if pid < t:
+            # For each X, y...
+            for X, y in zip(Xs_test, ys_test):
+
+                # Initialize
+                pid = float(sum(X)) / len(X)
+
+                # If %ID is smaller than threshold = negative
+                if pid < t:
+                    continue
+
+                # If y is one = true
+                if y[0] == 1: tp += 1
+                else: fp += 1
+
+            # Precision, recall
+            precision.append(float(tp) / (tp + fp))
+            recall.append(float(tp) / sum(ys_test.ravel()))
+
+        # Statistics
+        precision.append(1.)
+        recall.append(0.)
+        statistics["Precision"] = precision
+        statistics["Recall"] = recall
+        for idx in range(len(thresholds)):
+            if thresholds[idx] < domains[DBD]:
                 continue
+            statistics["Cis-BP Threshold"] = domains[DBD]
+            statistics["Precision @ Cis-BP Threshold"] = precision[idx]
+            statistics["Recall @ Cis-BP Threshold"] = recall[idx]
+            break
 
-            # If y is one = true
-            if y[0] == 1: tp += 1
-            else: fp += 1
+        # Verbose
+        if verbose:
+            T = statistics["Cis-BP Threshold"]
+            Jglobals.write(
+                None,
+                "\t*** Cis-BP Threshold: {0:.2f}%".format(round(T * 100, 2))
+            )
+            P = round(statistics["Precision @ Cis-BP Threshold"] * 100, 2)
+            Jglobals.write(
+                None, "\t*** Precision @ Cis-BP Threshold: %s" % P
+            )
+            R = round(statistics["Recall @ Cis-BP Threshold"] * 100, 2)
+            Jglobals.write(
+                None, "\t*** Recall @ Cis-BP Threshold: %s" % R
+            )
 
-        # Precision, recall
-        precision.append(float(tp) / (tp + fp))
-        recall.append(float(tp) / sum(ys_test.ravel()))
+    except:
 
-    # Statistics
-    precision.append(1.)
-    recall.append(0.)
-    for idx in range(len(thresholds)):
-        if thresholds[idx] < domains[DBD]:
-            continue
-        statistics["Cis-BP Threshold"] = domains[DBD]
-        statistics["Precision @ Cis-BP Threshold"] = precision[idx]
-        statistics["Recall @ Cis-BP Threshold"] = recall[idx]
-        break
-
-    # Verbose
-    if verbose:
-        threshold = statistics["Cis-BP Threshold"]
-        Jglobals.write(
-            None,
-            "\t*** Cis-BP Threshold: {0:.2f}%".format(round(threshold * 100, 2))
-        )
-        P = round(statistics["Precision @ Cis-BP Threshold"] * 100, 2)
-        Jglobals.write(
-            None, "\t*** Precision @ Cis-BP Threshold: %s" % P
-        )
-        R = round(statistics["Recall @ Cis-BP Threshold"] * 100, 2)
-        Jglobals.write(
-            None, "\t*** Recall @ Cis-BP Threshold: %s" % R
-        )
-
-    print(thresholds)
-    print(precision)
-    print(recall)
-    exit(0)
+        # Verbose
+        if verbose:
+            Jglobals.write(None, "\t*** Cis-BP Threshold: FAIL!")
 
     return(statistics)
 

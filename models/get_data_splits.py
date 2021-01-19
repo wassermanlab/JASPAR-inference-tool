@@ -407,23 +407,12 @@ def __get_training_test_sets(DBD, uniaccs, uniacc2sequence):
         if os.path.exists(seq_file):
             os.remove(seq_file)
 
-    # Get training (90%) and test (10%) sets
+    # Get training (80%) and test (20%) sets
     seqs = [l for l in Jglobals.parse_file(txt_file)]
-    training = seqs[:len(seqs) * 90 // 100]
+    training = seqs[:len(seqs) * 80 // 100]
     test = seqs[len(training):]
 
     return(set(training), set(test))
-
-def __train_or_test_split(uniacc1, uniacc2, non_redundant):
-
-    if uniacc1 in non_redundant:
-        if len(non_redundant[uniacc1]) > 2:
-            return("test")
-    if uniacc2 in non_redundant:
-        if len(non_redundant[uniacc2]) > 2:
-            return("test")
-
-    return("train")
 
 def __get_y(uniacc1, uniacc2, uniacc2matrix, matrix2cluster):
     """
