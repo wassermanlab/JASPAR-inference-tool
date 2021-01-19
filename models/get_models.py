@@ -8,7 +8,6 @@ from itertools import chain
 import json
 import numpy as np
 import os
-import pandas as pd
 import pickle
 import shutil
 from sklearn.metrics import precision_recall_curve
@@ -17,6 +16,7 @@ import sys
 # Defaults
 out_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 root_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)
+files_dir = os.path.join(root_dir, "files")
 data_splits_file = os.path.join(out_dir, "data_splits.json.gz")
 
 # Append JASPAR-profile-inference to path
@@ -55,7 +55,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--data-splits-file", default=data_splits_file,
-        metavar="FILE", help="compressed json file from get_data_splits.py")
+        metavar="FILE", help="compressed json file (from get_data_splits.py)")
+    parser.add_argument("--files-dir", default=files_dir, metavar="DIR",
+        help="files directory (from get_files.py)")
     parser.add_argument("-o", default=out_dir, metavar="DIR",
         help="output directory (default = ./)")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -80,6 +82,13 @@ def main():
     lambdas = 10**np.linspace(6, -6, 100)
     global verbose
     verbose = args.verbose
+    global domains
+    domains = {}
+    domains_file = os.path.abspath(os.path.join(files_dir, "pfam-DBDs.json"))
+    handle = Jglobals._get_file_handle(domains_file)
+    for key, values in json.load(handle).items():
+        domains.setdefault(values[0], float(values[1]))
+    handle.close()
 
     # Create output dir
     if not os.path.exists(out_dir):
@@ -97,14 +106,17 @@ def get_models(out_dir=out_dir):
         # Initialize
         models = {
             "Keys": "DBD",
-            "Values": [
-                "similarity",
-                "coefficients",
-                "threshold @ 75% precision",
-                "recall @ 75% precision",
-                "precision",
-                "recall",
-            ]
+            "Values": {
+                "Keys": "Similarity",
+                "Values": [
+                    "Coefficients",
+                    "Best lambda",
+                    "Threshold @ 75% Precision",
+                    "Recall @ 75% Precision",
+                    "Precision",
+                    "Recall"
+                ]
+            }
         }
 
         # Create data splits dir
@@ -126,60 +138,52 @@ def get_models(out_dir=out_dir):
             if not os.path.exists(pickle_file):
 
                 # Initialize
-                models = {}
+                pickles = {}
+                models.setdefault(DBD, {})
 
                 # For each sequence similarity representation...
                 for similarity in ["identity", "blosum62"]:
 
                     # Train model
-                    m = __train_model(DBD, similarity)
-                    models.setdefault(similarity, m)
+                    m, coefficients, lamdabest = __train_model(DBD, similarity)
+                    pickles.setdefault(similarity, m)
+
+                    # Compute statistics
+                    statistics = __compute_statistics(DBD, similarity, m)
+                    models[DBD].setdefault(similarity, [])
+                    models[DBD][similarity].append([
+                        coefficients,
+                        lamdabest,
+                        statistics["Threshold @ 75% Precision"],
+                        statistics["Recall @ 75% Precision"],
+                        statistics["Precision"],
+                        statistics["Recall"]
+                    ])
 
                 # Write
                 handle = Jglobals._get_file_handle(pickle_file, "wb")
-                pickle.dump(models, handle)
+                pickle.dump(pickles, handle)
                 handle.close()
 
-            # # Skip if JSON file already exists
-            # if DBD == "AP2":
-            #     print(models["identity"].coef_)
-            #     exit(0)
+            # Compute Cis-BP statistics
+            statistics = __compute_CisBP_statistics(DBD)
+            models[DBD].setdefault("cisbp", [])
+            models[DBD][similarity].append([
+                coefficients,
+                lamdabest,
+                statistics["Threshold @ 75% Precision"],
+                statistics["Recall @ 75% Precision"],
+                statistics["Precision"],
+                statistics["Recall"]
+            ])
 
-            # # Train models
-            # # similarity, model, lambdabest, y = _train_LinReg_models(values)
-            # similarity, coeffs, Y, coverage = _train_LinReg_models(values)
+            exit(0)
 
-            # # Add model
-            # # models.setdefault(domain, [similarity, model, lambdabest, y])
-            # models.setdefault(domain, [similarity, coeffs, Y, coverage])
-
-        # # Write pickle file
-        # with open(gzip_file, "wb") as f:
-        #     pickle.dump(models, f)
-        # # Write
-        # Jglobals.write(
-        #     json_file[:-3],
-        #     json.dumps(models, sort_keys=True, indent=4)
-        # )
-        # fi = Jglobals._get_file_handle(json_file[:-3], "rb")
-        # fo = Jglobals._get_file_handle(json_file, "wb")
-        # shutil.copyfileobj(fi, fo)
-        # fi.close()
-        # fo.close()
-        # os.remove(json_file[:-3])
-
-        # Verbose mode
-        if verbose:
-            Jglobals.write(None, "\n")
-
-# def __get_lambda_path(min_lambda=1e-3, max_lambda=1e+3, reg_step = 0.01):
-
-#     lambdas = np.arange(log(min_lambda), log(max_lambda), reg_step)
-#     lambdas = list(np.power(10, lambdas))
-#     lambdas.append(max_lambda)
-#     lambdas.sort(reverse=True)
-
-#     return(lambdas)
+        # Write
+        Jglobals.write(
+            json_file,
+            json.dumps(models, sort_keys=True, indent=4)
+        )
 
 def __train_model(DBD, similarity):
 
@@ -217,7 +221,7 @@ def __train_model(DBD, similarity):
         if verbose:
             Jglobals.write(None, "\t*** LogitNet training: success!")
 
-        return(m_fit)
+        return(m_fit, list(m_fit.coef_[0]), m_fit.lambda_max_)
 
     except:
 
@@ -225,7 +229,7 @@ def __train_model(DBD, similarity):
         if verbose:
             Jglobals.write(None, "\t*** LogitNet training: fail!")
 
-        return(None) 
+        return(None, None, None) 
 
 def __get_pairs_Xs_ys(DBD, similarity, data_split="train"):
 
@@ -291,52 +295,140 @@ def __get_weights(ys):
 
     return([weights[y[0]] for y in ys])
 
-def __compute_statistics(DBD, similarity, m):
+def __compute_statistics(DBD, similarity, m=None):
 
-    # Skip
-    if m is None:
+    # Initialize
+    statistics = {
+        "Threshold @ 75% Precision": None,
+        "Recall @ 75% Precision": None,
+        "Precision": None,
+        "Recall": None,
+    }
 
-        # Verbose mode
+    if m is not None:
+
+        # Get pairs, Xs, ys
+        pairs, Xs, ys = __get_pairs_Xs_ys(DBD, similarity, "test")
+
+        # Get best lambda (i.e. max)
+        lambdabest = m.lambda_max_
         if verbose:
-            Jglobals.write(None, "\t*** not enough data: skip statistics!")
+            Jglobals.write(None, "\t*** best lambda: %s" % round(lambdabest, 8))
 
-        return(None, None, None, None)
+        # Get Xs, ys
+        Xs_test = np.asarray(Xs)
+        ys_test = np.asarray(ys["stringent"])
+
+        # Predict
+        p = m.predict_proba(Xs_test, lamb=lambdabest)
+        p_transposed = p.transpose()
+
+        # Statistics
+        precision, recall, thresholds = precision_recall_curve(
+            ys_test.ravel(), p_transposed[1]
+        )
+        statistics["Precision"] = list(precision)
+        statistics["Recall"] = list(recall)
+        for idx in range(len(thresholds)):
+            if precision[idx] < 0.75:
+                continue
+            statistics["Threshold @ 75% Precision"] = thresholds[idx]
+            statistics["Recall @ 75% Precision"] = recall[idx]
+            break
+
+        # Verbose
+        if verbose:
+            if statistics["Threshold @ 75% Precision"] is not None:
+                recall = round(statistics["Threshold @ 75% Precision"] * 100, 2)
+                Jglobals.write(
+                    None,
+                    "\t*** Recall @ 75% Precision: {0:.2f}%".format(recall)
+                )
+            else:
+                Jglobals.write(None, "\t*** Recall @ 75% Precision: fail!")
+
+    return(statistics)
+
+def __compute_CisBP_statistics(DBD):
+
+    # Initialize
+    precision = []
+    recall = []
+    statistics = {
+        "Cis-BP Threshold": None,
+        "Precision @ Cis-BP Threshold": None,
+        "Recall @ Cis-BP Threshold": None,
+        "Precision": None,
+        "Recall": None,
+    }
 
     # Get pairs, Xs, ys
-    pairs, Xs, ys = __get_pairs_Xs_ys(DBD, similarity, "test")
-
-    # Get best lambda (i.e. max)
-    lambdabest = m.lambda_max_
-    if verbose:
-        Jglobals.write(None, "\t*** best lambda: %s" % round(lambdabest, 8))
+    pairs, Xs, ys = __get_pairs_Xs_ys(DBD, "identity", "test")
 
     # Get Xs, ys
     Xs_test = np.asarray(Xs)
     ys_test = np.asarray(ys["stringent"])
 
-    # Predict
-    p = m.predict_proba(Xs_test, lamb=lambdabest)
-    p_transposed = p.transpose()
+    # Get thresholds
+    thresholds = sorted(set([float(sum(X)) / len(X) for X in Xs_test]))
+
+    # For each threshold...
+    for t in thresholds:
+
+        # Initialize
+        tp = 0; fp = 0
+
+        # For each X, y...
+        for X, y in zip(Xs_test, ys_test):
+
+            # Initialize
+            pid = float(sum(X)) / len(X)
+
+            # If %ID is smaller than threshold = negative
+            if pid < t:
+                continue
+
+            # If y is one = true
+            if y[0] == 1: tp += 1
+            else: fp += 1
+
+        # Precision, recall
+        precision.append(float(tp) / (tp + fp))
+        recall.append(float(tp) / sum(ys_test.ravel()))
 
     # Statistics
-    precision, recall, thresholds = precision_recall_curve(
-        ys_test.ravel(), p_transposed[1]
-    )
-    if verbose:
-        success = False
-        for idx in range(len(thresholds)):
-            if precision[idx] < 0.75:
-                continue
-            r = round(recall[idx] * 100, 2)
-            Jglobals.write(
-                None, "\t*** model recall @ 75% precision: {0:.2f}%".format(r)
-            )
-            success = True
-            break
-        if not success:
-            Jglobals.write(None, "\t*** model does not achieve 75% precision!")
+    precision.append(1.)
+    recall.append(0.)
+    for idx in range(len(thresholds)):
+        if thresholds[idx] < domains[DBD]:
+            continue
+        statistics["Cis-BP Threshold"] = domains[DBD]
+        statistics["Precision @ Cis-BP Threshold"] = precision[idx]
+        statistics["Recall @ Cis-BP Threshold"] = recall[idx]
+        break
 
-    return(lambdabest, idx, precision, recall, thresholds)
+    # Verbose
+    if verbose:
+        threshold = statistics["Cis-BP Threshold"]
+        Jglobals.write(
+            None,
+            "\t*** Cis-BP Threshold: {0:.2f}%".format(round(threshold * 100, 2))
+        )
+        P = round(statistics["Precision @ Cis-BP Threshold"] * 100, 2)
+        Jglobals.write(
+            None, "\t*** Precision @ Cis-BP Threshold: %s" % P
+        )
+        R = round(statistics["Recall @ Cis-BP Threshold"] * 100, 2)
+        Jglobals.write(
+            None, "\t*** Recall @ Cis-BP Threshold: %s" % R
+        )
+
+    print(thresholds)
+    print(precision)
+    print(recall)
+    exit(0)
+
+    return(statistics)
 
 #-------------#
 # Main        #
