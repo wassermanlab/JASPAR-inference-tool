@@ -101,10 +101,6 @@ def get_data_splits(files_dir=files_dir, out_dir=out_dir):
         # For each DBD, values...
         for DBD, values in dbd2uniaccs.items():
 
-            # # Test C2H2 zinc fingers
-            # if DBD != "zf-C2H2":
-            #     continue
-
             # Initialize
             uniaccs = list(values.keys())
 
