@@ -49,34 +49,35 @@ def main():
     # Parse arguments
     args = parse_args()
 
-    # Get files
-    get_files(args.devel, os.path.abspath(args.o))
-
-def get_files(devel=False, out_dir=out_dir):
-
     # Globals
     global client
-    global codec
-    global cwd
-    global profiles_file_ext
-    global clusters_file_ext
-    global uniprot_file_ext
     client = coreapi.Client()
+    global codec
     codec = coreapi.codecs.CoreJSONCodec()
+    global cwd
     cwd = os.getcwd()
+    global devnull
+    devnull = subprocess.DEVNULL
+    global jaspar_url
+    jaspar_url = "http://jaspar.genereg.net/"
+    if args.devel:
+        jaspar_url = "http://hfaistos.uio.no:8002/"
+    global profiles_file_ext
     profiles_file_ext = ".profiles.json"
+    global clusters_file_ext
     clusters_file_ext = ".clusters.json"
+    global uniprot_file_ext
     uniprot_file_ext = ".uniprot.json"
+    out_dir = os.path.abspath(args.o)
+
+    # Get files
+    get_files(out_dir)
+
+def get_files(out_dir=out_dir):
 
     # Create output dir
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-
-    # Get JASPAR URL
-    global jaspar_url
-    jaspar_url = "http://jaspar.genereg.net/"
-    if devel:
-        jaspar_url = "http://hfaistos.uio.no:8002/"
 
     # Download Pfam DBD hidden Markov models
     __download_Pfam_DBD_HMMs(out_dir)
@@ -90,7 +91,6 @@ def get_files(devel=False, out_dir=out_dir):
         # Download JASPAR files
         __download_JASPAR_profiles(taxon, out_dir)
         __get_profile_info(taxon, out_dir)
-        # __get_motif_clusters(taxon, out_dir)
 
         # Download TF sequences from UniProt
         __download_UniProt_sequences(taxon, out_dir)
@@ -320,60 +320,9 @@ def __get_profile_info(taxon, out_dir=out_dir):
             json.dumps(profiles, sort_keys=True, indent=4)
         )
 
-# def __get_motif_clusters(taxon, out_dir=out_dir):
-
-#     # Skip if taxon clusters JSON file already exists
-#     clusters_json_file = os.path.join(out_dir, taxon + clusters_file_ext)
-#     if not os.path.exists(clusters_json_file):
-
-#         # Create taxon directory
-#         clusters_dir = os.path.join(out_dir, taxon, "clusters")
-#         os.makedirs(clusters_dir)
-
-#         # Move to clusters directory
-#         os.chdir(clusters_dir)
-
-#         # Initialize
-#         clusters = {}
-#         leafs_file = os.path.join(
-#             "JASPAR_2020_matrix_clustering_%s_tables" % taxon,
-#             "leaf_to_cluster.tab"
-#         )
-#         clusters_file = "JASPAR_2020_matrix_clustering_%s_archive.zip" % taxon
-#         url = os.path.join(
-#             jaspar_url, "static", "clustering", "JASPAR_2020_clusters", taxon,
-#             "radial_trees"
-#         )
-
-#         # Skip if Cis-BP file already exists
-#         if not os.path.exists(clusters_file):
-#             urlretrieve(os.path.join(url, clusters_file), clusters_file)
-
-#         # Unzip
-#         os.system("unzip -qq %s" % clusters_file)
-
-#         # For each line...
-#         for line in Jglobals.parse_file(leafs_file):
-#             m = re.search("JASPAR_2020_\w+_m\d+_(MA\d{4})_(\d)\t(\d+)", line)
-#             matrix_id = "%s.%s" % (m.group(1), m.group(2))
-#             clusters.setdefault(matrix_id, [])
-#             clusters[matrix_id].append(int(m.group(3)))
-
-#         # Remove clusters directory
-#         shutil.rmtree(clusters_dir)
-
-#         # Write
-#         Jglobals.write(
-#             clusters_json_file,
-#             json.dumps(clusters, sort_keys=True, indent=4)
-#         )
-
-#         # Change dir
-#         os.chdir(cwd)
-
 def __download_UniProt_sequences(taxon, out_dir=out_dir):
 
-    # # Initialize
+    # Initialize
     # faulty_profiles = {
     #     "MA0024.1": ["Q01094"],
     #     "MA0046.1": ["P20823"],
@@ -432,10 +381,6 @@ def __download_UniProt_sequences(taxon, out_dir=out_dir):
             response = client.get(url)
             json_obj = json.loads(codec.encode(response))
 
-            # # Fix faulty profiles
-            # if json_obj["matrix_id"] in faulty_profiles:
-            #     json_obj["uniprot_ids"] = faulty_profiles[json_obj["matrix_id"]]
-
             # For each UniProt Accession...
             for uniacc in json_obj["uniprot_ids"]:
 
@@ -493,12 +438,13 @@ def __format_BLAST_database(taxon, out_dir=out_dir):
 
         # For each UniProt Accession...
         for uniacc in sorted(uniaccs):
-            Jglobals.write(fasta_file, ">%s\n%s" % (uniacc, uniaccs[uniacc][1]))
+            seq = uniaccs[uniacc][1]
+            Jglobals.write(fasta_file, ">%s\n%s" % (uniacc, seq))
 
         # Make BLAST+ database
         cmd = "makeblastdb -in %s -dbtype prot" % fasta_file
-        process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL)
+        process = subprocess.run(
+            [cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 #-------------#
 # Main        #
