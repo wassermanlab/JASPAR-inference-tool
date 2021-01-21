@@ -100,25 +100,31 @@ def get_files(devel=False, out_dir=out_dir):
 
 def __download_Pfam_DBD_HMMs(out_dir=out_dir):
 
-    # Skip if Pfam DBD file already exists
-    pfam_DBD_file = os.path.join(out_dir, "pfam-DBDs.json")
-    if not os.path.exists(pfam_DBD_file):
+    # Skip if Pfam file already exists
+    json_file = os.path.join(out_dir, "pfam.json")
+    if not os.path.exists(json_file):
 
         # Initialize
-        cutoffs = {}
-        pfam_DBDs = {}
-        url = "http://cisbp.ccbr.utoronto.ca/data/2.00/DataFiles/Bulk_downloads/EntireDataset/"
+        pfams = {}
+        pfam_ids = set()
+        url = "http://cisbp.ccbr.utoronto.ca/data/2.00/" + \
+              "DataFiles/Bulk_downloads/EntireDataset/"
         cisbp_file = "TF_Information_all_motifs.txt.zip"
 
+        # Create Pfam dir
+        pfam_dir = os.path.join(out_dir, "pfam")
+        if not os.path.isdir(pfam_dir):
+            os.makedirs(pfam_dir)
+
         # Change dir
-        os.chdir(out_dir)
+        os.chdir(pfam_dir)
 
         # Skip if Cis-BP file already exists
         if not os.path.exists(cisbp_file):
             urlretrieve(os.path.join(url, cisbp_file), cisbp_file)
 
         # Get DBD/cut-off pairs
-        cmd = "unzip -p %s | cut -f 11,13 | sort | uniq | grep -v DBDs" % \
+        cmd = "unzip -p %s | cut -f 11 | sort | uniq | grep -v DBDs" % \
             cisbp_file
         process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
@@ -126,32 +132,18 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
         # For each line...
         for line in process.stdout.decode("utf-8").split("\n"):
 
-            # Initialize
-            line = line.split("\t")
-            if len(line) != 2:
-                continue
-            pfam_ids, cutoff = line[0], line[1]
-
             # For each Pfam ID...
-            for pfam_id in pfam_ids.split(","):
+            for pfam_id in line.split(","):
 
                 # Skip if not Pfam ID
-                if pfam_id == "UNKNOWN":
+                if pfam_id == "UNKNOWN" or pfam_id == "":
                     continue
 
-                # Add Pfam ID cut-off
-                cutoffs.setdefault(pfam_id, float(cutoff))
-
-        # Create Pfam dir
-        pfam_dir = "pfam-DBDs"
-        if not os.path.exists(pfam_dir):
-            os.makedirs(pfam_dir)
-
-        # Change dir
-        os.chdir(pfam_dir)
+                # Add Pfam ID
+                pfam_ids.add(pfam_id)
 
         # For each Pfam ID...
-        for pfam_id in sorted(cutoffs):
+        for pfam_id in pfam_ids:
 
             # Fetch MSA from Pfam
             attempts = 0
@@ -188,13 +180,13 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
                 stderr=subprocess.DEVNULL)
 
             # Add Pfam
-            pfam_DBDs.setdefault(pfam_ac, [pfam_id_std, cutoffs[pfam_id]])
+            pfams.setdefault(pfam_ac, pfam_id_std)
 
             # Remove MSA file
             os.remove(msa_file)
 
         # Skip if HMM database of all DBDs already exists
-        hmm_db = "all_DBDs.hmm"
+        hmm_db = "All.hmm"
         if not os.path.exists(hmm_db):
 
             # For each HMM file...
@@ -212,21 +204,17 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
             process = subprocess.run([cmd], shell=True,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        # Write
-        Jglobals.write(
-            pfam_DBD_file,
-            json.dumps(pfam_DBDs, sort_keys=True, indent=4)
-        )
-
-        # Change dir
-        os.chdir(out_dir)
-
         # Remove Cis-BP file
         if os.path.exists(cisbp_file):
             os.remove(cisbp_file)
 
-    # Change dir
-    os.chdir(cwd)
+        # Write
+        Jglobals.write(
+            json_file, json.dumps(pfams, sort_keys=True, indent=4)
+        )
+
+        # Change dir
+        os.chdir(cwd)
 
 def __download_CisBP_models(out_dir=out_dir):
 
