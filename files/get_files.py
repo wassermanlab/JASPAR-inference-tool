@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.Alphabet import IUPAC
 import coreapi
 from git import Repo
 import json
@@ -24,6 +27,7 @@ sys.path.append(root_dir)
 
 # Import globals
 from __init__ import Jglobals
+from infer_profile import hmmalign, hmmscan, __make_seq_file
 
 #-------------#
 # Functions   #
@@ -62,10 +66,12 @@ def main():
     jaspar_url = "http://jaspar.genereg.net/"
     if args.devel:
         jaspar_url = "http://hfaistos.uio.no:8002/"
-    global profiles_file_ext
-    profiles_file_ext = ".profiles.json"
     global clusters_file_ext
     clusters_file_ext = ".clusters.json"
+    global pfam_file_ext
+    pfam_file_ext = ".pfam.json"
+    global profiles_file_ext
+    profiles_file_ext = ".profiles.json"
     global uniprot_file_ext
     uniprot_file_ext = ".uniprot.json"
     out_dir = os.path.abspath(args.o)
@@ -97,6 +103,9 @@ def get_files(out_dir=out_dir):
 
         # Format BLAST+ database
         __format_BLAST_database(taxon, out_dir)
+
+        # Get Pfam alignments
+        __get_Pfam_alignments(taxon, out_dir)
 
 def __download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -316,8 +325,7 @@ def __get_profile_info(taxon, out_dir=out_dir):
 
         # Write
         Jglobals.write(
-            profiles_json_file,
-            json.dumps(profiles, sort_keys=True, indent=4)
+            profiles_json_file, json.dumps(profiles, sort_keys=True, indent=4)
         )
 
 def __download_UniProt_sequences(taxon, out_dir=out_dir):
@@ -418,8 +426,7 @@ def __download_UniProt_sequences(taxon, out_dir=out_dir):
 
         # Write
         Jglobals.write(
-            uniprot_json_file,
-            json.dumps(uniaccs, sort_keys=True, indent=4)
+            uniprot_json_file, json.dumps(uniaccs, sort_keys=True, indent=4)
         )
 
     # Change dir
@@ -445,6 +452,64 @@ def __format_BLAST_database(taxon, out_dir=out_dir):
         cmd = "makeblastdb -in %s -dbtype prot" % fasta_file
         process = subprocess.run(
             [cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def __get_Pfam_alignments(taxon, out_dir=out_dir):
+
+    # Skip if Pfam JSON file already exists
+    pfam_json_file = os.path.join(out_dir, taxon + pfam_file_ext)
+    if not os.path.exists(pfam_json_file):
+
+        # Change dir
+        os.chdir(out_dir)
+
+        # Initialize
+        pfams = {}
+        seq_file = ".seq.fasta"
+        hmm_db = os.path.join("pfam", "All.hmm")
+        uniprot_json_file = taxon + uniprot_file_ext
+
+        # Load JSON file
+        with open(uniprot_json_file) as f:
+            uniaccs = json.load(f)
+
+        # For each uniacc...
+        for u in uniaccs:
+
+            # Initialize
+            pfams.setdefault(u, [])
+
+            # Make seq file
+            seq = Seq(uniaccs[u][1], IUPAC.protein)
+            record = SeqRecord(seq, id=u, name=u, description=u)
+            __make_seq_file(record, seq_file)
+
+            # For each DBD...
+            for pfam_id_std, start, end, evalue in hmmscan(seq_file, hmm_db,
+                non_overlapping_domains=True):
+
+                # Initialize
+                hmm_file = os.path.join("pfam", "%s.hmm" % pfam_id_std)
+
+                # Make seq file
+                sub_seq = seq[start:end]
+                record = SeqRecord(sub_seq, id=u, name=u, description=u)
+                __make_seq_file(record, seq_file)
+
+                # Add DBDs
+                alignment = hmmalign(seq_file, hmm_file)
+                pfams[u].append((pfam_id_std, alignment, start+1, end, evalue))
+
+        # Write
+        Jglobals.write(
+            pfam_json_file, json.dumps(pfams, sort_keys=True, indent=4)
+        )
+
+        # Remove seq file
+        if os.path.exists(seq_file):
+            os.remove(seq_file)
+
+        # Change dir
+        os.chdir(cwd)
 
 #-------------#
 # Main        #

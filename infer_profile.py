@@ -1,150 +1,106 @@
 #!/usr/bin/env python
 
-import os, re
 import argparse
-from Bio import SearchIO, SeqIO
+from Bio import SearchIO
 from Bio.SeqRecord import SeqRecord
 from Bio.SubsMat.MatrixInfo import blosum62
+import copy
 from functools import partial
 import json
 import math
 from multiprocessing import Pool
 import numpy as np
+import os
+import re
 import shutil
 import string
 import subprocess
 import sys
 from tqdm import tqdm
+import warnings
 
 # Defaults
 root_dir = os.path.dirname(os.path.realpath(__file__))
 files_dir = os.path.join(root_dir, "files")
-models_dir = os.path.join(root_dir, "models")
+# models_dir = os.path.join(root_dir, "models")
 
 # Append JASPAR-profile-inference to path
 sys.path.append(root_dir)
 
 # Import globals
-from __init__ import Jglobals
+from __init__ import Jglobals, CisBP
 
 #-------------#
 # Functions   #
 #-------------#
 
-usage_msg = """
-usage: %s --fasta-file FILE --files-dir DIR
-                        --models-dir DIR
-""" % os.path.basename(__file__)
-
-help_msg = """%s
-  --fasta-file FILE   one or more sequences in FASTA format
-
-optional arguments:
-  -h, --help          show this help message and exit
-  --dummy-dir DIR     dummy directory (default = /tmp/)
-  --files-dir DIR     files directory (from get_files.py;
-                      default = ./files/)
-  --models-dir DIR    models directory (from regression.py;
-                      default = ./models/)
-  --output-file FILE  output file (default = STDOUT)
-  --threads INT       threads to use (default = 1)
-
-inference arguments:
-  -l, --latest        use the latest version of each profile
-  --rost INT          n parameter for the Rost's sequence
-                      identity curve (default = 5; i.e. ~99%%
-                      of correctly assigned homologs)
-  --taxon [STR ...]   taxon(s) to use (default = all)
-""" % usage_msg
-
 def parse_args():
     """
-    This function parses arguments provided via the command line and returns an {argparse} object.
+    This function parses arguments provided via the command line and returns
+    an {argparse} object.
     """
 
     # Initialize
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser()
 
     # Mandatory args
-    parser.add_argument("--fasta-file")
+    parser.add_argument("sequences",
+        help="input sequence(s) in FASTA format")
 
     # Optional args
-    optional_group = parser.add_argument_group("optional arguments")
-    optional_group.add_argument("-h", "--help", action="store_true")
-    optional_group.add_argument("--dummy-dir", default="/tmp/")
-    optional_group.add_argument("--files-dir", default=files_dir)
-    optional_group.add_argument("--models-dir", default=models_dir)
-    optional_group.add_argument("--output-file")
-    optional_group.add_argument("-l", "--latest", action="store_true")
-    optional_group.add_argument("--rost", default=5)
-    optional_group.add_argument("--taxon", nargs="*", default=Jglobals.taxons)
-    optional_group.add_argument("--threads", default=1)
+    parser.add_argument("--dummy-dir", default="/tmp/", metavar="DIR", 
+        help="dummy directory (default = /tmp/)")
+    parser.add_argument("--files-dir", default=files_dir, metavar="DIR",
+        help="files directory from get_files.py (default = ./files/)")
+    # # parser.add_argument("--models-dir", default=models_dir)
+    parser.add_argument("--output-file", metavar="FILE",
+        help="output file (default = STDOUT)")
+    parser.add_argument("--threads", default=1, metavar="INT", type=int,
+        help="number of threads to use (default = 1)")
+    parser.add_argument("-w", "--warnings", action="store_true",
+        help="issue warnings (default = False)")
+
+    # Inference args
+    inference_group = parser.add_argument_group("inference arguments")
+    inference_group.add_argument("-l", "--latest", action="store_true",
+        help="return the latest version of each profile")
+    inference_group.add_argument("--rost", default=5, metavar="INT",
+        help="\"n\" parameter for the Rost's curve (default = 5)")
+    inference_group.add_argument("--taxon", nargs="*", default=Jglobals.taxons,
+        metavar="STR", help="return profiles from given taxon (default = all)")
 
     args = parser.parse_args()
 
-    check_args(args)
-
     return(args)
-
-def check_args(args):
-    """
-    This function checks an {argparse} object.
-    """
-
-    # Print help
-    if args.help:
-        print(help_msg)
-        exit(0)
-
-    # Check mandatory arguments
-    if not args.fasta_file:
-        error = ["%s\n%s" % (usage_msg, os.path.basename(__file__)), "error", "argument \"--fasta-file\" is required\n"]
-        print(": ".join(error))
-        exit(0)
-
-    # Check "--threads" argument
-    try:
-        args.threads = int(args.threads)
-    except:
-        error = ["%s\n%s" % (usage_msg, os.path.basename(__file__)), "error", "argument \"--threads\"", "invalid value", "\"%s\"\n" % args.threads]
-        print(": ".join(error))
-        exit(0)
-
-    # Check "--rost" argument
-    try:
-        args.rost = int(args.rost)
-    except:
-        error = ["%s\n%s" % (usage_msg, os.path.basename(__file__)), "error", "argument \"--rost\"", "invalid value", "\"%s\"\n" % args.rost]
-        print(": ".join(error))
-        exit(0)
-
-    # Check "--taxon" argument
-    for taxon in args.taxon:
-        if taxon not in Jglobals.taxons:
-            error = [os.path.basename(__file__), "error", "argument \"--taxon\"", "invalid value", "\"%s\"" % taxon]
-            print(": ".join(error))
-            exit(0)
-
-    return(args) 
 
 def main():
 
     # Parse arguments
     args = parse_args()
 
+    # Warnings
+    if not args.warnings:
+        warnings.filterwarnings("ignore")
+
     # Infer profiles
-    infer_profiles(args.fasta_file, args.dummy_dir, args.files_dir,
-        args.models_dir, args.output_file, args.threads, args.latest,
-        args.rost, args.taxon)
+    infer_profiles(args.sequences, args.dummy_dir, args.files_dir,
+        args.output_file, args.threads, args.latest, args.rost, args.taxon)
 
 def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
-    models_dir=models_dir, output_file=None, threads=1, latest=False, n=5,
-    taxons=Jglobals.taxons):
+    output_file=None, threads=1, latest=False, n=5, taxons=Jglobals.taxons):
 
     # Initialize
     base_name = os.path.basename(__file__)
     pid = os.getpid()
-    
+
+    # Globals
+    global cisbp, domains, jaspar
+    cisbp = {}
+    for json_file in os.listdir(os.path.join(files_dir, "cisbp")):
+        model = CisBP(os.path.join(files_dir, "cisbp", json_file))
+        cisbp.setdefault(model.family, model)
+    domains, jaspar = __load_JSON_files(files_dir, taxons)
+
     # Create dummy dir
     dummy_dir = os.path.join(dummy_dir, "%s.%s" % (base_name, pid))
     dummy_file = os.path.join(dummy_dir, "inferred_profiles.tsv")
@@ -163,16 +119,13 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
     Jglobals.write(dummy_file, "\t".join(columns))
 
     # Infer SeqRecord profiles
-    pool = Pool(threads)
-    parallelized = partial(infer_SeqRecord_profiles, dummy_dir=dummy_dir,
-        files_dir=files_dir, models_dir=models_dir, latest=latest, n=n,
-        taxons=taxons)
-    for inference_results in tqdm(pool.imap(parallelized, seq_records),
-        total=len(seq_records)):
-        # For each inference...
-        for inference_result in inference_results:
-            # Write
-            Jglobals.write(dummy_file, "\t".join(map(str, inference_result)))
+    kwargs = {"total": len(seq_records), "ncols": 100}
+    pool = Pool(min([threads, len(seq_records)]))
+    p = partial(infer_SeqRecord_profiles, dummy_dir=dummy_dir,
+        files_dir=files_dir, latest=latest, n=n, taxons=taxons)
+    for inferences in tqdm(pool.imap(p, seq_records), **kwargs):
+        for inference in inferences:
+            Jglobals.write(dummy_file, "\t".join(map(str, inference)))
     pool.close()
     pool.join()
 
@@ -188,102 +141,7 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
     # Remove dummy dir
     shutil.rmtree(dummy_dir)
 
-def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
-    models_dir=models_dir, latest=False, n=5, taxons=Jglobals.taxons):
-
-    # Load JSON files
-    global domains, jaspar, models, profiles
-    domains, jaspar, models = _load_json_files(files_dir, models_dir)
-
-    # Initialize
-    cutoffs = {}
-    inference_results = []
-
-    # BLAST+ search
-    blast_results = BLAST(seq_record, files_dir, taxons)
-
-    # Get Pfam DBDs
-    SeqRecord_Pfam_alignments = _get_SeqRecord_Pfam_alignments(seq_record,
-        files_dir, dummy_dir)
-    SeqRecord_DBDs = [v[0] for v in SeqRecord_Pfam_alignments]
-    SeqRecord_alignments = [v[1] for v in SeqRecord_Pfam_alignments] 
-    pfam_results = _get_results_Pfam_alignments(blast_results)
-
-    # Skip if no Pfam DBDs
-    if len(SeqRecord_Pfam_alignments) == 0:
-        return(inference_results)
-
-    # Filter results
-    filtered_results = _filter_results(blast_results, pfam_results,
-        SeqRecord_DBDs, n)
-
-    # Get cut-offs on the percentage of sequence identity
-    for pfam_ac in domains:
-        if domains[pfam_ac][0] in SeqRecord_DBDs:
-            cutoffs.setdefault(domains[pfam_ac][0], domains[pfam_ac][1])
-
-    # Get similarity, coefficients and Y cut-off
-    DBDs = "+".join(SeqRecord_DBDs)
-    if DBDs in models:
-        similarity, coeffs, Y = models[DBDs][:3]
-        coeffs = np.array(coeffs)
-    else:
-        similarity = None
-
-    # For each result...
-    for result in filtered_results:
-
-        # Inference: percentage of sequence identity
-        pids = []
-        skip = False
-        identities = None
-        for a in range(len(SeqRecord_alignments)):
-            s1 = __removeLowercase(SeqRecord_alignments[a])
-            s2 = __removeLowercase(pfam_results[result[1]][1][a])
-            pids.append(_get_pid(s1, s2))
-            if pids[-1] < cutoffs[SeqRecord_DBDs[a]]:
-                skip = True
-                break
-        if not skip:
-            identities = round(np.mean(np.array(pids)), 3)
-
-        # Inference: similarity regression
-        Xs = []
-        similarity_regression = None
-        if similarity is not None:
-            sr = []
-            sr_cutoff = False
-            for a in range(len(SeqRecord_alignments)):
-                s1 = __removeLowercase(SeqRecord_alignments[a])
-                s2 = __removeLowercase(pfam_results[result[1]][1][a])
-                Xs.extend(__get_X(s1, s2, similarity=similarity))
-            similarity_regression = round(sum(np.array(Xs) * coeffs), 3)
-            if similarity_regression < Y:
-                similarity_regression = None
-
-        # Add result
-        if identities is not None or similarity_regression is not None:
-            for matrix, gene_name in jaspar[result[1]]["profiles"]:
-                inference_results.append([result[0], gene_name, matrix,
-                    result[4], result[2], result[3], identities,
-                    similarity_regression])
-    
-    # If use the lastest version of JASPAR...
-    if latest:
-        # Sort
-        inference_results.sort(key=lambda x: (x[3], x[1], -float(x[2][2:])))
-        # Remove profiles from older versions
-        for i in sorted(frozenset(range(len(inference_results))), reverse=True):
-            if inference_results[i][2][:6] == inference_results[i - 1][2][:6]:
-                inference_results.pop(i)
-    # ... Else, just sort...
-    else:
-        inference_results.sort(key=lambda x: (x[3], x[1], float(x[2][2:])))
-
-    return(inference_results)
-
-def _load_json_files(files_dir=files_dir, models_dir=models_dir,
-    taxons=Jglobals.taxons):
+def __load_JSON_files(files_dir=files_dir, taxons=Jglobals.taxons):
 
     # Initialize
     jaspar = {}
@@ -291,7 +149,7 @@ def _load_json_files(files_dir=files_dir, models_dir=models_dir,
     profiles = {}
     uniprots = {}
 
-    with open(os.path.join(files_dir, "pfam-DBDs.json")) as f:
+    with open(os.path.join(files_dir, "pfam.json")) as f:
         domains = json.load(f)
 
     for taxon in taxons:
@@ -316,101 +174,125 @@ def _load_json_files(files_dir=files_dir, models_dir=models_dir,
         for profile in uniprots[uniprot][0]:
             jaspar[uniprot]["profiles"].append([profile, profiles[profile]])
 
-    handle = Jglobals._get_file_handle(os.path.join(models_dir, "models.json.gz"))
-    models = json.load(handle)
-    handle.close()
+    # handle = Jglobals._get_file_handle(os.path.join(models_dir, "models.json.gz"))
+    # models = json.load(handle)
+    # handle.close()
 
-    return(domains, jaspar, models)
+    return(domains, jaspar)
 
-def BLAST(seq_record, files_dir, taxons=Jglobals.taxons):
-
-    # Initialize
-    blast_results = set()
-    outfmt = "sseqid pident length qstart qend sstart send evalue bitscore ppos qlen slen"
-
-    # For each taxon...
-    for taxon in taxons:
-
-        # Taxon db
-        taxon_db = os.path.join(files_dir, "%s.fa" % taxon)
-
-        # Run BLAST+
-        cmd = "blastp -db %s -outfmt \"6 %s\"" % (taxon_db, outfmt)
-        process = subprocess.Popen([cmd], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        fasta_sequence = ">%s\n%s" % (seq_record.id, seq_record.seq)
-        process.stdin.write(fasta_sequence.encode())
-        (blast_records, blast_errors) = process.communicate()
-
-        # For each BLAST+ record...
-        for blast_record in blast_records.decode("utf-8").split("\n"):
-
-            # Custom BLAST+ record:
-            # (1) identifier of target sequence;
-            # (2) percentage of identical matches;
-            # (3) alignment length;
-            # (4-5, 6-7) start and end-position in query and in target;
-            # (8) E-value;
-            # (9) bit score;
-            # (10) percentage of positive-scoring matches; and
-            # (4-7, 11, 12) joint coverage (i.e. square root of the coverage
-            # on the query and the target).
-            blast_record = blast_record.split("\t")
-
-            # Skip if not a BLAST+ record
-            if len(blast_record) != 12: continue
-
-            # Get BLAST+ record
-            target_id = blast_record[0]
-            percent_identities = float(blast_record[1])
-            alignment_length = int(blast_record[2])
-            query_start_end = "%s-%s" % (blast_record[3], blast_record[4])
-            target_start_end = "%s-%s" % (blast_record[5], blast_record[6])
-            e_value = float(blast_record[7])
-            score = float(blast_record[8])
-            percent_similarity = float(blast_record[9])
-            query_aligned_residues = int(blast_record[4]) - int(blast_record[3]) + 1
-            query_length = float(blast_record[10])
-            target_aligned_residues = int(blast_record[6]) - int(blast_record[5]) + 1
-            target_length = float(blast_record[11])
-            query_coverage = query_aligned_residues * 100 / query_length
-            target_coverage = target_aligned_residues * 100 / target_length
-            joint_coverage = math.sqrt(query_coverage * target_coverage)
-
-            # Add BLAST+ record to search results
-            blast_results.add((seq_record.id, target_id, query_start_end, target_start_end, e_value, score, percent_identities, alignment_length, percent_similarity, joint_coverage))
-
-    # Return results sorted by score
-    return(list(sorted(blast_results, key=lambda x: x[-1], reverse=True)))
-
-def _get_SeqRecord_Pfam_alignments(seq_record, files_dir, dummy_dir="/tmp/"):
+def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
+    latest=False, n=5, taxons=Jglobals.taxons):
 
     # Initialize
-    alignments = []
-    hmm_db = os.path.join(files_dir, "pfam-DBDs", "all_DBDs.hmm")
+    pfam_alignments = []
+    inference_results = []
+
+    # Get SeqRecord Pfam DBDs
+    alignments = __get_SeqRecord_Pfam_alignments(seq_record,
+        files_dir, dummy_dir)
+    if len(alignments) == 0:
+        return(inference_results)
+    pfam_alignments.append({})
+    for alignment in alignments:
+        pfam_alignments[0].setdefault(alignment[0], [])
+        pfam_alignments[0][alignment[0]].append(alignment[1])
+
+    # BLAST+ search
+    blast_results = blast(seq_record, files_dir, taxons, n)
+
+    # Get Pfam DBDs of BLAST+ (filtered) results
+    pfam_alignments.append(__get_blast_results_Pfam_alignments(blast_results))
+
+    # Get Cis-BP thresholds
+    models = __get_CisBP_models(list(pfam_alignments[0].keys()))
+
+    for result in blast_results:
+        scores = [None, None]
+        for DBD in pfam_alignments[0]:
+
+            if DBD not in pfam_alignments[1][result[1]]:
+                continue
+
+            # Clean sequences
+            seq1 = pfam_alignments[0][DBD]
+            seq1 = list([__remove_insertions(s) for s in seq1])
+            seq2 = pfam_alignments[1][result[1]][DBD]
+            seq2 = list([__remove_insertions(s) for s in seq2])
+
+            # Inference: percentage of sequence identity
+            X = __get_X(copy.copy(seq1), copy.copy(seq2), "identity")
+            score = sum(X) / len(X)
+            if score >= models[DBD]["pid"]["hsim"]:
+                scores[0] = copy.copy(score)
+
+            # Inference: similarity regression
+            if models[DBD]["sr"] is not None:
+                if models[DBD]["sr"]["similarity"] == "blosum62":
+                    X = __get_X(copy.copy(seq1), copy.copy(seq2), "blosum62")
+                mean = models[DBD]["sr"]["mean"]
+                sd = models[DBD]["sr"]["sd"]
+                intercept = models[DBD]["sr"]["intercept"]
+                weights = models[DBD]["sr"]["weights"]
+                # i.e. length of Pfam domains might be different
+                if len(X) == len(weights):
+                    score = __get_similarity_regression_score(X, mean, sd,
+                        intercept, weights)
+                    if score >= models[DBD]["sr"]["hsim"]:
+                        scores[1] = copy.copy(score)
+
+            # Skip
+            if scores[0] is None and scores[1] is None:
+                continue
+
+            # Add inferred result
+            for matrix, gene_name in jaspar[result[1]]["profiles"]:
+                inference_results.append([result[0], gene_name, matrix,
+                    result[4], result[2], result[3], scores[0], scores[1]])
+            break
+    
+    # If use the lastest version of JASPAR...
+    if latest:
+        # Sort
+        inference_results.sort(key=lambda x: (x[3], x[1], -float(x[2][2:])))
+        # Remove profiles from older versions
+        for i in sorted(frozenset(range(len(inference_results))), reverse=True):
+            if inference_results[i][2][:6] == inference_results[i - 1][2][:6]:
+                inference_results.pop(i)
+    # ... Else, just sort...
+    else:
+        inference_results.sort(key=lambda x: (x[3], x[1], float(x[2][2:])))
+
+    return(inference_results)
+
+def __get_SeqRecord_Pfam_alignments(seq_record, files_dir, dummy_dir="/tmp/"):
+
+    # Initialize
+    pfam_alignments = []
+    hmm_db = os.path.join(files_dir, "pfam", "All.hmm")
 
     # Make seq file
-    seq_file = os.path.join(dummy_dir, ".seq.fasta")
-    __makeSeqFile(seq_record, seq_file)
+    seq_file = os.path.join(dummy_dir, ".%s.seq.fasta" % os.getpid())
+    __make_seq_file(seq_record, seq_file)
 
     # For each DBD...
-    for pfam_id_std, start, end, evalue in hmmScan(seq_file, hmm_db, dummy_dir,
+    for pfam_id_std, start, end, evalue in hmmscan(seq_file, hmm_db, dummy_dir,
         non_overlapping_domains=True):
 
         # Initialize
-        hmm_file = os.path.join(files_dir, "pfam-DBDs", "%s.hmm" % pfam_id_std)
+        hmm_file = os.path.join(files_dir, "pfam", "%s.hmm" % pfam_id_std)
 
         # Make seq file
         sub_seq_record = SeqRecord(seq_record.seq[start:end], id=seq_record.id,
             name=seq_record.name, description=seq_record.description)
-        __makeSeqFile(sub_seq_record, seq_file)
+        __make_seq_file(sub_seq_record, seq_file)
 
         # Add DBDs
-        alignment = hmmAlign(seq_file, hmm_file)
-        alignments.append((pfam_id_std, alignment, start+1, end, evalue))
+        alignment = hmmalign(seq_file, hmm_file)
+        pfam_alignments.append((pfam_id_std, alignment, start+1, end, evalue))
 
-    return(alignments)
+    return(pfam_alignments)
 
-def __makeSeqFile(seq_record, file_name=".seq.fa"):
+def __make_seq_file(seq_record, file_name=".seq.fa"):
 
     # Remove seq file if exists...
     if os.path.exists(file_name):
@@ -419,10 +301,11 @@ def __makeSeqFile(seq_record, file_name=".seq.fa"):
     # Write
     Jglobals.write(file_name, seq_record.format("fasta"))
 
-def hmmScan(seq_file, hmm_file, dummy_dir="/tmp/", non_overlapping_domains=False):
+def hmmscan(seq_file, hmm_file, dummy_dir="/tmp/",
+    non_overlapping_domains=False):
 
     # Initialize
-    out_file = os.path.join(dummy_dir, ".out.txt")
+    out_file = os.path.join(dummy_dir, ".%s.out.txt" % os.getpid())
 
     # Scan
     cmd = "hmmscan --domtblout %s %s %s" % (out_file, hmm_file, seq_file)
@@ -430,7 +313,7 @@ def hmmScan(seq_file, hmm_file, dummy_dir="/tmp/", non_overlapping_domains=False
         stderr=subprocess.DEVNULL)
 
     # Read domains
-    domains = _readDomainsTab(out_file)
+    domains = __read_domains(out_file)
 
     # Remove output file
     if os.path.exists(out_file):
@@ -438,14 +321,14 @@ def hmmScan(seq_file, hmm_file, dummy_dir="/tmp/", non_overlapping_domains=False
 
     # Filter overlapping domains
     if non_overlapping_domains:
-        domains = _getNonOverlappingDomains(domains)
+        domains = __get_non_overlapping_domains(domains)
 
     # Yield domains one by one
     for pfam_ac, start, end, evalue in sorted(domains, key=lambda x: x[1]):
 
         yield(pfam_ac, start, end, evalue)
 
-def _readDomainsTab(file_name):
+def __read_domains(file_name):
     """
     From PMID:22942020;
     A hit has equal probability of being in the same clan as a different clan
@@ -488,7 +371,7 @@ def _readDomainsTab(file_name):
 
     return(domains)
 
-def _getNonOverlappingDomains(domains):
+def __get_non_overlapping_domains(domains):
     """
     Do domains 1 & 2 overlap?
     ---------1111111---------
@@ -521,15 +404,15 @@ def _getNonOverlappingDomains(domains):
 
     return(nov_domains)
 
-def hmmAlign(seq_file, hmm_file):
+def hmmalign(seq_file, hmm_file):
 
     # Align
     cmd = "hmmalign --outformat PSIBLAST %s %s" % (hmm_file, seq_file)
     process = subprocess.check_output([cmd], shell=True, universal_newlines=True)
 
-    return(_readPSIBLASToutformat(process))
+    return(__read_PSIBLAST_format(process))
 
-def _readPSIBLASToutformat(psiblast_alignment):
+def __read_PSIBLAST_format(psiblast_alignment):
 
     # Initialize
     alignment = ""
@@ -544,36 +427,73 @@ def _readPSIBLASToutformat(psiblast_alignment):
 
     return(alignment)
 
-def _get_results_Pfam_alignments(blast_results):
+def blast(seq_record, files_dir, taxons=Jglobals.taxons, n=5):
 
     # Initialize
-    results_Pfam_alignments = {}
+    blast_results = set()
+    outfmt = "sseqid pident length qstart qend sstart send evalue bitscore ppos qlen slen"
 
-    # For each BLAST result...        
-    for blast_result in blast_results:
+    # For each taxon...
+    for taxon in taxons:
 
-        # Unwind
-        DBDs = [v[0] for v in jaspar[blast_result[1]]["pfam"]]
-        alignments = [v[1] for v in jaspar[blast_result[1]]["pfam"]]
-        results_Pfam_alignments.setdefault(blast_result[1], [DBDs, alignments])
+        # Taxon db
+        taxon_db = os.path.join(files_dir, "%s.fa" % taxon)
 
-    return(results_Pfam_alignments)
+        # Run BLAST+
+        cmd = "blastp -db %s -outfmt \"6 %s\"" % (taxon_db, outfmt)
+        process = subprocess.Popen([cmd], shell=True, stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE)
+        fasta_sequence = ">%s\n%s" % (seq_record.id, seq_record.seq)
+        process.stdin.write(fasta_sequence.encode())
+        (blast_records, blast_errors) = process.communicate()
 
-def _filter_results(blast_results, pfam_results, DBDs, n=5):
+        # For each BLAST+ record...
+        for blast_record in blast_records.decode("utf-8").split("\n"):
 
-    # Intialize
-    filtered_results = []
+            # Custom BLAST+ record:
+            # (1) identifier of target sequence;
+            # (2) percentage of identical matches;
+            # (3) alignment length;
+            # (4-5, 6-7) start and end-position in query and in target;
+            # (8) E-value;
+            # (9) bit score;
+            # (10) percentage of positive-scoring matches; and
+            # (4-7, 11, 12) joint coverage (i.e. square root of the coverage
+            # on the query and the target).
+            blast_record = blast_record.split("\t")
 
-    # For each filtered result...
-    for filtered_result in _filter_results_by_Rost(blast_results, n=5):
+            # Skip if not a BLAST+ record
+            if len(blast_record) != 12: continue
 
-        if filtered_result[1] in pfam_results:
-            if pfam_results[filtered_result[1]][0] == DBDs:
-                filtered_results.append(filtered_result)
+            # Get BLAST+ record
+            target_id = blast_record[0]
+            percent_identities = float(blast_record[1])
+            alignment_length = int(blast_record[2])
+            query_start_end = "%s-%s" % (blast_record[3], blast_record[4])
+            target_start_end = "%s-%s" % (blast_record[5], blast_record[6])
+            e_value = float(blast_record[7])
+            score = float(blast_record[8])
+            percent_similarity = float(blast_record[9])
+            query_aligned_residues = int(blast_record[4]) - \
+                int(blast_record[3]) + 1
+            query_length = float(blast_record[10])
+            target_aligned_residues = int(blast_record[6]) - \
+                int(blast_record[5]) + 1
+            target_length = float(blast_record[11])
+            query_coverage = query_aligned_residues * 100 / query_length
+            target_coverage = target_aligned_residues * 100 / target_length
+            joint_coverage = math.sqrt(query_coverage * target_coverage)
 
-    return(filtered_results)
+            # Add BLAST+ record to search results
+            blast_results.add((seq_record.id, target_id, query_start_end,
+                target_start_end, e_value, score, percent_identities,
+                alignment_length, percent_similarity, joint_coverage))
 
-def _filter_results_by_Rost(blast_results, n=5):
+    # Return filtered results sorted by score
+    blast_results = sorted(blast_results, key=lambda x: x[-1], reverse=True)
+    return(__filter_blast_results_by_Rost(blast_results))
+
+def __filter_blast_results_by_Rost(blast_results, n=5):
 
     # Initialize
     blast_homologs = []
@@ -582,150 +502,122 @@ def _filter_results_by_Rost(blast_results, n=5):
     for result in blast_results:
 
         # Initialize
-        percent_identity = result[6]
-        alignment_length = result[7]
+        pid = result[6]
+        L = result[7]
 
         # If homologs...
-        if _is_alignment_over_Rost_seq_id_curve(percent_identity, alignment_length, n):
+        if __is_alignment_over_Rost_seq_id_curve(pid, L, n):
 
             # Add homolog
             blast_homologs.append(result)
 
     return(blast_homologs)
 
-def _is_alignment_over_Rost_seq_id_curve(percent_identity, L, n=5):
+def __is_alignment_over_Rost_seq_id_curve(pid, L, n=5):
     """
     This function returns whether an alignment is over the Rost's pairwise
     sequence identity curve or not.
     """
-    return(percent_identity >= _get_Rost_cutoff_percent_identity(L, n))
+    return(pid >= __get_Rost_cutoff_percent_identity(L, n))
 
-def _get_Rost_cutoff_percent_identity(L, n=5):
+def __get_Rost_cutoff_percent_identity(L, n=5):
     """
     This function returns the Rost's cut-off percentage of identical residues
     for an alignment of length "L".
     """
     return(n + (480 * pow(L, -0.32 * (1 + pow(math.e, float(-L) / 1000)))))
 
-def _is_alignment_over_Rost_seq_sim_curve(percent_similarity, L, n=12):
-    """
-    This function returns whether an alignment is over the Rost's pairwise
-    sequence similarity curve or not.
-    """
-    return(percent_similarity >= _get_Rost_cutoff_percent_similarity(L, n))
-
-def _get_Rost_cutoff_percent_similarity(L, n=12):
-    """
-    This function returns the Rost's cut-off percentage of "similar" residues
-    for an alignment of length "L".
-    """
-    return(n + (420 * pow(L, -0.335 * (1 + pow(math.e, float(-L) / 2000)))))
-
-# def _SeqRecord_profile_inference(seq_record, uniacc, files_dir):
-
-#     # Initialize
-#     inference_results = {}
-
-#     # Load JSON files
-#     global domains, jaspar
-#     try:
-#         domains, jaspar
-#     except NameError:
-#         domains, jaspar = _load_json_files(files_dir)
-
-#     # If domains...
-#     if uniacc in domains:
-#         # For each domain...
-#         for domain in domains[uniacc][0]:
-#             # For each pairwise alignment...
-#             for alignment in _pairwise_alignment(
-#                 seq_record.seq, domain):
-#                 # If alignment does not satisfy the threshold...
-#                 identities = _get_alignment_identities(
-#                     alignment[0], alignment[1]) / float(len(domain))
-#                 if identities >= float(domains[uniacc][1]):
-#                     # For each JASPAR matrix... #
-#                     for matrix, gene_name in jaspar[uniacc]:
-#                         # Infer matrix
-#                         inference_results.setdefault((gene_name, matrix), identities)
-#                         if identities > inference_results[(gene_name, matrix)]:
-#                             inference_results[(gene_name, matrix)] = identities
-
-#     return [[i[0], i[1], inference_results[i]] for i in inference_results]
-
-# def _pairwise_alignment(A, B):
+# def __is_alignment_over_Rost_seq_sim_curve(psim, L, n=12):
 #     """
-#     This function returns the alignments between two sequences "A" and "B" using
-#     dynamic programming.
+#     This function returns whether an alignment is over the Rost's pairwise
+#     sequence similarity curve or not.
 #     """
-#     try:
-#         # Parameters from EMBOSS needle
-#         return pairwise2.align.globalds(A, B, blosum62, -10.0, -0.5)
-#     except:
-#         return []
+#     return(psim >= _get_Rost_cutoff_percent_similarity(L, n))
 
-# def _get_alignment_identities(A, B):
+# def __get_Rost_cutoff_percent_similarity(L, n=12):
 #     """
-#     This function returns the number of identities between two aligned sequences
-#     "A" and "B". If "A" and "B" have different lengths, returns None.
+#     This function returns the Rost's cut-off percentage of "similar" residues
+#     for an alignment of length "L".
 #     """
-#     if len(A) == len(B):
-#         return len([i for i in range(len(A)) if A[i] == B[i]])
+#     return(n + (420 * pow(L, -0.335 * (1 + pow(math.e, float(-L) / 2000)))))
 
-#     return None
-
-def _get_pid(seq1, seq2):
+def __get_blast_results_Pfam_alignments(blast_results):
 
     # Initialize
-    double_gaps = 0
-    seq1 = __removeLowercase(seq1)
-    seq2 = __removeLowercase(seq2)
+    pfam_alignments = {}
 
-    identities = __get_X(seq1, seq2)
+    # For each BLAST result...
+    for blast_result in blast_results:
+        pfam_alignments.setdefault(blast_result[1], {})
+        for alignment in jaspar[blast_result[1]]["pfam"]:
+            pfam_alignments[blast_result[1]].setdefault(alignment[0], [])
+            pfam_alignments[blast_result[1]][alignment[0]].append(alignment[1])
 
-    for i in range(len(seq1)):
-        if seq1[i] == seq2[i] and seq1[i] == "-":
-            double_gaps += 1
+    return(pfam_alignments)
 
-    return(sum(__get_X(seq1, seq2))/float(len(seq1)-double_gaps))
+def __get_CisBP_models(DBDs):
+    """
+    Return Cis-BP highly-similar ("hsim") and dissimilar ("dis") thresholds
+    based on DBD percentage of sequence identity ("pid") and similarity
+    regression ("sr") models. For similarity regression models, it further
+    returns the feature scaling "mean" and standard deviation ("sd"), and the
+    features "intercept" and "weights".
+    """
 
-def __removeLowercase(s):
+    # Initialize
+    thresholds = {}
 
+    # For each DBD...
+    for DBD in DBDs:
+
+        # Initialize
+        thresholds.setdefault(DBD, {})
+
+        # Get thresholds
+        if DBD in cisbp:
+            m = cisbp[DBD]
+        else:
+            m = cisbp[None]
+        for what_threshold in ["dis", "hsim"]:
+            t = m.get_model_threshold("pid", what_threshold)
+            if t is None:
+                t = cisbp[None].get_model_threshold("pid", what_threshold)
+            thresholds[DBD].setdefault("pid", {})
+            thresholds[DBD]["pid"].setdefault(what_threshold, t)
+        thresholds[DBD].setdefault("sr", m.get_model("sr"))
+
+    return(thresholds)
+
+def __remove_insertions(s):
+    """
+    Remove insertions (i.e. lower case letters)
+    """
     return(s.translate(str.maketrans("", "", string.ascii_lowercase)))
 
 def __get_X(seq1, seq2, similarity="identity"):
     """
-    Called for each comparison to compare the DBDs.
+    Compare DBDs.
     """
 
     # Initialize
     scores = []
 
-    # Assign sequence with more DBDs to seq1
+    # Reassign seq with more DBDs to seq1
     seq1, seq2 = __reassign(seq1, seq2)
 
     for i in range(len(seq1) - len(seq2) + 1):
 
         # Initialize
-        array = [0] * len(seq1[i])
+        arr = [0] * len(seq1[i])
 
         for j in range(len(seq2)):
 
-            if len(seq1[i+j]) != len(seq2[j]):
-                # i.e. something is wrong
-                print("DBDs have different length!\n\tA: %s\n\tB: %s" % \
-                     (seq1[i+j], seq2[j]))
-                exit(0)
-
             for k in range(len(seq1[i+j])):
 
-                if similarity == "identity":
-                    array[k] += __IDscoring(seq1[i+j][k], seq2[j][k])
+                arr[k] += __score(seq1[i+j][k], seq2[j][k], similarity)
 
-                elif similarity == "blosum62":
-                    array[k] += __BLOSUMscoring(seq1[i+j][k], seq2[j][k])
-
-        scores.append(np.array(array))
+        # Append scores and rescale by the number of DBDs in seq2
+        scores.append(np.array(arr))
         scores[-1] = scores[-1] / len(seq2)
 
     # Sort
@@ -740,24 +632,34 @@ def __reassign(seq1, seq2):
 
     return(seq1, seq2)
 
-def __IDscoring(aa1, aa2):
+def __score(aa1, aa2, similarity="identity"):
 
-    if aa1 == aa2 and aa1 != "-":
-        return(1)
-    else:
-        return(0)
-
-def __BLOSUMscoring(aa1, aa2):
-
-    if aa1 == "-" and aa2 == "-":
-        return(1)
-    elif aa1 == "-" or aa2 == "-":
-        return(-4)
-    else:
-        if (aa1, aa2) in blosum62:
-            return(blosum62[(aa1, aa2)])
+    if similarity == "identity":
+        if aa1 == aa2 and aa1 != "-":
+            return(1)
         else:
-            return(blosum62[(aa2, aa1)])
+            return(0)
+    elif similarity == "blosum62":
+        if aa1 == "-" and aa2 == "-":
+            return(1)
+        elif aa1 == "-" or aa2 == "-":
+            return(-4)
+        else:
+            if (aa1, aa2) in blosum62:
+                return(blosum62[(aa1, aa2)])
+            else:
+                return(blosum62[(aa2, aa1)])
+
+def __get_similarity_regression_score(X, mean, sd, intercept, weights):
+    """
+    From "Evaluate Heldout Predictions.ipynb" (i.e. as in Lambert et al.)
+    """
+
+    # Z-scoring
+    Z = (X - mean) / sd
+    Z[np.isnan(Z)] = 0
+
+    return(intercept + np.dot(weights, Z))
 
 #-------------#
 # Main        #
