@@ -33,7 +33,7 @@ conda env create -f ./conda/environment.yml
 To illustrate how the profile inference tool can be used, we provide an example for the [brown rat](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock) TF [Egr1](https://www.uniprot.org/uniprot/P08154):
 ```
 ./infer_profile.py ./examples/egr1+tbp1.fa --latest
-100%|█████████████████████████████████████████████████████████████████| 2/2 [00:01<00:00,  1.15it/s]
+100%|█████████████████████████████████████████████████████████████████| 2/2 [00:01<00:00, 1.15it/s]
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Reg...
 sp|P26632|EGR1_DANRE    EGR1    MA0162.4        0.0     1-511   1-543   None    0.82
 sp|P26632|EGR1_DANRE    EGR3    MA0732.1        5.89e-89        57-410  38-374  None    0.803
