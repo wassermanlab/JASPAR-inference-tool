@@ -93,13 +93,9 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
     base_name = os.path.basename(__file__)
     pid = os.getpid()
 
-    # Globals
-    global cisbp, domains, jaspar
-    cisbp = {}
-    for json_file in os.listdir(os.path.join(files_dir, "cisbp")):
-        model = CisBP(os.path.join(files_dir, "cisbp", json_file))
-        cisbp.setdefault(model.family, model)
-    domains, jaspar = __load_JSON_files(files_dir, taxons)
+    # Load data
+    cisbp = __load_CisBP_models(files_dir)
+    jaspar = __load_JASPAR_files(files_dir, taxons)
 
     # Create dummy dir
     dummy_dir = os.path.join(dummy_dir, "%s.%s" % (base_name, pid))
@@ -121,8 +117,8 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
     # Infer SeqRecord profiles
     kwargs = {"total": len(seq_records), "ncols": 100}
     pool = Pool(min([threads, len(seq_records)]))
-    p = partial(infer_SeqRecord_profiles, dummy_dir=dummy_dir,
-        files_dir=files_dir, latest=latest, n=n, taxons=taxons)
+    p = partial(infer_SeqRecord_profiles, cisbp=cisbp, dummy_dir=dummy_dir,
+        files_dir=files_dir, jaspar=jaspar, latest=latest, n=n, taxons=taxons)
     for inferences in tqdm(pool.imap(p, seq_records), **kwargs):
         for inference in inferences:
             Jglobals.write(dummy_file, "\t".join(map(str, inference)))
@@ -141,16 +137,25 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
     # Remove dummy dir
     shutil.rmtree(dummy_dir)
 
-def __load_JSON_files(files_dir=files_dir, taxons=Jglobals.taxons):
+def __load_CisBP_models(files_dir="./files/"):
+
+    # Initialize
+    cisbp = {}
+
+    for json_file in os.listdir(os.path.join(files_dir, "cisbp")):
+        model = CisBP(os.path.join(files_dir, "cisbp", json_file))
+        cisbp.setdefault(model.family, model)
+
+    return(cisbp)
+
+def __load_JASPAR_files(files_dir="./files/", taxons=["fungi", "insects",
+    "nematodes", "plants", "vertebrates"]):
 
     # Initialize
     jaspar = {}
     pfams = {}
     profiles = {}
     uniprots = {}
-
-    with open(os.path.join(files_dir, "pfam.json")) as f:
-        domains = json.load(f)
 
     for taxon in taxons:
         with open(os.path.join(files_dir, "%s.pfam.json" % taxon)) as f:
@@ -174,14 +179,11 @@ def __load_JSON_files(files_dir=files_dir, taxons=Jglobals.taxons):
         for profile in uniprots[uniprot][0]:
             jaspar[uniprot]["profiles"].append([profile, profiles[profile]])
 
-    # handle = Jglobals._get_file_handle(os.path.join(models_dir, "models.json.gz"))
-    # models = json.load(handle)
-    # handle.close()
+    return(jaspar)
 
-    return(domains, jaspar)
-
-def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
-    latest=False, n=5, taxons=Jglobals.taxons):
+def infer_SeqRecord_profiles(seq_record, cisbp, jaspar, dummy_dir="/tmp/",
+    files_dir="./files/", latest=False, n=5, taxons=["fungi", "insects",
+    "nematodes", "plants", "vertebrates"]):
 
     # Initialize
     pfam_alignments = []
@@ -201,10 +203,11 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
     blast_results = blast(seq_record, files_dir, taxons, n)
 
     # Get Pfam DBDs of BLAST+ (filtered) results
-    pfam_alignments.append(__get_blast_results_Pfam_alignments(blast_results))
+    pfam_alignments.append(__get_blast_results_Pfam_alignments(blast_results,
+        jaspar))
 
     # Get Cis-BP thresholds
-    models = __get_CisBP_models(list(pfam_alignments[0].keys()))
+    models = __get_CisBP_models(list(pfam_alignments[0].keys()), cisbp)
 
     for result in blast_results:
         scores = [None, None]
@@ -223,7 +226,7 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
             X = __get_X(copy.copy(seq1), copy.copy(seq2), "identity")
             score = sum(X) / len(X)
             if score >= models[DBD]["pid"]["hsim"]:
-                scores[0] = copy.copy(score)
+                scores[0] = round(score, 3)
 
             # Inference: similarity regression
             if models[DBD]["sr"] is not None:
@@ -238,7 +241,7 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
                     score = __get_similarity_regression_score(X, mean, sd,
                         intercept, weights)
                     if score >= models[DBD]["sr"]["hsim"]:
-                        scores[1] = copy.copy(score)
+                        scores[1] = round(score, 3)
 
             # Skip
             if scores[0] is None and scores[1] is None:
@@ -264,7 +267,8 @@ def infer_SeqRecord_profiles(seq_record, dummy_dir="/tmp/", files_dir=files_dir,
 
     return(inference_results)
 
-def __get_SeqRecord_Pfam_alignments(seq_record, files_dir, dummy_dir="/tmp/"):
+def __get_SeqRecord_Pfam_alignments(seq_record, files_dir="./files/",
+    dummy_dir="/tmp/"):
 
     # Initialize
     pfam_alignments = []
@@ -427,7 +431,8 @@ def __read_PSIBLAST_format(psiblast_alignment):
 
     return(alignment)
 
-def blast(seq_record, files_dir, taxons=Jglobals.taxons, n=5):
+def blast(seq_record, files_dir="./files/", taxons=["fungi", "insects",
+    "nematodes", "plants", "vertebrates"], n=5):
 
     # Initialize
     blast_results = set()
@@ -541,7 +546,7 @@ def __get_Rost_cutoff_percent_identity(L, n=5):
 #     """
 #     return(n + (420 * pow(L, -0.335 * (1 + pow(math.e, float(-L) / 2000)))))
 
-def __get_blast_results_Pfam_alignments(blast_results):
+def __get_blast_results_Pfam_alignments(blast_results, jaspar):
 
     # Initialize
     pfam_alignments = {}
@@ -555,7 +560,7 @@ def __get_blast_results_Pfam_alignments(blast_results):
 
     return(pfam_alignments)
 
-def __get_CisBP_models(DBDs):
+def __get_CisBP_models(DBDs, cisbp):
     """
     Return Cis-BP highly-similar ("hsim") and dissimilar ("dis") thresholds
     based on DBD percentage of sequence identity ("pid") and similarity
