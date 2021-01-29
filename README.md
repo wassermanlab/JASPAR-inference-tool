@@ -2,13 +2,13 @@
 This repository contains the data and code used by the JASPAR profile inference tool. For more information please refer to the supplementary data from JASPAR [2016](https://academic.oup.com/nar/article/44/D1/D110/2502663) and [2020](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkz1001/5614568).
 
 ## News
-31/01/2021 We have updated the profile inference tool as described in the similarity regression [manuscript](https://www.nature.com/articles/s41588-019-0411-1)
+31/01/2021 We have updated the profile inference tool as described in the similarity regression [manuscript](https://www.nature.com/articles/s41588-019-0411-1).
 ~~01/09/2019 We have improved the profile inference tool by implementing our own [similarity regression](https://www.nature.com/articles/s41588-019-0411-1) method.~~
 
 ## Content
 * The `examples` folder contains the sequences of two transcription factors (TFs) and one protein that is not a transcription factor, such as the human serine/threonine-protein kinase [mTOR](https://www.uniprot.org/uniprot/P42345)
-* The `files` folder contains the output of the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which downloads TF sequences from [UniProt](https://www.uniprot.org/), DNA-binding domains (DBDs) from [Pfam](https://pfam.xfam.org/), and retrieves cut-offs on the DBD percentage of sequence identity from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), etc.
-~~* The `models` folder contains the similarity regression models created by calling the script [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py) followed by [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py)~~
+* The `files` folder contains the output of the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which downloads TF sequences from [UniProt](https://www.uniprot.org/), DNA-binding domains (DBDs) from [Pfam](https://pfam.xfam.org/), retrieves infernece models from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), etc.
+* ~~The `models` folder contains the similarity regression models created by calling the script [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py) followed by [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py)~~
 * The script [`infer_profile.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/infer_profile.py) takes as input ~~the folders `files` and `models`, plus~~ one or more proteic sequences in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format) (_e.g._ a proteome), and infers DNA-binding profiles from JASPAR 
 * The file [`environment.yml`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/environment.yml) contains the conda environment used to develop the profile inference tool for JASPAR 2020 (see installation)
 
@@ -17,16 +17,16 @@ The original scripts used for the publication of [JASPAR 2016](https://doi.org/1
 ## Dependencies
 * [BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
 * [HMMER](http://hmmer.org/) (version ≥3.0)
-* [Python 3](https://www.python.org/download/releases/3/) with the following libraries: [Biopython](http://biopython.org) (<1.74), [CoreAPI](http://www.coreapi.org), [glmnet](https://github.com/civisanalytics/python-glmnet), [NumPy](https://numpy.org/), [pandas](https://pandas.pydata.org/), [ProDy](http://prody.csb.pitt.edu/), [SciPy](https://www.scipy.org/), [scikit-learn](https://scikit-learn.org/stable/) and [tqdm](https://tqdm.github.io) 
-~~* The [RSAT matrix-clustering](http://pedagogix-tagc.univ-mrs.fr/rsat/matrix-clustering_form.cgi) tool~~
-~~* [Tomtom](http://meme-suite.org/doc/tomtom.html) as distributed in the [MEME](http://meme-suite.org/index.html) suite (version ≥5.0)~~
+* [Python 3](https://www.python.org/download/releases/3/) with the following libraries: [Biopython](http://biopython.org) (<1.74), [CoreAPI](http://www.coreapi.org), [GitPython](https://gitpython.readthedocs.io/en/stable/), ~~[glmnet](https://github.com/civisanalytics/python-glmnet)~~, [NumPy](https://numpy.org/), [pandas](https://pandas.pydata.org/), [ProDy](http://prody.csb.pitt.edu/), ~~[SciPy](https://www.scipy.org/)~~, ~~[scikit-learn](https://scikit-learn.org/stable/)~~ and [tqdm](https://tqdm.github.io) 
+* ~~The [RSAT matrix-clustering](http://pedagogix-tagc.univ-mrs.fr/rsat/matrix-clustering_form.cgi) tool~~
+* ~~[Tomtom](http://meme-suite.org/doc/tomtom.html) as distributed in the [MEME](http://meme-suite.org/index.html) suite (version ≥5.0)~~
 
-Note that for running `infer_profile.py`, the CoreAPI, glmnet, ProDy and scikit-learn python packages are not required.
+Note that for running `infer_profile.py`, the CoreAPI, GitPython, ~~glmnet~~, ProDy, ~~SciPy~~ and ~~scikit-learn~~ python packages are not required.
 
 ## Installation
 All dependencies can be installed through the [conda](https://docs.conda.io/en/latest/) package manager:
 ```
-conda env create -f ./environment.yml
+conda env create -f ./conda/environment.yml
 ```
 
 ## Usage
