@@ -34,13 +34,13 @@ To illustrate how the profile inference tool can be used, we provide an example 
 ```
 ./infer_profile.py ./examples/egr1+tbp1.fa --latest
 100%|█████████████████████████████████████████████████████████████████| 2/2 [00:01<00:00,  1.15it/s]
-Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Regression
-sp|P26632|EGR1_DANRE    EGR1    MA0162.4        0.0     1-511   1-543   None    0.8197347683535658
-sp|P26632|EGR1_DANRE    EGR3    MA0732.1        5.89e-89        57-410  38-374  None    0.8031460785230047
-sp|P26632|EGR1_DANRE    EGR2    MA0472.1        5.15e-72        55-398  38-424  None    0.7997468734244444
-sp|P26632|EGR1_DANRE    EGR4    MA0733.1        7.89e-51        306-401 478-573 None    0.7961647984971425
-sp|P17871|TBP_SCHPO     SPT15   MA0386.1        8.25e-126       17-230  29-239  0.8941176470588236      None
-sp|P17871|TBP_SCHPO     TBP     MA0108.2        3.17e-109       8-230   114-337 0.7647058823529411      None
+Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Reg...
+sp|P26632|EGR1_DANRE    EGR1    MA0162.4        0.0     1-511   1-543   None    0.82
+sp|P26632|EGR1_DANRE    EGR3    MA0732.1        5.89e-89        57-410  38-374  None    0.803
+sp|P26632|EGR1_DANRE    EGR2    MA0472.1        5.15e-72        55-398  38-424  None    0.8
+sp|P26632|EGR1_DANRE    EGR4    MA0733.1        7.89e-51        306-401 478-573 None    0.796
+sp|P17871|TBP_SCHPO     SPT15   MA0386.1        8.25e-126       17-230  29-239  0.894   None
+sp|P17871|TBP_SCHPO     TBP     MA0108.2        3.17e-109       8-230   114-337 0.765   None
 ```
 The tool infers that the DNA-binding preferences of `sp|P26632|EGR1_DANRE` are similar to those from the JASPAR TFs [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/), [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) and [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/). The inference is based on the Cys2-His2 zinc finger `Similarity Regression` [model](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/cisbp/F135_1.97d.json). In contrast, inferences for `sp|P17871|TBP_SCHPO` are based on the percentage of identical residues between its DBD and those of [SPT15](http://jaspar.genereg.net/matrix/MA0386.1/) and [TBP](http://jaspar.genereg.net/matrix/MA0108.2/).
 
@@ -80,7 +80,7 @@ for inferred_profile in inferred_profiles:
 for row in rows:
     print("\t".join(map(str, row)))
 
-Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Regression
+Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID Similarity Reg...
 Sox-3-B Sox3    MA0514.1        3.39e-129       1-307   1-375   0.942   0.732
 Sox-3-B SOX2    MA0143.4        8.28e-115       1-307   1-317   0.913   0.702
 Sox-3-B Pou5f1::Sox2    MA0142.1        6.3e-112        1-307   1-319   0.913   0.702
