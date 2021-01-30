@@ -21,7 +21,7 @@ The original scripts used for the publication of [JASPAR 2016](https://doi.org/1
 * ~~The [RSAT matrix-clustering](http://pedagogix-tagc.univ-mrs.fr/rsat/matrix-clustering_form.cgi) tool~~
 * ~~[Tomtom](http://meme-suite.org/doc/tomtom.html) as distributed in the [MEME](http://meme-suite.org/index.html) suite (version ≥5.0)~~
 
-Note that for running `infer_profile.py`, the CoreAPI, GitPython, ~~glmnet~~, ProDy, ~~SciPy~~ and ~~scikit-learn~~ python packages are not required.
+Note that for running `infer_profile.py`, the CoreAPI, GitPython, ~~glmnet, SciPy and scikit-learn,~~ and ProDy python packages are not required.
 
 ## Installation
 All dependencies can be installed through the [conda](https://docs.conda.io/en/latest/) package manager:
