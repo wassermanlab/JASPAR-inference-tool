@@ -6,7 +6,7 @@ This repository contains the data and code used by the JASPAR profile inference 
 ~~01/09/2019 We have improved the profile inference tool by implementing our own [similarity regression](https://www.nature.com/articles/s41588-019-0411-1) method.~~
 
 ## Content
-* The `conda` folder contains contains the [`environment.yml`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/environment.yml) file used to develop the profile inference tool for JASPAR 2020 (see installation)
+* The `conda` folder contains contains the [`environment.yml`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/conda/environment.yml) file used to develop the profile inference tool for JASPAR 2020 (see installation)
 * The `examples` folder contains the sequences of two transcription factors (TFs) and one protein that is not a transcription factor, such as the human serine/threonine-protein kinase [mTOR](https://www.uniprot.org/uniprot/P42345)
 * The `files` folder contains the output of the script [`get_files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get_files.py), which downloads TF sequences from [UniProt](https://www.uniprot.org/), DNA-binding domains (DBDs) from [Pfam](https://pfam.xfam.org/), retrieves infernece models from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), etc.
 * ~~The `models` folder contains the similarity regression models created by calling the script [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py) followed by [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py)~~
