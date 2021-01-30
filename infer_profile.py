@@ -17,6 +17,7 @@ import string
 import subprocess
 import sys
 from tqdm import tqdm
+bar_format = "{desc:<5.5}{percentage:3.0f}%|{bar:20}{r_bar}"
 import warnings
 
 # Defaults
@@ -115,7 +116,7 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
     Jglobals.write(dummy_file, "\t".join(columns))
 
     # Infer SeqRecord profiles
-    kwargs = {"total": len(seq_records), "ncols": 100}
+    kwargs = {"total": len(seq_records), bar_format = bar_format}
     pool = Pool(min([threads, len(seq_records)]))
     p = partial(infer_SeqRecord_profiles, cisbp=cisbp, dummy_dir=dummy_dir,
         files_dir=files_dir, jaspar=jaspar, latest=latest, n=n, taxons=taxons)
