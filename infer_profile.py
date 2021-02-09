@@ -29,7 +29,7 @@ files_dir = os.path.join(root_dir, "files")
 sys.path.append(root_dir)
 
 # Import globals
-from __init__ import Jglobals, CisBP
+from __init__ import CisBP2Pfam, Jglobals, ReadSRModel, ScoreAlignmentResult
 
 #-------------#
 # Functions   #
@@ -96,7 +96,8 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
 
     # Load data
     cisbp = __load_CisBP_models(files_dir)
-    jaspar = __load_JASPAR_files(files_dir, taxons)
+    # jaspar = __load_JASPAR_files_n_models(files_dir, models_dir, taxons)
+    jaspar = __load_JASPAR_files_n_models(files_dir, taxons)
 
     # Create dummy dir
     dummy_dir = os.path.join(dummy_dir, "%s.%s" % (base_name, pid))
@@ -111,12 +112,14 @@ def infer_profiles(fasta_file, dummy_dir="/tmp/", files_dir=files_dir,
         seq_records.append(seq_record)
 
     # Write
+    # columns = ["Query", "TF Name", "TF Matrix", "E-value", "Query Start-End",
+    #     "TF Start-End", "DBD %ID", "Cis-BP", "JASPAR"]
     columns = ["Query", "TF Name", "TF Matrix", "E-value", "Query Start-End",
-        "TF Start-End", "DBD %ID", "Similarity Regression"]
+        "TF Start-End", "DBD %ID"]
     Jglobals.write(dummy_file, "\t".join(columns))
 
     # Infer SeqRecord profiles
-    kwargs = {"total": len(seq_records), bar_format: bar_format}
+    kwargs = {"total": len(seq_records), "bar_format": bar_format}
     pool = Pool(min([threads, len(seq_records)]))
     p = partial(infer_SeqRecord_profiles, cisbp=cisbp, dummy_dir=dummy_dir,
         files_dir=files_dir, jaspar=jaspar, latest=latest, n=n, taxons=taxons)
@@ -144,13 +147,13 @@ def __load_CisBP_models(files_dir="./files/"):
     cisbp = {}
 
     for json_file in os.listdir(os.path.join(files_dir, "cisbp")):
-        model = CisBP(os.path.join(files_dir, "cisbp", json_file))
-        cisbp.setdefault(model.family, model)
+        model = ReadSRModel(os.path.join(files_dir, "cisbp", json_file))
+        cisbp.setdefault(CisBP2Pfam[model["Family_Name"]], model)
 
     return(cisbp)
 
-def __load_JASPAR_files(files_dir="./files/", taxons=["fungi", "insects",
-    "nematodes", "plants", "vertebrates"]):
+def __load_JASPAR_files_n_models(files_dir="./files/", taxons=["fungi",
+    "insects", "nematodes", "plants", "vertebrates"]):
 
     # Initialize
     jaspar = {}
@@ -207,64 +210,56 @@ def infer_SeqRecord_profiles(seq_record, cisbp, jaspar, dummy_dir="/tmp/",
     pfam_alignments.append(__get_blast_results_Pfam_alignments(blast_results,
         jaspar))
 
-    # Get Cis-BP thresholds
-    models = __get_CisBP_models(list(pfam_alignments[0].keys()), cisbp)
+    for r in blast_results:
 
-    for result in blast_results:
-        scores = [None, None]
+        inferences = [False, False]
+
         for DBD in pfam_alignments[0]:
 
-            if DBD not in pfam_alignments[1][result[1]]:
+            if DBD not in pfam_alignments[1][r[1]]:
                 continue
 
             # Clean sequences
             seq1 = pfam_alignments[0][DBD]
             seq1 = list([__remove_insertions(s) for s in seq1])
-            seq2 = pfam_alignments[1][result[1]][DBD]
+            seq2 = pfam_alignments[1][r[1]][DBD]
             seq2 = list([__remove_insertions(s) for s in seq2])
 
-            # Inference: percentage of sequence identity
-            X = __get_X(copy.copy(seq1), copy.copy(seq2), "identity")
-            score = sum(X) / len(X)
-            if score >= models[DBD]["pid"]["hsim"]:
-                scores[0] = round(score, 3)
+            # Similarity regression alignment
+            sr_alignment = {}
+            ByPosPctID = __get_X(copy.copy(seq1), copy.copy(seq2), "identity")
+            sr_alignment.setdefault("ByPos.PctID", ByPosPctID)
+            ByPosAvgB62 = __get_X(copy.copy(seq1), copy.copy(seq2), "blosum62")
+            sr_alignment.setdefault("ByPos.AvgB62", ByPosAvgB62)
+            PctID_L = sum(ByPosPctID) / len(ByPosPctID)
+            sr_alignment.setdefault("PctID_L", PctID_L)
 
-            # Inference: similarity regression
-            if models[DBD]["sr"] is not None:
-                if models[DBD]["sr"]["similarity"] == "blosum62":
-                    X = __get_X(copy.copy(seq1), copy.copy(seq2), "blosum62")
-                mean = models[DBD]["sr"]["mean"]
-                sd = models[DBD]["sr"]["sd"]
-                intercept = models[DBD]["sr"]["intercept"]
-                weights = models[DBD]["sr"]["weights"]
-                # i.e. length of Pfam domains might be different
-                if len(X) == len(weights):
-                    score = __get_similarity_regression_score(X, mean, sd,
-                        intercept, weights)
-                    if score >= models[DBD]["sr"]["hsim"]:
-                        scores[1] = round(score, 3)
+            # Inference: Cis-BP
+            if DBD in cisbp:
+                model = cisbp[DBD]
+            else:
+                model = cisbp[None]
+            _, Classification = ScoreAlignmentResult(sr_alignment, model)
+            inferences[0] = Classification == "HSim"
 
-            # Skip
-            if scores[0] is None and scores[1] is None:
+            # i.e. inferred result
+            if not inferences[0] and not inferences[1]:
                 continue
-
-            # Add inferred result
-            for matrix, gene_name in jaspar[result[1]]["profiles"]:
-                inference_results.append([result[0], gene_name, matrix,
-                    result[4], result[2], result[3], scores[0], scores[1]])
+            for matrix, gene_name in jaspar[r[1]]["profiles"]:
+                # inference_results.append([r[0], gene_name, matrix, r[4], r[2],
+                #     r[3], round(sr_alignment["PctID_L"], 3), inferences[0],
+                #     inferences[1]])
+                inference_results.append([r[0], gene_name, matrix, r[4], r[2],
+                    r[3], round(sr_alignment["PctID_L"], 3)])
             break
     
-    # If use the lastest version of JASPAR...
+    # Sort
+    inference_results.sort(key=lambda x: (x[3], x[1], float(x[2][2:])))
+    # Remove profiles from older versions
     if latest:
-        # Sort
-        inference_results.sort(key=lambda x: (x[3], x[1], -float(x[2][2:])))
-        # Remove profiles from older versions
         for i in sorted(frozenset(range(len(inference_results))), reverse=True):
             if inference_results[i][2][:6] == inference_results[i - 1][2][:6]:
                 inference_results.pop(i)
-    # ... Else, just sort...
-    else:
-        inference_results.sort(key=lambda x: (x[3], x[1], float(x[2][2:])))
 
     return(inference_results)
 
@@ -656,16 +651,6 @@ def __score(aa1, aa2, similarity="identity"):
             else:
                 return(blosum62[(aa2, aa1)])
 
-def __get_similarity_regression_score(X, mean, sd, intercept, weights):
-    """
-    From "Evaluate Heldout Predictions.ipynb" (i.e. as in Lambert et al.)
-    """
-
-    # Z-scoring
-    Z = (X - mean) / sd
-    Z[np.isnan(Z)] = 0
-
-    return(intercept + np.dot(weights, Z))
 
 #-------------#
 # Main        #

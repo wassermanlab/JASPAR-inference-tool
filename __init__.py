@@ -186,48 +186,81 @@ Pfam2CisBP = {
 
 CisBP2Pfam = {v: k for k, v in Pfam2CisBP.items()}
 
-class CisBP:
+###########################################################
+# Github: https://github.com/smlmbrt/SimilarityRegression #
+# Script: ./similarityregression/PredictSimilarity.py     #
+###########################################################
 
-    def __init__(self, model_file):
-        self.file = model_file
-        self.__model = {}
-        self.family = None
-        self.__parse_model()
+def ReadSRModel(filename):
+    with open(filename) as SRModel:
+        srmodel = json.load(SRModel)
+    #Convert to NP arrarys
+    if 'SR.Weights' in srmodel:
+        srmodel['SR.Weights'] = np.asarray(srmodel['SR.Weights'])
+        srmodel['SR.FeatureScales.mean'] = np.asarray(srmodel['SR.FeatureScales.mean'])
+        #Convert 0's to NAs
+        sd = np.asarray(srmodel['SR.FeatureScales.sd'])
+        sd[sd == 0] = np.nan
+        srmodel['SR.FeatureScales.sd'] = sd
+    #Check for Amb/Dis threshold
+    if np.isnan(srmodel['Threshold.Dis']):
+        srmodel['Threshold.Dis'] = None
+    return(srmodel)
+    
+def ScoreAlignmentResult(resultDict, scoreDict, applyidenticalRule = True):
+    #Check if 100% identical (gets rid of proteins w/ truncations)
+    if (applyidenticalRule == True) and (resultDict['PctID_L'] == 1):
+        return(resultDict['PctID_L'], 'HSim')
+    #Score The Sequence
+    if scoreDict['Model.Class'] == 'SequenceIdentity':
+        Score = resultDict[scoreDict['Model.Name']]
+        threshold_hsim = scoreDict['Threshold.HSim']
+        threshold_dis = scoreDict['Threshold.Dis']
+        if Score >= threshold_hsim:
+            Classification = 'HSim'
+            return(Score, Classification)
+        # else:
+        #     Classification = 'Amb'
+        # ##Check if Amb/Dis
+        # if threshold_dis != None:
+        #     if Score < threshold_dis:
+        #         Classification = 'Dis'
+    else:
+        Score = resultDict[scoreDict['Baseline']['Name']]
+        threshold_hsim = scoreDict['Baseline']['Threshold.HSim']
+        threshold_dis = scoreDict['Baseline']['Threshold.Dis']        
+        if Score >= threshold_hsim:
+            Classification = 'HSim'
+            return(Score, Classification)
+        # else:
+        #     Classification = 'Amb'
+        # ##Check if Amb/Dis
+        # if threshold_dis != None:
+        #     if Score < threshold_dis:
+        #         Classification = 'Dis'
+        SRweights = scoreDict['SR.Weights']
+        #Get postional scores
+        key = 'ByPos.'+scoreDict['SR.Features'].replace('_','.')
+        ByPos = np.array(resultDict[key])
+        # i.e. fix error when length of Pfam domain != from Cis-BP
+        if len(ByPos) == len(scoreDict['SR.FeatureScales.mean']):
+            #Normalize to features (f)
+            f = (ByPos - scoreDict['SR.FeatureScales.mean'])/scoreDict['SR.FeatureScales.sd']
+            f[np.isnan(f)] = 0 #Cleanup NAs
+            Score = scoreDict['SR.Intercept'] + np.dot(SRweights, f)
+            if scoreDict['SR.LogisticTransform'] == True:
+                logistic = lambda x: 1 / (1 + np.exp(-x))
+                Score = logistic(Score)
+            threshold_hsim = scoreDict['Threshold.HSim']
+            threshold_dis = scoreDict['Threshold.Dis']
+            if Score >= threshold_hsim:
+                Classification = 'HSim'
+                return(Score, Classification)
+            # else:
+            #     Classification = 'Amb'
+            # ##Check if Amb/Dis
+            # if threshold_dis != None:
+            #     if Score < threshold_dis:
+            #         Classification = 'Dis'
 
-    def __parse_model(self):
-        handle = Jglobals._get_file_handle(self.file)
-        model = json.load(handle)
-        self.family = CisBP2Pfam[model["Family_Name"]]
-        if model["Model.Name"] == "PctID_L":
-            self.__model.setdefault("pid", {})
-            self.__model["pid"].setdefault("dis", model["Threshold.Dis"])
-            self.__model["pid"].setdefault("hsim", model["Threshold.HSim"])
-        else:
-            self.__model.setdefault("pid", {})
-            self.__model["pid"].setdefault("dis", model["Baseline"]["Threshold.Dis"])
-            self.__model["pid"].setdefault("hsim", model["Baseline"]["Threshold.HSim"])
-            self.__model.setdefault("sr", {})
-            self.__model["sr"].setdefault("dis", model["Threshold.Dis"])
-            self.__model["sr"].setdefault("hsim", model["Threshold.HSim"])
-            self.__model["sr"].setdefault("mean", model["SR.FeatureScales.mean"])
-            self.__model["sr"].setdefault("sd", model["SR.FeatureScales.sd"])
-            self.__model["sr"].setdefault("intercept", model["SR.Intercept"])
-            self.__model["sr"].setdefault("weights", model["SR.Weights"])
-            if model["SR.Features"] == "AvgB62":
-                self.__model["sr"].setdefault("similarity", "blosum62")
-            else:
-                self.__model["sr"].setdefault("similarity", "identity")
-
-    def get_model_threshold(self, what_model, what_threshold):
-        if what_model in self.__model:
-            if what_threshold in self.__model[what_model]:
-                threshold = self.__model[what_model][what_threshold]
-                if np.isnan(threshold):
-                    return(None)
-                return(threshold)
-        return(None)
-
-    def get_model(self, what_model):
-        if what_model in self.__model:
-            return(self.__model[what_model])
-        return(None)
+    return(np.nan, np.nan)
