@@ -2,6 +2,7 @@
 This repository contains the data and code used by the JASPAR profile inference tool. For more information please refer to the supplementary data from JASPAR [2016](https://academic.oup.com/nar/article/44/D1/D110/2502663) and [2020](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkz1001/5614568).
 
 ## News
+01/09/2021 We have updated the profile inference tool with new profiles for the 2022 release of JASPAR.
 31/01/2021 We have updated the profile inference tool as described in the similarity regression [manuscript](https://www.nature.com/articles/s41588-019-0411-1).
 ~~01/09/2019 We have improved the profile inference tool by implementing our own [similarity regression](https://www.nature.com/articles/s41588-019-0411-1) method.~~
 
