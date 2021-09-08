@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  RRM_1
-ACC   PF00076.23
+ACC   PF00076.24
 DESC  RNA recognition motif. (a.k.a. RRM, RBD, or RNP domain)
 LENG  70
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:58:01 2021
+DATE  Wed Sep  8 09:27:39 2021
 NSEQ  68
 EFFN  11.558838
 CKSUM 1874161885

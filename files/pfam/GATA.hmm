@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  GATA
-ACC   PF00320.28
+ACC   PF00320.29
 DESC  GATA zinc finger
 LENG  36
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Fri Jan 22 09:55:28 2021
+DATE  Wed Sep  8 09:27:10 2021
 NSEQ  56
 EFFN  10.298340
 CKSUM 142612169

@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  Zn_clus
-ACC   PF00172.19
+ACC   PF00172.20
 DESC  Fungal Zn(2)-Cys(6) binuclear cluster domain
 LENG  40
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:58:53 2021
+DATE  Wed Sep  8 09:28:58 2021
 NSEQ  29
 EFFN  6.219849
 CKSUM 4168413184

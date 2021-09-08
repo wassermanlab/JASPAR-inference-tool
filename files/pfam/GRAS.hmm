@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  GRAS
-ACC   PF03514.15
+ACC   PF03514.16
 DESC  GRAS domain family
 LENG  374
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:59:48 2021
+DATE  Wed Sep  8 09:29:01 2021
 NSEQ  30
 EFFN  2.340088
 CKSUM 3600684689

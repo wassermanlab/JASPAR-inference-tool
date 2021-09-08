@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  KilA-N
-ACC   PF04383.14
+ACC   PF04383.15
 DESC  KilA-N domain
 LENG  112
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Fri Jan 22 09:56:28 2021
+DATE  Wed Sep  8 09:30:12 2021
 NSEQ  137
 EFFN  6.618378
 CKSUM 2599536474

@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  GCM
-ACC   PF03615.16
+ACC   PF03615.17
 DESC  GCM motif protein
 LENG  140
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:56:22 2021
+DATE  Wed Sep  8 09:26:33 2021
 NSEQ  14
 EFFN  0.584473
 CKSUM 1230376341

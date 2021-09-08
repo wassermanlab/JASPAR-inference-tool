@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  Rap1-DNA-bind
-ACC   PF09197.11
+ACC   PF09197.12
 DESC  Rap1, DNA-binding
 LENG  108
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:58:16 2021
+DATE  Wed Sep  8 09:28:13 2021
 NSEQ  14
 EFFN  1.828613
 CKSUM 1881474192

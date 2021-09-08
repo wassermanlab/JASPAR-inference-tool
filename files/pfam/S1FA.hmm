@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  S1FA
-ACC   PF04689.14
+ACC   PF04689.15
 DESC  DNA binding protein S1FA
 LENG  66
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Fri Jan 22 09:55:42 2021
+DATE  Wed Sep  8 09:30:03 2021
 NSEQ  6
 EFFN  0.729492
 CKSUM 4176938462

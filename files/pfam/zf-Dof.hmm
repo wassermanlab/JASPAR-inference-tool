@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  zf-Dof
-ACC   PF02701.16
+ACC   PF02701.17
 DESC  Dof domain, zinc finger
 LENG  59
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Fri Jan 22 09:59:24 2021
+DATE  Wed Sep  8 09:30:10 2021
 NSEQ  44
 EFFN  1.050049
 CKSUM 2751555741

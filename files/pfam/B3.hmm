@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  B3
-ACC   PF02362.22
+ACC   PF02362.23
 DESC  B3 DNA binding domain
 LENG  101
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:55:54 2021
+DATE  Wed Sep  8 09:27:16 2021
 NSEQ  87
 EFFN  7.160614
 CKSUM 2206534453

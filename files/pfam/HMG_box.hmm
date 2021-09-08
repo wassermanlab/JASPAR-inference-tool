@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  HMG_box
-ACC   PF00505.20
+ACC   PF00505.21
 DESC  HMG (high mobility group) box
 LENG  69
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:55:45 2021
+DATE  Wed Sep  8 09:26:42 2021
 NSEQ  27
 EFFN  4.795532
 CKSUM 912449539

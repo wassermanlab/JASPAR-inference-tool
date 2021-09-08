@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  FAR1
-ACC   PF03101.16
+ACC   PF03101.17
 DESC  FAR1 DNA-binding domain
 LENG  90
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Fri Jan 22 09:55:25 2021
+DATE  Wed Sep  8 09:26:56 2021
 NSEQ  16
 EFFN  1.394531
 CKSUM 2504990708

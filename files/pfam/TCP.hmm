@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  TCP
-ACC   PF03634.14
+ACC   PF03634.15
 DESC  TCP family transcription factor
 LENG  154
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Fri Jan 22 09:57:10 2021
+DATE  Wed Sep  8 09:27:48 2021
 NSEQ  45
 EFFN  1.831970
 CKSUM 829720322

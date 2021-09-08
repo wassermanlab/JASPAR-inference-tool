@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  zf-CXXC
-ACC   PF02008.21
+ACC   PF02008.22
 DESC  CXXC zinc finger domain
 LENG  48
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Fri Jan 22 09:58:35 2021
+DATE  Wed Sep  8 09:29:30 2021
 NSEQ  31
 EFFN  2.554321
 CKSUM 1552214015

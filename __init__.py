@@ -5,7 +5,7 @@ JASPAR profile inference tool
 __author__ = "Oriol Fornes, Xi Zhang"
 __email__ = "oriol@cmmt.ubc.ca, nzhang@cmmt.ubc.ca"
 __organization__ = "The JASPAR Consortium"
-__version__ = "2.0.1"
+__version__ = "2021.9.1"
 
 from Bio import SeqIO
 import gzip
@@ -24,7 +24,9 @@ class Globals(object):
     # Definitions #
     #-------------#
 
-    taxons = ["fungi", "insects", "nematodes", "plants", "vertebrates"]
+    version = 2022
+    taxons = ["fungi", "insects", "nematodes", "plants", "urochordates",
+        "vertebrates"]
 
     #--------------#
     # Input/Output #
@@ -197,7 +199,9 @@ def ReadSRModel(filename):
     #Convert to NP arrarys
     if 'SR.Weights' in srmodel:
         srmodel['SR.Weights'] = np.asarray(srmodel['SR.Weights'])
-        srmodel['SR.FeatureScales.mean'] = np.asarray(srmodel['SR.FeatureScales.mean'])
+        srmodel['SR.FeatureScales.mean'] = np.asarray(
+            srmodel['SR.FeatureScales.mean']
+        )
         #Convert 0's to NAs
         sd = np.asarray(srmodel['SR.FeatureScales.sd'])
         sd[sd == 0] = np.nan
@@ -245,7 +249,8 @@ def ScoreAlignmentResult(resultDict, scoreDict, applyidenticalRule = True):
         # i.e. fix error when length of Pfam domain != from Cis-BP
         if len(ByPos) == len(scoreDict['SR.FeatureScales.mean']):
             #Normalize to features (f)
-            f = (ByPos - scoreDict['SR.FeatureScales.mean'])/scoreDict['SR.FeatureScales.sd']
+            f = (ByPos - scoreDict['SR.FeatureScales.mean']) / \
+                scoreDict['SR.FeatureScales.sd']
             f[np.isnan(f)] = 0 #Cleanup NAs
             Score = scoreDict['SR.Intercept'] + np.dot(SRweights, f)
             if scoreDict['SR.LogisticTransform'] == True:

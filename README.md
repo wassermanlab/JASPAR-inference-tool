@@ -32,15 +32,15 @@ conda env create -f ./conda/environment.yml
 ## Usage
 To illustrate how the profile inference tool can be used, we provide an example for the [zebra fish](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=7955) TF [egr1](https://www.uniprot.org/uniprot/P26632), and the [fission yeast](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=4896) TF [tbp](https://www.uniprot.org/uniprot/P17871):
 ```
-./infer_profile.py ./examples/egr1+tbp1.fa --latest
-100%|████████████████████| 2/2 [00:02<00:00,  1.21s/it]
+$ ./infer-profile.py --files-dir ./files/ --latest ./examples/egr1+tbp1.fa 
+100%|████████████████████| 2/2 [00:08<00:00,  4.28s/it]
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID
 sp|P26632|EGR1_DANRE    EGR1    MA0162.2        0.0     1-511   1-543   0.971
-sp|P26632|EGR1_DANRE    EGR3    MA0732.1        5.89e-89        57-410  38-374  0.899
-sp|P26632|EGR1_DANRE    EGR2    MA0472.1        5.15e-72        55-398  38-424  0.942
-sp|P26632|EGR1_DANRE    EGR4    MA0733.1        7.89e-51        306-401 478-573 0.783
-sp|P17871|TBP_SCHPO     SPT15   MA0386.1        8.25e-126       17-230  29-239  0.894
-sp|P17871|TBP_SCHPO     TBP     MA0108.2        3.17e-109       8-230   114-337 0.765
+sp|P26632|EGR1_DANRE    EGR3    MA0732.1        6.81e-89        57-410  38-374  0.899
+sp|P26632|EGR1_DANRE    Egr2    MA0472.1        5.95e-72        55-398  38-424  0.942
+sp|P26632|EGR1_DANRE    EGR4    MA0733.1        9.11e-51        306-401 478-573 0.783
+sp|P17871|TBP_SCHPO     SPT15   MA0386.1        8.18e-126       17-230  29-239  0.912
+sp|P17871|TBP_SCHPO     TBP     MA0108.2        3.66e-109       8-230   114-337 0.771
 ```
 The tool infers that the motif of `sp|P26632|EGR1_DANRE` should be similar to [EGR1](http://jaspar.genereg.net/matrix/MA0162.4/), [EGR2](http://jaspar.genereg.net/matrix/MA0472.1/), [EGR3](http://jaspar.genereg.net/matrix/MA0732.1/) and [EGR4](http://jaspar.genereg.net/matrix/MA0733.1/), and that the motif of `sp|P17871|TBP_SCHPO` should be similar to [SPT15](http://jaspar.genereg.net/matrix/MA0386.1/) and [TBP](http://jaspar.genereg.net/matrix/MA0108.2/).
 
@@ -48,9 +48,8 @@ The tool infers that the motif of `sp|P26632|EGR1_DANRE` should be similar to [E
 ```
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from infer_profile import (
-    infer_SeqRecord_profiles, __load_CisBP_models, __load_JASPAR_files_n_models
-)
+import importlib
+infer_profile = importlib.import_module("infer-profile")
 
 # Transcription factor Sox-3-B of Xenopus laevis
 # https://www.uniprot.org/uniprot/Q5FWM3.fasta
@@ -64,13 +63,13 @@ seq = [
 ]
 
 # Load data
-cisbp = __load_CisBP_models()
-jaspar = __load_JASPAR_files_n_models()
+cisbp = infer_profile.__load_CisBP_models()
+jaspar = infer_profile.__load_JASPAR_files_n_models()
 
 # Infer profiles
 seq_record = SeqRecord(Seq("".join(seq)), id="Sox-3-B")
-inferred_profiles = infer_SeqRecord_profiles(seq_record, cisbp, jaspar,
-    latest=True)
+inferred_profiles = infer_profile.infer_SeqRecord_profiles(
+    seq_record, cisbp, jaspar, latest=True)
 
 # Print
 rows = [["Query", "TF Name", "TF Matrix", "E-value", "Query Start-End",
@@ -81,25 +80,26 @@ for row in rows:
     print("\t".join(map(str, row)))
 
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID
-Sox-3-B Sox3    MA0514.1        3.39e-129       1-307   1-375   0.942
-Sox-3-B SOX2    MA0143.4        8.28e-115       1-307   1-317   0.913
-Sox-3-B Pou5f1::Sox2    MA0142.1        6.3e-112        1-307   1-319   0.913
-Sox-3-B Sox2    MA0143.1        6.3e-112        1-307   1-319   0.913
-Sox-3-B Sox1    MA0870.1        5.52e-81        1-307   1-391   0.884
-Sox-3-B SOX21   MA0866.1        5.81e-54        38-127  6-95    0.899
-Sox-3-B SOX14   MA1562.1        1.94e-53        38-127  6-95    0.884
-Sox-3-B D       MA0445.1        6.79e-45        32-145  134-239 0.826
-Sox-3-B SOX15   MA1152.1        3.15e-44        22-117  34-126  0.812
-Sox-3-B SRY     MA0084.1        9.58e-42        27-187  51-198  0.667
-Sox-3-B Sox11   MA0869.1        3.96e-35        40-117  49-126  0.696
-Sox-3-B SOX18   MA1563.1        2.93e-34        25-117  70-162  0.551
-Sox-3-B SOX4    MA0867.1        1.17e-33        40-117  59-136  0.696
-Sox-3-B Sox17   MA0078.1        1.39e-33        18-143  50-168  0.58
-Sox-3-B SOX12   MA1561.1        9.6e-33 40-116  40-116  0.681
-Sox-3-B SOX9    MA0077.1        8.17e-32        31-114  96-179  0.638
-Sox-3-B SOX8    MA0868.1        1.35e-31        40-114  102-176 0.652
-Sox-3-B SOX10   MA0442.1        1.51e-31        31-128  95-192  0.638
-Sox-3-B Sox6    MA0515.1        6.06e-26        40-126  620-706 0.551
-Sox-3-B Sox5    MA0087.1        8.96e-26        40-126  556-642 0.551
-Sox-3-B SOX13   MA1120.1        4.3e-25 40-120  424-504 0.551
+Sox-3-B Sox3    MA0514.1        3.91e-129       1-307   1-375   0.942
+Sox-3-B POU2F1::SOX2    MA1962.1        9.56e-115       1-307   1-317   0.913
+Sox-3-B SOX2    MA0143.4        9.56e-115       1-307   1-317   0.913
+Sox-3-B Pou5f1::Sox2    MA0142.1        7.27e-112       1-307   1-319   0.913
+Sox-3-B Sox2    MA0143.1        7.27e-112       1-307   1-319   0.913
+Sox-3-B Sox1    MA0870.1        6.37e-81        1-307   1-391   0.884
+Sox-3-B SOX21   MA0866.1        6.71e-54        38-127  6-95    0.899
+Sox-3-B SOX14   MA1562.1        2.24e-53        38-127  6-95    0.884
+Sox-3-B D       MA0445.1        7.12e-45        32-145  134-239 0.826
+Sox-3-B SOX15   MA1152.1        3.64e-44        22-117  34-126  0.812
+Sox-3-B SRY     MA0084.1        1.11e-41        27-187  51-198  0.667
+Sox-3-B Sox11   MA0869.1        4.58e-35        40-117  49-126  0.696
+Sox-3-B SOX18   MA1563.1        3.38e-34        25-117  70-162  0.551
+Sox-3-B SOX4    MA0867.1        1.36e-33        40-117  59-136  0.696
+Sox-3-B Sox17   MA0078.1        1.6e-33 18-143  50-168  0.58
+Sox-3-B SOX12   MA1561.1        1.11e-32        40-116  40-116  0.681
+Sox-3-B SOX9    MA0077.1        9.43e-32        31-114  96-179  0.638
+Sox-3-B SOX8    MA0868.1        1.56e-31        40-114  102-176 0.652
+Sox-3-B SOX10   MA0442.1        1.74e-31        31-128  95-192  0.638
+Sox-3-B Sox6    MA0515.1        6.99e-26        40-126  620-706 0.551
+Sox-3-B Sox5    MA0087.1        1.03e-25        40-126  556-642 0.551
+Sox-3-B SOX13   MA1120.1        4.97e-25        40-120  424-504 0.551
 ```

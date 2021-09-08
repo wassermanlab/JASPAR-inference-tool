@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  CUT
-ACC   PF02376.16
+ACC   PF02376.17
 DESC  CUT domain
 LENG  79
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Fri Jan 22 09:58:07 2021
+DATE  Wed Sep  8 09:29:48 2021
 NSEQ  37
 EFFN  2.868042
 CKSUM 4025283662
