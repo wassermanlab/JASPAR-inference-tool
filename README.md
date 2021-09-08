@@ -31,7 +31,7 @@ conda env create -f ./conda/environment.yml
 ```
 
 ## Usage
-To illustrate how the profile inference tool can be used, we provide an example for the [zebra fish](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=7955) TF [egr1](https://www.uniprot.org/uniprot/P26632), and the [fission yeast](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=4896) TF [tbp](https://www.uniprot.org/uniprot/P17871):
+To illustrate how the profile inference tool can be used, we provide an example for the [zebra fish](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=7955) TF [egr1](https://www.uniprot.org/uniprot/P26632), and the [fission yeast](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=4896) TF [tbp1](https://www.uniprot.org/uniprot/P17871):
 ```
 $ ./infer-profile.py --files-dir ./files/ --latest ./examples/egr1+tbp1.fa 
 100%|████████████████████| 2/2 [00:08<00:00,  4.28s/it]
