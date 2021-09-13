@@ -28,7 +28,7 @@ sys.path.append(root_dir)
 
 # Import globals
 from __init__ import Jglobals
-infer_profile = importlib.import_module("infer-profile")
+from infer_profile import __make_seq_file, hmmscan, hmmalign
 
 #-------------#
 # Functions   #
@@ -480,11 +480,11 @@ def __get_Pfam_alignments(taxon, out_dir=out_dir):
             # Make seq file
             seq = Seq(uniaccs[u][1], IUPAC.protein)
             record = SeqRecord(seq, id=u, name=u, description=u)
-            infer_profile.__make_seq_file(record, seq_file)
+            __make_seq_file(record, seq_file)
 
             # For each DBD...
-            for pfam_id_std, start, end, evalue in infer_profile.hmmscan(
-                seq_file, hmm_db, non_overlapping_domains=True):
+            for pfam_id_std, start, end, evalue in hmmscan(seq_file, hmm_db,
+                non_overlapping_domains=True):
 
                 # Initialize
                 hmm_file = os.path.join("pfam", "%s.hmm" % pfam_id_std)
@@ -492,10 +492,10 @@ def __get_Pfam_alignments(taxon, out_dir=out_dir):
                 # Make seq file
                 sub_seq = seq[start:end]
                 record = SeqRecord(sub_seq, id=u, name=u, description=u)
-                infer_profile.__make_seq_file(record, seq_file)
+                __make_seq_file(record, seq_file)
 
                 # Add DBDs
-                alignment = infer_profile.hmmalign(seq_file, hmm_file)
+                alignment = hmmalign(seq_file, hmm_file)
                 pfams[u].append((pfam_id_std, alignment, start+1, end, evalue))
 
         # Write
