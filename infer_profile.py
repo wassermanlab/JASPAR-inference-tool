@@ -194,7 +194,7 @@ def infer_SeqRecord_profiles(seq_record, cisbp, jaspar, dummy_dir="/tmp/",
     inference_results = []
 
     # Get SeqRecord Pfam DBDs
-    alignments = __get_SeqRecord_Pfam_alignments(seq_record,
+    _, alignments = __get_SeqRecord_Pfam_alignments(seq_record,
         files_dir, dummy_dir)
     if len(alignments) == 0:
         return(inference_results)
@@ -290,7 +290,7 @@ def __get_SeqRecord_Pfam_alignments(seq_record, files_dir="./files/",
         alignment = hmmalign(seq_file, hmm_file)
         pfam_alignments.append((pfam_id_std, alignment, start+1, end, evalue))
 
-    return(pfam_alignments)
+    return(seq_record.id, pfam_alignments)
 
 def __make_seq_file(seq_record, file_name=".seq.fa"):
 
