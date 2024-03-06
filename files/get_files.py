@@ -1,22 +1,21 @@
 #!/usr/bin/env python
 
 import argparse
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 import coreapi
 from git import Repo
-import importlib
+import io
 import json
 import os
 import pickle
-# Download of Pfam/UniProt via RESTFUL API
-from prody.database import pfam, uniprot
 import re
+import requests
 import shutil
 import subprocess
 import sys
-import time
 from urllib.request import urlretrieve
 
 # Defaults
@@ -43,10 +42,15 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "-o",
+        "--out-dir",
         default="./",
         help="output directory (default = ./)",
-        metavar="DIR"
+    )
+    parser.add_argument(
+        "-u", "--update",
+        default=False,
+        help="update files (default = False)",
+        action="store_true"
     )
 
     return(parser.parse_args())
@@ -66,7 +70,7 @@ def main():
     global devnull
     devnull = subprocess.DEVNULL
     global jaspar_url
-    jaspar_url = "https://testjaspar.uio.no/"
+    jaspar_url = "https://jaspar.elixir.no/"
     global clusters_file_ext
     clusters_file_ext = ".clusters.json"
     global pfam_file_ext
@@ -75,12 +79,12 @@ def main():
     profiles_file_ext = ".profiles.json"
     global uniprot_file_ext
     uniprot_file_ext = ".uniprot.json"
-    out_dir = os.path.abspath(args.o)
+    out_dir = os.path.abspath(args.out_dir)
 
     # Get files
-    get_files(out_dir)
+    get_files(out_dir, args.update)
 
-def get_files(out_dir=out_dir):
+def get_files(out_dir=out_dir, update=False):
 
     # Create output dir
     if not os.path.exists(out_dir):
@@ -96,17 +100,17 @@ def get_files(out_dir=out_dir):
     for taxon in Jglobals.taxons:
 
         # Download JASPAR files
-        __download_JASPAR_profiles(taxon, out_dir)
-        __get_profile_info(taxon, out_dir)
+        __download_JASPAR_profiles(taxon, out_dir, update)
+        __get_profile_info(taxon, out_dir, update)
 
         # Download TF sequences from UniProt
-        __download_UniProt_sequences(taxon, out_dir)
+        __download_UniProt_sequences(taxon, out_dir, update)
 
         # Format BLAST+ database
-        __format_BLAST_database(taxon, out_dir)
+        __format_BLAST_database(taxon, out_dir, update)
 
         # Get Pfam alignments
-        __get_Pfam_alignments(taxon, out_dir)
+        __get_Pfam_alignments(taxon, out_dir, update)
 
 def __download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -117,9 +121,6 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
         # Initialize
         pfams = {}
         pfam_ids = set()
-        url = "http://cisbp.ccbr.utoronto.ca/data/2.00/" + \
-              "DataFiles/Bulk_downloads/EntireDataset/"
-        cisbp_file = "TF_Information_all_motifs.txt.zip"
 
         # Create Pfam dir
         pfam_dir = os.path.join(out_dir, "pfam")
@@ -130,7 +131,10 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
         os.chdir(pfam_dir)
 
         # Skip if Cis-BP file already exists
+        cisbp_file = "TF_Information_all_motifs.txt.zip"
         if not os.path.exists(cisbp_file):
+            url = "http://cisbp.ccbr.utoronto.ca/data/2.00/" + \
+                "DataFiles/Bulk_downloads/EntireDataset/"
             urlretrieve(os.path.join(url, cisbp_file), cisbp_file)
 
         # Get DBD/cut-off pairs
@@ -152,48 +156,67 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
                 # Add Pfam ID
                 pfam_ids.add(pfam_id)
 
-        # For each Pfam ID...
-        for pfam_id in pfam_ids:
+        # Skip if Pfam file already exists
+        pfam_file = "Pfam-A.seed.gz"
+        if not os.path.exists(pfam_file):
+            url = "https://ftp.ebi.ac.uk/pub/databases/" + \
+                "Pfam/releases/Pfam32.0/"
+            urlretrieve(os.path.join(url, pfam_file), pfam_file)
 
-            # Fetch MSA from Pfam
-            attempts = 0
-            while attempts < 5:
-                try:
-                    msa_file = pfam.fetchPfamMSA(pfam_id, alignment="seed")
-                    break
-                except:
-                    # i.e. try again in 5 seconds
-                    attempts += 1
-                    time.sleep(5)
+        # Parse seed files
+        pfam_id = None
+        pfam_ac = None
+        msa = []
+        cmd = "zless %s" % pfam_file
+        process = subprocess.run([cmd], shell=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
-            # For each line...
-            for line in Jglobals.parse_file(msa_file):
+        # For each line...
+        for line in process.stdout.decode("latin-1").split("\n"):
 
-                m = re.search("^#=GF\sID\s+(\S+)$", line)
-                if m:
-                    pfam_id_std = m.group(1)
+            # Add line
+            msa.append(line)
 
-                m = re.search("^#=GF\sAC\s+(PF\d{5}).\d+$", line)
-                if m:
-                    pfam_ac = m.group(1)
-                    break
+            # Get Pfam ID
+            m = re.search("^#=GF\sID\s+(\S+)$", line)
+            if m:
+                pfam_id = m.group(1)
 
-            # HMM build
-            hmm_file = "%s.hmm" % pfam_id_std
-            cmd = "hmmbuild %s %s" % (hmm_file, msa_file)
-            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL)
+            # Get Pfam accession
+            m = re.search("^#=GF\sAC\s+(PF\d{5}).\d+$", line)
+            if m:
+                pfam_ac = m.group(1)
 
-            # HMM press
-            cmd = "hmmpress -f %s" % hmm_file
-            process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL)
+            if line.startswith("//"):
 
-            # Add Pfam
-            pfams.setdefault(pfam_ac, pfam_id_std)
+                # If Pfam ID in Cis-BP...
+                if pfam_id in pfam_ids:
 
-            # Remove MSA file
-            os.remove(msa_file)
+                    # Write MSA
+                    msa_file = "%s.msa" % pfam_id
+                    for m in msa:
+                        Jglobals.write(msa_file, m)
+
+                    # HMM build
+                    hmm_file = "%s.hmm" % pfam_id
+                    cmd = "hmmbuild %s %s" % (hmm_file, msa_file)
+                    process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL)
+
+                    # HMM press
+                    cmd = "hmmpress -f %s" % hmm_file
+                    process = subprocess.run([cmd], shell=True, stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL)
+
+                    # Add Pfam
+                    pfams.setdefault(pfam_ac, pfam_id)
+
+                    # Remove MSA file
+                    os.remove(msa_file)
+
+                pfam_id = None
+                pfam_ac = None
+                msa = []
 
         # Skip if HMM database of all DBDs already exists
         hmm_db = "All.hmm"
@@ -218,6 +241,10 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
         if os.path.exists(cisbp_file):
             os.remove(cisbp_file)
 
+        # Remove Pfam file
+        if os.path.exists(pfam_file):
+            os.remove(pfam_file)
+
         # Write
         Jglobals.write(
             json_file, json.dumps(pfams, sort_keys=True, indent=4)
@@ -240,7 +267,7 @@ def __download_CisBP_models(out_dir=out_dir):
 
         # Clone repo to tmp dir
         url = "https://github.com/smlmbrt/SimilarityRegression.git"
-        repo = Repo.clone_from(url, "tmp")
+        Repo.clone_from(url, "tmp")
 
         # For each JSON file...
         for json_file in os.listdir(os.path.join("tmp", "SRModels")):
@@ -258,11 +285,11 @@ def __download_CisBP_models(out_dir=out_dir):
     # Change dir
     os.chdir(cwd)
 
-def __download_JASPAR_profiles(taxon, out_dir=out_dir):
+def __download_JASPAR_profiles(taxon, out_dir=out_dir, update=False):
         
     # Skip if taxon directory already exists
     taxon_dir = os.path.join(out_dir, taxon)
-    if not os.path.exists(taxon_dir):
+    if not os.path.exists(taxon_dir) or update:
 
         # Create taxon directory
         os.makedirs(taxon_dir)
@@ -277,8 +304,14 @@ def __download_JASPAR_profiles(taxon, out_dir=out_dir):
         # Get JASPAR profiles
         if not os.path.exists(jaspar_file):
             urlretrieve(
-                os.path.join(jaspar_url, "download", "data",
-                    str(Jglobals.version), "CORE", jaspar_file), jaspar_file
+                os.path.join(
+                    jaspar_url,
+                    "download",
+                    "data",
+                    str(Jglobals.version),
+                    "CORE",
+                    jaspar_file
+                ), jaspar_file
             )
 
         # Unzip
@@ -290,11 +323,11 @@ def __download_JASPAR_profiles(taxon, out_dir=out_dir):
         # Change dir
         os.chdir(cwd)
 
-def __get_profile_info(taxon, out_dir=out_dir):
+def __get_profile_info(taxon, out_dir=out_dir, update=False):
 
     # Skip if taxon profiles JSON file already exists
     profiles_json_file = os.path.join(out_dir, taxon + profiles_file_ext)
-    if not os.path.exists(profiles_json_file):
+    if not os.path.exists(profiles_json_file) or update:
 
         # Initialize
         profiles = {}
@@ -328,41 +361,14 @@ def __get_profile_info(taxon, out_dir=out_dir):
             profiles_json_file, json.dumps(profiles, sort_keys=True, indent=4)
         )
 
-def __download_UniProt_sequences(taxon, out_dir=out_dir):
-
-    # Initialize
-    faulty_profiles = {
-        "MA1826.1": ["B4FU91"],
-    }
-    faulty_sequences = {
-        "B9GPL8": [
-            "MEEVGAQVAAPIFIHEALSSRYCDMTSMAKKHDLSYQSPNSQLQQHQFLQASREKNWNSK",
-            "AWDWDSVDDDGLGLNLGGSLTSVEEPVSRPNKRVRSGSPGNGSYPMCQVDNCKEDLSKAK",
-            "DYHRRHKVCQVHSKATKALVGKQMQRFCQQCSRFHPLTEFDEGKRSCRRRLAGHNRRRRK",
-            "TQPEDVTSRLLLPGNPDMNNNGNLDIVNLLTALARSQGKTYLPMIDFYVPPFVLTNCPTV",
-            "PDKDQLIQILNKINSLPLPMDLAAKLSNIASLNVKNPNQPYLGHQNRLNGTASSPSTNDL",
-            "LAVLSTTLAASAPDALAILSQRSSQSSDNDKSKLPGPNQVTVPHLQKRSNVEFPAVGVER",
-            "ISRCYESPAEDSDYQIQESRPNLPLQLFSSSPENESRQKPASSGKYFSSDSSNPIEERSP",
-            "SSSPPVVQKLFPLQSTAETMKSEKMSVSREVNANVEGDRSHGCVLPLELFRGPNREPDHS",
-            "SFQSFPYRGGYTSSSGSDHSPSSQNSDPQDRTGRIIFKLFDKDPSHFPGTLRTKIYNWLS",
-            "NSPSEMESYIRPGCVVLSVYLSMPSASWEQLERNLLQLVDSLVQDSDSDLWRSGRFLLNT",
-            "GRQLASHKDGKVRLCKSWRTWSSPELILVSPVAVIGGQETSLQLKGRNLTGPGTKIHCTY",
-            "MGGYTSKEVTDSSSPGSMYDEINVGGFKIHGPSPSILGRCFIEVENGFKGNSFPVIIADA",
-            "SICKELRLLESEFDENAVVSNIVSEEQTRDLGRPRSREEVMHFLNELGWLFQRKSMPSMH",
-            "EAPDYSLNRFKFLLIFSVERDYCVLVKTILDMLVERNTCRDELSKEHLEMLYEIQLLNRS",
-            "VKRRCRKMADLLIHYSIIGGDNSSRTYIFPPNVGGPGGITPLHLAACASGSDGLVDALTN",
-            "DPHEIGLSCWNSVLDANGLSPYAYAVMTKNHSYNLLVARKLADKRNGQISVAIGNEIEQA",
-            "ALEQEHVTISQFQRERKSCAKCASVAAKMHGRFLGSQGLLQRPYVHSMLAIAAVCVCVCL",
-            "FFRGAPDIGLVAPFKWENLNYGTI"
-        ]
-    }
+def __download_UniProt_sequences(taxon, out_dir=out_dir, update=False):
 
     # Change dir
     os.chdir(out_dir)
 
     # Skip if pickle file already exists
     pickle_file = ".%s.uniaccs.pickle" % taxon
-    if not os.path.exists(pickle_file):
+    if not os.path.exists(pickle_file) or update:
 
         # Initialize
         uniaccs = {}
@@ -379,10 +385,6 @@ def __download_UniProt_sequences(taxon, out_dir=out_dir):
             url = os.path.join(jaspar_url, "api", "v1", "matrix", profile)
             response = client.get(url)
             json_obj = json.loads(codec.encode(response))
-
-            # Fix faulty profiles
-            if json_obj["matrix_id"] in faulty_profiles:
-                json_obj["uniprot_ids"] = faulty_profiles[json_obj["matrix_id"]]
 
             # For each UniProt Accession...
             for uniacc in json_obj["uniprot_ids"]:
@@ -405,23 +407,36 @@ def __download_UniProt_sequences(taxon, out_dir=out_dir):
 
     # Skip if taxon uniprot JSON file already exists
     uniprot_json_file = taxon + uniprot_file_ext
-    if not os.path.exists(uniprot_json_file):
+    if not os.path.exists(uniprot_json_file) or update:
 
         # Load pickle file
         with open(pickle_file, "rb") as f:
             uniaccs = pickle.load(f)
 
-        # For each UniProt Accession...
+        # For each sublist...
+        for uniaccs_100 in __split_in_chunks(list(uniaccs.keys())):
+        
+            # Get UniProt sequences
+            query = "+OR+".join(f"accession:{acc}" for acc in uniaccs_100)
+            url = "https://rest.uniprot.org/uniprotkb/" + \
+                f"stream?&format=fasta&query={query}"
+            request = requests.get(url)
+            handle = io.StringIO(request.text)
+            records = list(SeqIO.parse(handle, "fasta"))
+
+            # For each UniProt Accession...
+            for record in records:
+                uniacc = record.id.split("|")[1]
+                if uniacc in uniaccs:
+                    uniaccs[uniacc][1] = str(record.seq)
+
+        # Fix faulty sequences
         for uniacc in uniaccs:
-
-            # Fix faulty sequences
-            if uniacc in faulty_sequences:
-                uniaccs[uniacc][1] = "".join(faulty_sequences[uniacc]) 
-                continue
-
-            # Get UniProt sequence
-            u = uniprot.queryUniprot(uniacc)
-            uniaccs[uniacc][1] = "".join(u["sequence   0"].split("\n"))
+            if not uniaccs[uniacc][1]:
+                print("faulty UniProt accession", taxon, uniacc)
+                url = f"https://www.uniprot.org/uniprot/{uniacc}.fasta"
+                response = requests.get(url)
+                uniaccs[uniacc][1] = "".join(response.text.split("\n")[1:])
 
         # Write
         Jglobals.write(
@@ -431,11 +446,15 @@ def __download_UniProt_sequences(taxon, out_dir=out_dir):
     # Change dir
     os.chdir(cwd)
 
-def __format_BLAST_database(taxon, out_dir=out_dir):
+def __split_in_chunks(l, n=100): 
+    for i in range(0, len(l), n):  
+        yield l[i:i + n] 
+
+def __format_BLAST_database(taxon, out_dir=out_dir, update=False):
 
     # Skip if taxon FASTA file already exists
     fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
-    if not os.path.exists(fasta_file):
+    if not os.path.exists(fasta_file) or update:
 
         # Load JSON file
         uniprot_json_file = taxon + uniprot_file_ext
@@ -452,11 +471,11 @@ def __format_BLAST_database(taxon, out_dir=out_dir):
         process = subprocess.run(
             [cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def __get_Pfam_alignments(taxon, out_dir=out_dir):
+def __get_Pfam_alignments(taxon, out_dir=out_dir, update=False):
 
     # Skip if Pfam JSON file already exists
     pfam_json_file = os.path.join(out_dir, taxon + pfam_file_ext)
-    if not os.path.exists(pfam_json_file):
+    if not os.path.exists(pfam_json_file) or update:
 
         # Change dir
         os.chdir(out_dir)

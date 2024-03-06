@@ -1,6 +1,5 @@
 {
     "PF00010": "HLH",
-    "PF00046": "Homeodomain",
     "PF00076": "RRM_1",
     "PF00096": "zf-C2H2",
     "PF00105": "zf-C4",
@@ -32,7 +31,6 @@
     "PF01422": "zf-NF-X1",
     "PF01429": "MBD",
     "PF01530": "zf-C2HC",
-    "PF01698": "SAM_LFY",
     "PF02008": "zf-CXXC",
     "PF02042": "RWP-RK",
     "PF02045": "CBFB_NFYA",
@@ -52,7 +50,6 @@
     "PF03106": "WRKY",
     "PF03110": "SBP",
     "PF03165": "MH1",
-    "PF03195": "LOB",
     "PF03299": "TF_AP-2",
     "PF03514": "GRAS",
     "PF03584": "Herpes_ICP4_N",

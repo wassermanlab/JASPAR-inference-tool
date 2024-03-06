@@ -3,9 +3,9 @@ JASPAR profile inference tool
 """
 
 __author__ = "Oriol Fornes, Xi Zhang"
-__email__ = "oriol@cmmt.ubc.ca, nzhang@cmmt.ubc.ca"
+__email__ = "oriol.fornes@gmail.com, nzhang@cmmt.ubc.ca"
 __organization__ = "The JASPAR Consortium"
-__version__ = "2021.9.1"
+__version__ = "2024.3.1"
 
 from Bio import SeqIO
 import gzip
@@ -24,9 +24,20 @@ class Globals(object):
     # Definitions #
     #-------------#
 
-    version = 2022
-    taxons = ["fungi", "insects", "nematodes", "plants", "urochordates",
-        "vertebrates"]
+    version = 2024
+    taxons = [
+        # "cnidaria",
+        # "diatoms",
+        # "dictyostelium",
+        "fungi",
+        "insects",
+        "nematodes",
+        # "oomycota",
+        "plants",
+        # "trematodes",
+        "urochordates",
+        "vertebrates"
+    ]
 
     #--------------#
     # Input/Output #

@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  CSD
-ACC   PF00313.24
+ACC   PF00313.22
 DESC  'Cold-shock' DNA-binding domain
 LENG  66
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Wed Sep  8 09:28:16 2021
+DATE  Tue Mar  5 09:37:14 2024
 NSEQ  34
 EFFN  2.809814
 CKSUM 2228867964
