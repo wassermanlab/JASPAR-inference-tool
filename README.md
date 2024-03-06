@@ -2,6 +2,7 @@
 This repository contains the data and code used by the JASPAR profile inference tool. For more information please refer to the supplementary data from JASPAR [2016](https://academic.oup.com/nar/article/44/D1/D110/2502663) and [2020](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkz1001/5614568).
 
 ## News
+01/03/2024 We have updated the profile inference tool with new profiles for the 2024 release of JASPAR.
 01/09/2021 We have updated the profile inference tool with new profiles for the 2022 release of JASPAR.
 31/01/2021 We have updated the profile inference tool as described in the similarity regression [manuscript](https://www.nature.com/articles/s41588-019-0411-1).
 ~~01/09/2019 We have improved the profile inference tool by implementing our own [similarity regression](https://www.nature.com/articles/s41588-019-0411-1) method.~~
@@ -18,7 +19,7 @@ The original scripts used for the publication of [JASPAR 2016](https://doi.org/1
 ## Dependencies
 * [BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi)
 * [HMMER](http://hmmer.org/) (version ≥3.0)
-* [Python 3](https://www.python.org/download/releases/3/) with the following libraries: [Biopython](http://biopython.org), [CoreAPI](http://www.coreapi.org), [GitPython](https://gitpython.readthedocs.io/en/stable/), [joblib](https://joblib.readthedocs.io/en/latest/), ~~[glmnet](https://github.com/civisanalytics/python-glmnet)~~, [NumPy](https://numpy.org/), [pandas](https://pandas.pydata.org/), [ProDy](http://prody.csb.pitt.edu/), ~~[SciPy](https://www.scipy.org/)~~, ~~[scikit-learn](https://scikit-learn.org/stable/)~~ and [tqdm](https://tqdm.github.io) 
+* [Python 3](https://www.python.org/download/releases/3/) with the following libraries: [Biopython](http://biopython.org), [CoreAPI](http://www.coreapi.org), [GitPython](https://gitpython.readthedocs.io/en/stable/), [joblib](https://joblib.readthedocs.io/en/latest/), ~~[glmnet](https://github.com/civisanalytics/python-glmnet)~~, [NumPy](https://numpy.org/), [pandas](https://pandas.pydata.org/), ~~[ProDy](http://prody.csb.pitt.edu/), [SciPy](https://www.scipy.org/), [scikit-learn](https://scikit-learn.org/stable/)~~ and [tqdm](https://tqdm.github.io) 
 * ~~The [RSAT matrix-clustering](http://pedagogix-tagc.univ-mrs.fr/rsat/matrix-clustering_form.cgi) tool~~
 * ~~[Tomtom](http://meme-suite.org/doc/tomtom.html) as distributed in the [MEME](http://meme-suite.org/index.html) suite (version ≥5.0)~~
 
@@ -28,6 +29,13 @@ Note that for running `infer_profile.py`, the CoreAPI, GitPython, ~~glmnet, SciP
 All dependencies can be installed through the [conda](https://docs.conda.io/en/latest/) package manager:
 ```
 conda env create -f ./conda/environment.yml
+```
+
+## Update
+To update the tool to the latest release of JASPAR, execute `get_files.py` as follows:
+```
+cd files
+./get_files.py --update
 ```
 
 ## Usage

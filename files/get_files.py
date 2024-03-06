@@ -81,13 +81,19 @@ def main():
     uniprot_file_ext = ".uniprot.json"
     out_dir = os.path.abspath(args.out_dir)
 
-    # Get files
-    get_files(out_dir, args.update)
+    # Prepare for update
+    if args.update:
+        os.chdir(out_dir)
+        os.system("./rm_files.sh")
+        os.chdir(cwd)
 
-def get_files(out_dir=out_dir, update=False):
+    # Get files
+    get_files(out_dir)
+
+def get_files(out_dir=out_dir):
 
     # Create output dir
-    if not os.path.exists(out_dir):
+    if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
 
     # Download Pfam DBD hidden Markov models
@@ -100,17 +106,17 @@ def get_files(out_dir=out_dir, update=False):
     for taxon in Jglobals.taxons:
 
         # Download JASPAR files
-        __download_JASPAR_profiles(taxon, out_dir, update)
-        __get_profile_info(taxon, out_dir, update)
+        __download_JASPAR_profiles(taxon, out_dir)
+        __get_profile_info(taxon, out_dir)
 
         # Download TF sequences from UniProt
-        __download_UniProt_sequences(taxon, out_dir, update)
+        __download_UniProt_sequences(taxon, out_dir)
 
         # Format BLAST+ database
-        __format_BLAST_database(taxon, out_dir, update)
+        __format_BLAST_database(taxon, out_dir)
 
         # Get Pfam alignments
-        __get_Pfam_alignments(taxon, out_dir, update)
+        __get_Pfam_alignments(taxon, out_dir)
 
 def __download_Pfam_DBD_HMMs(out_dir=out_dir):
 
@@ -260,7 +266,8 @@ def __download_CisBP_models(out_dir=out_dir):
     if not os.path.isdir(cisbp_dir):
 
         # Create Cis-BP dir
-        os.makedirs(cisbp_dir)
+        if not os.path.isdir(cisbp_dir):
+            os.makedirs(cisbp_dir)
 
         # Change dir
         os.chdir(cisbp_dir)
@@ -285,13 +292,15 @@ def __download_CisBP_models(out_dir=out_dir):
     # Change dir
     os.chdir(cwd)
 
-def __download_JASPAR_profiles(taxon, out_dir=out_dir, update=False):
+def __download_JASPAR_profiles(taxon, out_dir=out_dir):
         
     # Skip if taxon directory already exists
     taxon_dir = os.path.join(out_dir, taxon)
-    if not os.path.exists(taxon_dir) or update:
+    if not os.path.exists(taxon_dir):
 
         # Create taxon directory
+        if os.path.isdir(taxon_dir):
+            shutil.rmtree(taxon_dir)            
         os.makedirs(taxon_dir)
 
         # Move to taxon directory
@@ -323,11 +332,11 @@ def __download_JASPAR_profiles(taxon, out_dir=out_dir, update=False):
         # Change dir
         os.chdir(cwd)
 
-def __get_profile_info(taxon, out_dir=out_dir, update=False):
+def __get_profile_info(taxon, out_dir=out_dir):
 
     # Skip if taxon profiles JSON file already exists
     profiles_json_file = os.path.join(out_dir, taxon + profiles_file_ext)
-    if not os.path.exists(profiles_json_file) or update:
+    if not os.path.exists(profiles_json_file):
 
         # Initialize
         profiles = {}
@@ -361,14 +370,14 @@ def __get_profile_info(taxon, out_dir=out_dir, update=False):
             profiles_json_file, json.dumps(profiles, sort_keys=True, indent=4)
         )
 
-def __download_UniProt_sequences(taxon, out_dir=out_dir, update=False):
+def __download_UniProt_sequences(taxon, out_dir=out_dir):
 
     # Change dir
     os.chdir(out_dir)
 
     # Skip if pickle file already exists
     pickle_file = ".%s.uniaccs.pickle" % taxon
-    if not os.path.exists(pickle_file) or update:
+    if not os.path.exists(pickle_file):
 
         # Initialize
         uniaccs = {}
@@ -407,7 +416,7 @@ def __download_UniProt_sequences(taxon, out_dir=out_dir, update=False):
 
     # Skip if taxon uniprot JSON file already exists
     uniprot_json_file = taxon + uniprot_file_ext
-    if not os.path.exists(uniprot_json_file) or update:
+    if not os.path.exists(uniprot_json_file):
 
         # Load pickle file
         with open(pickle_file, "rb") as f:
@@ -450,11 +459,11 @@ def __split_in_chunks(l, n=100):
     for i in range(0, len(l), n):  
         yield l[i:i + n] 
 
-def __format_BLAST_database(taxon, out_dir=out_dir, update=False):
+def __format_BLAST_database(taxon, out_dir=out_dir):
 
     # Skip if taxon FASTA file already exists
     fasta_file = os.path.join(out_dir, "%s.fa" % taxon)
-    if not os.path.exists(fasta_file) or update:
+    if not os.path.exists(fasta_file):
 
         # Load JSON file
         uniprot_json_file = taxon + uniprot_file_ext
@@ -471,11 +480,11 @@ def __format_BLAST_database(taxon, out_dir=out_dir, update=False):
         process = subprocess.run(
             [cmd], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def __get_Pfam_alignments(taxon, out_dir=out_dir, update=False):
+def __get_Pfam_alignments(taxon, out_dir=out_dir):
 
     # Skip if Pfam JSON file already exists
     pfam_json_file = os.path.join(out_dir, taxon + pfam_file_ext)
-    if not os.path.exists(pfam_json_file) or update:
+    if not os.path.exists(pfam_json_file):
 
         # Change dir
         os.chdir(out_dir)
