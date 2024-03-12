@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  FLYWCH
-ACC   PF04500.16
+ACC   PF04500.15
 DESC  FLYWCH zinc finger domain
 LENG  62
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Mar  5 09:37:18 2024
+DATE  Tue Mar 12 10:13:18 2024
 NSEQ  102
 EFFN  6.913513
 CKSUM 3677530065

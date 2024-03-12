@@ -240,6 +240,7 @@ def infer_SeqRecord_profiles(seq_record, cisbp, jaspar, dummy_dir="/tmp/",
             else:
                 model = cisbp[None]
             _, Classification = ScoreAlignmentResult(sr_alignment, model)
+
             inferences[0] = Classification == "HSim"
 
             # i.e. inferred result
@@ -252,7 +253,7 @@ def infer_SeqRecord_profiles(seq_record, cisbp, jaspar, dummy_dir="/tmp/",
                 inference_results.append([r[0], gene_name, matrix, r[4], r[2],
                     r[3], round(sr_alignment["PctID_L"], 3)])
             break
-    
+
     # Sort
     inference_results.sort(key=lambda x: (x[3], x[1], float(x[2][2:])))
     # Remove profiles from older versions
@@ -636,7 +637,7 @@ def __reassign(seq1, seq2):
 def __score(aa1, aa2, similarity="identity"):
 
     if similarity == "identity":
-        if aa1 == aa2 and aa1 != "-":
+        if aa1 == aa2:
             return(1)
         else:
             return(0)

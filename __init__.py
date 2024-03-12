@@ -177,7 +177,7 @@ Pfam2CisBP = {
     "Forkhead": "Forkhead",
     "GATA": "GATA",
     "GCM": "GCM",
-    "Homeodomain": "Homeodomain",
+    "Homeobox": "Homeodomain",
     "Pou": "Homeodomain,POU",
     "HSF_DNA-bind": "HSF",
     "MADF_DNA_bdg": "MADF",
@@ -243,7 +243,7 @@ def ScoreAlignmentResult(resultDict, scoreDict, applyidenticalRule = True):
     else:
         Score = resultDict[scoreDict['Baseline']['Name']]
         threshold_hsim = scoreDict['Baseline']['Threshold.HSim']
-        threshold_dis = scoreDict['Baseline']['Threshold.Dis']        
+        # threshold_dis = scoreDict['Baseline']['Threshold.Dis']    
         if Score >= threshold_hsim:
             Classification = 'HSim'
             return(Score, Classification)

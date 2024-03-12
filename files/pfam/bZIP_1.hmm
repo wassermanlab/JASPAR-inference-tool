@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  bZIP_1
-ACC   PF00170.21
+ACC   PF00170.20
 DESC  bZIP transcription factor
 LENG  64
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Mar  5 09:37:12 2024
+DATE  Tue Mar 12 10:13:12 2024
 NSEQ  15
 EFFN  3.790283
 CKSUM 2171139466

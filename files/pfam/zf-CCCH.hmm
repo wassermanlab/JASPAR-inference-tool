@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  zf-CCCH
-ACC   PF00642.24
+ACC   PF00642.23
 DESC  Zinc finger C-x8-C-x5-C-x3-H type (and similar)
 LENG  27
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Mar  5 09:37:35 2024
+DATE  Tue Mar 12 10:13:35 2024
 NSEQ  71
 EFFN  71.000000
 CKSUM 740282180

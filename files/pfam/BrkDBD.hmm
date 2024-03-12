@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  BrkDBD
-ACC   PF09607.10
+ACC   PF09607.9
 DESC  Brinker DNA-binding domain
 LENG  58
 ALPH  amino
@@ -9,10 +9,10 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Mar  5 09:37:11 2024
+DATE  Tue Mar 12 10:13:12 2024
 NSEQ  3
 EFFN  1.520508
-CKSUM 3864365468
+CKSUM 4072518571
 GA    23.40 23.40
 TC    23.40 23.40
 NC    23.30 23.30

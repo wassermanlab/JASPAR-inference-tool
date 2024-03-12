@@ -166,7 +166,7 @@ def __download_Pfam_DBD_HMMs(out_dir=out_dir):
         pfam_file = "Pfam-A.seed.gz"
         if not os.path.exists(pfam_file):
             url = "https://ftp.ebi.ac.uk/pub/databases/" + \
-                "Pfam/releases/Pfam32.0/"
+                "Pfam/releases/Pfam31.0/"
             urlretrieve(os.path.join(url, pfam_file), pfam_file)
 
         # Parse seed files

@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  MADF_DNA_bdg
-ACC   PF10545.9
+ACC   PF10545.8
 DESC  Alcohol dehydrogenase transcription factor Myb/SANT-like
 LENG  85
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    no
 MAP   yes
-DATE  Tue Mar  5 09:37:23 2024
+DATE  Tue Mar 12 10:13:23 2024
 NSEQ  95
 EFFN  5.650482
 CKSUM 1465940110

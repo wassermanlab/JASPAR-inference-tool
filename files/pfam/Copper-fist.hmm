@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  Copper-fist
-ACC   PF00649.18
+ACC   PF00649.17
 DESC  Copper fist DNA binding domain
 LENG  39
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Mar  5 09:37:13 2024
+DATE  Tue Mar 12 10:13:13 2024
 NSEQ  63
 EFFN  3.602966
 CKSUM 1192413466

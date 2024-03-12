@@ -1,6 +1,6 @@
 HMMER3/f [3.2.1 | June 2018]
 NAME  zf-BED
-ACC   PF02892.15
+ACC   PF02892.14
 DESC  BED zinc finger
 LENG  44
 ALPH  amino
@@ -9,7 +9,7 @@ MM    no
 CONS  yes
 CS    yes
 MAP   yes
-DATE  Tue Mar  5 09:37:34 2024
+DATE  Tue Mar 12 10:13:35 2024
 NSEQ  21
 EFFN  8.369751
 CKSUM 2868025516
