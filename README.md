@@ -12,7 +12,7 @@ This repository contains the data and code used by the JASPAR profile inference 
 * The `examples` folder contains the sequences of two transcription factors (TFs) and one protein that is not a transcription factor, such as the human serine/threonine-protein kinase [mTOR](https://www.uniprot.org/uniprot/P42345)
 * The `files` folder contains the output of the script [`get-files.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/files/get-files.py), which downloads TF sequences from [UniProt](https://www.uniprot.org/), DNA-binding domains (DBDs) from [Pfam](https://pfam.xfam.org/), retrieves infernece models from [Cis-BP](http://cisbp.ccbr.utoronto.ca/), etc.
 * ~~The `models` folder contains the similarity regression models created by calling the script [`pairwise.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/pairwise.py) followed by [`regression.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/models/regression.py)~~
-* The script [`infer-profile.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/infer-profile.py) takes as input ~~the folders `files` and `models`, plus~~ one or more proteic sequences in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format) (_e.g._ a proteome), and infers DNA-binding profiles from JASPAR 
+* The script [`infer_profile.py`](https://github.com/wassermanlab/JASPAR-profile-inference/blob/master/infer_profile.py) takes as input ~~the folders `files` and `models`, plus~~ one or more proteic sequences in [FASTA format](https://en.wikipedia.org/wiki/FASTA_format) (_e.g._ a proteome), and infers DNA-binding profiles from JASPAR 
 
 The original scripts used for the publication of [JASPAR 2016](https://doi.org/10.1093/nar/gkv1176) have been placed in the folder [`version-1.0`](https://github.com/wassermanlab/JASPAR-profile-inference/tree/master/version-1.0).
 
@@ -41,7 +41,7 @@ cd files
 ## Usage
 To illustrate how the profile inference tool can be used, we provide an example for the [zebra fish](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=7955) TF [egr1](https://www.uniprot.org/uniprot/P26632), and the [fission yeast](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?&id=4896) TF [tbp1](https://www.uniprot.org/uniprot/P17871):
 ```
-$ ./infer-profile.py --latest ./examples/egr1+tbp1.fa 
+$ ./infer_profile.py --latest ./examples/egr1+tbp1.fa 
 100%|████████████████████| 2/2 [00:08<00:00,  4.28s/it]
 Query   TF Name TF Matrix       E-value Query Start-End TF Start-End    DBD %ID
 sp|P26632|EGR1_DANRE    EGR1    MA0162.2        0.0     1-511   1-543   0.971
@@ -58,7 +58,7 @@ The tool infers that the motif of `sp|P26632|EGR1_DANRE` should be similar to [E
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import importlib
-infer_profile = importlib.import_module("infer-profile")
+infer_profile = importlib.import_module("infer_profile")
 
 # Transcription factor Sox-3-B of Xenopus laevis
 # https://www.uniprot.org/uniprot/Q5FWM3.fasta
